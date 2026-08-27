@@ -6,8 +6,8 @@
   "useCodeCache": true,
   "assets": {
     "dist/777.svg": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\777.svg",
+    "dist/assets/index-CCetS4pY.js": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\assets\\index-CCetS4pY.js",
     "dist/assets/index-F2fcsYzD.css": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\assets\\index-F2fcsYzD.css",
-    "dist/assets/index-zrFx4uvQ.js": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\assets\\index-zrFx4uvQ.js",
     "dist/gifs/effects/effect-0.gif": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\gifs\\effects\\effect-0.gif",
     "dist/gifs/effects/effect-1.gif": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\gifs\\effects\\effect-1.gif",
     "dist/gifs/effects/effect-10.gif": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\gifs\\effects\\effect-10.gif",
@@ -57,8 +57,6 @@
     "dist/gifs/sparkles.gif": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\gifs\\sparkles.gif",
     "dist/index.html": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\index.html",
     "dist/sounds/spin.mp3": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\sounds\\spin.mp3",
-    "dist/sounds/spin123 (2).mp3": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\sounds\\spin123 (2).mp3",
-    "dist/vite.svg": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\vite.svg",
     "dist/wpn-icons/wpn_9a91.png": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\wpn-icons\\wpn_9a91.png",
     "dist/wpn-icons/wpn_abakan.png": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\wpn-icons\\wpn_abakan.png",
     "dist/wpn-icons/wpn_abakan_camo.png": "C:\\Users\\korne\\OneDrive\\Документы\\projects\\gamma-slot-machine\\dist\\wpn-icons\\wpn_abakan_camo.png",

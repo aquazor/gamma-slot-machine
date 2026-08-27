@@ -83,7 +83,7 @@ const weaponCategories: WeaponCategory[] = [
    SLOT REEL
 ======================================== */
 
-function giveWeapon(itemId: string): void {
+function giveWeapon({ itemId, ammo }: { itemId: string; ammo: string }): void {
   console.log('Giving weapon with ID:', itemId);
 
   fetch('http://localhost:3000/give', {
@@ -91,7 +91,7 @@ function giveWeapon(itemId: string): void {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ itemId }),
+    body: JSON.stringify({ itemId, ammo }),
   })
     .then((response) => response.json())
     .then((data) => {
@@ -345,7 +345,9 @@ function SlotReel({ items, title, savedWeaponId, onResult }: SlotReelProps) {
 
               <button
                 className="action-button"
-                onClick={() => giveWeapon(selectedItem.id)}
+                onClick={() =>
+                  giveWeapon({ itemId: selectedItem.id, ammo: selectedItem.ammo })
+                }
               >
                 GIVE WEAPON
               </button>

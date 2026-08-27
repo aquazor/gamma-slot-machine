@@ -107,13 +107,20 @@ app.get('/gamma', (req, res) => {
  */
 
 app.post('/give', (req, res) => {
-  const { itemId } = req.body;
+  const { itemId, ammo } = req.body;
 
   console.log('GIVE WEAPON:', itemId);
+  console.log('AMMO:', ammo);
 
   if (!itemId) {
     return res.status(400).json({
       error: 'itemId is required',
+    });
+  }
+
+  if (!ammo) {
+    return res.status(400).json({
+      error: 'ammo is required',
     });
   }
 
@@ -128,13 +135,16 @@ app.post('/give', (req, res) => {
   const commandFile = getCommandFile(gammaPath);
 
   try {
-    fs.writeFileSync(commandFile, itemId, 'utf8');
+    const command = `${itemId}|${ammo}`;
 
-    console.log(`Command sent to GAMMA: ${itemId}`);
+    fs.writeFileSync(commandFile, command, 'utf8');
+
+    console.log(`Command sent to GAMMA: ${command}`);
 
     res.json({
       success: true,
       itemId,
+      ammo,
     });
   } catch (error) {
     console.error(error);

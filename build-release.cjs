@@ -116,5 +116,7 @@ try {
   console.error(' BUILD FAILED');
   console.error('========================================\n');
 
+  console.error(error);
+
   process.exit(1);
 }

@@ -279,19 +279,19 @@ export const rifles = [
     id: 'wpn_pkm_zenit_siber',
     name: 'PKM "Zenit" [enit_siber]',
     repair: 'D',
-    ammo: 'ammo_7.62x54_r;ammo_7.62x54_ap',
+    ammo: 'ammo_pkm_100;ammo_7.62x54_ap',
   },
   {
     id: 'wpn_pkm_siber',
     name: 'PKM [siber]',
     repair: 'D',
-    ammo: 'ammo_7.62x54_r;ammo_7.62x54_ap',
+    ammo: 'ammo_pkm_100;ammo_7.62x54_ap',
   },
   {
     id: 'wpn_pkp_siber',
     name: 'PKP Pecheneg [siber]',
     repair: 'D',
-    ammo: 'ammo_7.62x54_r;ammo_7.62x54_ap',
+    ammo: 'ammo_pkm_100;ammo_7.62x54_ap',
   },
   {
     id: 'wpn_ak74_isg',
