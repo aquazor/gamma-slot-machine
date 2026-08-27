@@ -67,8 +67,6 @@ function findGamma() {
     const gammaPath = path.join(drive, 'GAMMA');
 
     if (isValidGammaPath(gammaPath)) {
-      console.log(`GAMMA found: ${gammaPath}`);
-
       return gammaPath;
     }
   }
@@ -109,9 +107,6 @@ app.get('/gamma', (req, res) => {
 app.post('/give', (req, res) => {
   const { itemId, ammo } = req.body;
 
-  console.log('GIVE WEAPON:', itemId);
-  console.log('AMMO:', ammo);
-
   if (!itemId) {
     return res.status(400).json({
       error: 'itemId is required',
@@ -140,6 +135,7 @@ app.post('/give', (req, res) => {
     fs.writeFileSync(commandFile, command, 'utf8');
 
     console.log(`Command sent to GAMMA: ${command}`);
+    console.log('----------------------------------------');
 
     res.json({
       success: true,
