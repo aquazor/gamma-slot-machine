@@ -27,6 +27,7 @@
     "express": "^5.2.1",
     "globals": "^16.5.0",
     "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1"
