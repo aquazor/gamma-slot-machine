@@ -28,33 +28,6 @@ app.use(express.json());
 
 /*
  * ---------------------------------------------------------
- * CONFIG
- * ---------------------------------------------------------
- */
-
-const APP_DIR = isSea() ? path.dirname(process.execPath) : __dirname;
-
-const CONFIG_FILE = path.join(APP_DIR, 'config.json');
-
-function loadConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-  } catch (error) {
-    console.error('Failed to read config:', error);
-    return {};
-  }
-}
-
-function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-}
-
-/*
- * ---------------------------------------------------------
  * GAMMA PATH
  * ---------------------------------------------------------
  */
@@ -76,9 +49,7 @@ function isValidGammaPath(gammaPath) {
     return false;
   }
 
-  const commandFile = getCommandFile(gammaPath);
-
-  return fs.existsSync(commandFile);
+  return fs.existsSync(getCommandFile(gammaPath));
 }
 
 /*
@@ -86,17 +57,13 @@ function isValidGammaPath(gammaPath) {
  */
 function findGamma() {
   // Windows drives: C:\, D:\, E:\, etc.
-  const drives = [];
-
   for (let i = 67; i <= 90; i++) {
     const drive = `${String.fromCharCode(i)}:\\`;
 
-    if (fs.existsSync(drive)) {
-      drives.push(drive);
+    if (!fs.existsSync(drive)) {
+      continue;
     }
-  }
 
-  for (const drive of drives) {
     const gammaPath = path.join(drive, 'GAMMA');
 
     if (isValidGammaPath(gammaPath)) {
@@ -111,27 +78,11 @@ function findGamma() {
   return null;
 }
 
+/*
+ * Find GAMMA whenever needed.
+ */
 function getGammaPath() {
-  const config = loadConfig();
-
-  // First use saved path
-  if (isValidGammaPath(config.gammaPath)) {
-    return config.gammaPath;
-  }
-
-  // Otherwise try automatic detection
-  const detectedPath = findGamma();
-
-  if (detectedPath) {
-    saveConfig({
-      ...config,
-      gammaPath: detectedPath,
-    });
-
-    return detectedPath;
-  }
-
-  return null;
+  return findGamma();
 }
 
 /*
@@ -140,50 +91,12 @@ function getGammaPath() {
  * ---------------------------------------------------------
  */
 
-/**
- * Get current GAMMA configuration
- */
 app.get('/gamma', (req, res) => {
   const gammaPath = getGammaPath();
 
   res.json({
     configured: Boolean(gammaPath),
     gammaPath,
-  });
-});
-
-/**
- * Set GAMMA path manually
- */
-app.post('/gamma', (req, res) => {
-  const { gammaPath } = req.body;
-
-  if (!gammaPath) {
-    return res.status(400).json({
-      error: 'gammaPath is required',
-    });
-  }
-
-  const normalizedPath = path.normalize(gammaPath);
-
-  if (!isValidGammaPath(normalizedPath)) {
-    return res.status(400).json({
-      error: 'Invalid GAMMA path. Could not find Slot Machine bridge.',
-    });
-  }
-
-  const config = loadConfig();
-
-  saveConfig({
-    ...config,
-    gammaPath: normalizedPath,
-  });
-
-  console.log(`GAMMA path saved: ${normalizedPath}`);
-
-  res.json({
-    success: true,
-    gammaPath: normalizedPath,
   });
 });
 
@@ -208,7 +121,7 @@ app.post('/give', (req, res) => {
 
   if (!gammaPath) {
     return res.status(400).json({
-      error: 'GAMMA path is not configured',
+      error: 'GAMMA installation not found',
     });
   }
 
@@ -292,7 +205,9 @@ app.listen(PORT, () => {
 
   console.log(`GAMMA Weapon Roulette running on ${url}`);
 
-  console.log(`GAMMA path: ${getGammaPath() || 'NOT FOUND'}`);
+  const gammaPath = getGammaPath();
+
+  console.log(`GAMMA path: ${gammaPath || 'NOT FOUND'}`);
 
   exec(`start "" "${url}"`);
 });
