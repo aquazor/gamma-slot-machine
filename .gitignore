@@ -13,6 +13,7 @@ dist-ssr
 build
 temp
 *.local
+sea-config.json
 
 # Editor directories and files
 .vscode/*
