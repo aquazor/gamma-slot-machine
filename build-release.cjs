@@ -4,8 +4,8 @@ const path = require('path');
 
 const NODE_EXE = 'C:\\Program Files\\nodejs\\node.exe';
 
-const EXE = path.resolve('build/Gamma Slot Machine.exe');
-const ICON_EXE = path.resolve('build/Gamma Slot Machine-icon.exe');
+const EXE = path.resolve('build/GAMMA Slot Machine.exe');
+const ICON_EXE = path.resolve('build/GAMMA Slot Machine-icon.exe');
 const BLOB = path.resolve('build/sea-prep.blob');
 
 const ICON = path.resolve('app.ico');
@@ -24,7 +24,7 @@ function run(command) {
 }
 
 try {
-  console.log('\n=== Building Gamma Slot Machine ===\n');
+  console.log('\n=== Building GAMMA Slot Machine ===\n');
 
   // ========================================
   // 1. Bundle server

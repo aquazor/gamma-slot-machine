@@ -36,7 +36,7 @@ function getCommandFile(gammaPath) {
   return path.join(
     gammaPath,
     'mods',
-    'GAMMA Slot Machine',
+    'GAMMA Weapon and Armor Slot Machine by rip_perri',
     'gamedata',
     'scripts',
     'bridge',
@@ -56,7 +56,8 @@ function isValidGammaPath(gammaPath) {
  * Try to automatically find GAMMA.
  */
 function findGamma() {
-  // Windows drives: C:\, D:\, E:\, etc.
+  // why did it put 67 and 90 xd? 67 67 67
+  // because those are the ASCII codes for 'C' and 'Z', respectively. The loop iterates through the uppercase letters of the alphabet to check each drive letter from C to Z.
   for (let i = 67; i <= 90; i++) {
     const drive = `${String.fromCharCode(i)}:\\`;
 
@@ -209,7 +210,7 @@ if (isSea()) {
 app.listen(PORT, () => {
   const url = `http://localhost:${PORT}`;
 
-  console.log(`GAMMA Weapon Roulette running on ${url}`);
+  console.log(`GAMMA Weapon and Armor Slot Machine by rip_perri running on ${url}`);
 
   const gammaPath = getGammaPath();
 
