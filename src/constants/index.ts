@@ -8,3 +8,4 @@ export * from './outfitsHeavy';
 export * from './outfitsLight';
 export * from './outfitsMedium';
 export * from './outfitsField';
+export * from './loadouts';

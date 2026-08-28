@@ -56,8 +56,7 @@ function isValidGammaPath(gammaPath) {
  * Try to automatically find GAMMA.
  */
 function findGamma() {
-  // why did it put 67 and 90 xd? 67 67 67
-  // because those are the ASCII codes for 'C' and 'Z', respectively. The loop iterates through the uppercase letters of the alphabet to check each drive letter from C to Z.
+  // Windows drives: C:\, D:\, E:\, etc.
   for (let i = 67; i <= 90; i++) {
     const drive = `${String.fromCharCode(i)}:\\`;
 
@@ -101,22 +100,16 @@ app.get('/gamma', (req, res) => {
 
 /*
  * ---------------------------------------------------------
- * GIVE WEAPON
+ * GIVE ITEM
  * ---------------------------------------------------------
  */
 
-app.post('/give', (req, res) => {
-  const { itemId, ammo } = req.body;
+app.post('/give-loadout', (req, res) => {
+  const { weapons, outfits } = req.body;
 
-  if (!itemId) {
+  if (!Array.isArray(weapons) && !Array.isArray(outfits)) {
     return res.status(400).json({
-      error: 'itemId is required',
-    });
-  }
-
-  if (!ammo) {
-    return res.status(400).json({
-      error: 'ammo is required',
+      error: 'weapons or outfits are required',
     });
   }
 
@@ -131,27 +124,61 @@ app.post('/give', (req, res) => {
   const commandFile = getCommandFile(gammaPath);
 
   try {
-    const command = `${itemId}|${ammo}`;
+    const lines = [];
+
+    // Weapons
+    if (Array.isArray(weapons)) {
+      for (const weapon of weapons) {
+        if (!weapon.itemId) {
+          continue;
+        }
+
+        const ammo = weapon.ammo || '';
+
+        lines.push(`WEAPON|${weapon.itemId}|${ammo}`);
+      }
+    }
+
+    // Outfits
+    if (Array.isArray(outfits)) {
+      for (const outfit of outfits) {
+        if (!outfit.itemId) {
+          continue;
+        }
+
+        lines.push(`OUTFIT|${outfit.itemId}`);
+      }
+    }
+
+    if (lines.length === 0) {
+      return res.status(400).json({
+        error: 'Loadout is empty',
+      });
+    }
+
+    const command = lines.join('\n');
 
     fs.writeFileSync(commandFile, command, 'utf8');
 
-    console.log(`Command sent to GAMMA: ${command}`);
+    console.log('Loadout sent to GAMMA:');
+    console.log(command);
     console.log('----------------------------------------');
 
     res.json({
       success: true,
-      itemId,
-      ammo,
+      loadout: {
+        weapons: weapons || [],
+        outfits: outfits || [],
+      },
     });
   } catch (error) {
     console.error(error);
 
     res.status(500).json({
-      error: 'Failed to write command file',
+      error: 'Failed to write loadout command',
     });
   }
 });
-
 /*
  * ---------------------------------------------------------
  * REACT / SEA ASSETS
