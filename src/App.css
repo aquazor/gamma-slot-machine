@@ -75,21 +75,6 @@ select {
     inset 0 -20px 40px rgba(0, 0, 0, 0.35);
 }
 
-/* Decorative inner frame */
-
-.slot-machine::before {
-  content: '';
-
-  position: absolute;
-
-  inset: 10px;
-
-  border: 1px solid rgba(255, 205, 100, 0.18);
-  border-radius: 14px;
-
-  pointer-events: none;
-}
-
 /* ========================================
    HEADER
 ======================================== */
@@ -498,8 +483,7 @@ select {
 ======================================== */
 
 .selected-box {
-  min-height: 105px;
-
+  min-height: 126px;
   display: flex;
   align-items: center;
 
@@ -563,8 +547,8 @@ select {
 ======================================== */
 
 .selected-image {
-  width: 70px;
-  height: 70px;
+  width: 90px;
+  height: 90px;
 
   flex-shrink: 0;
 
@@ -764,6 +748,7 @@ select {
   }
 
   .reels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
 
@@ -858,8 +843,8 @@ select {
   }
 
   .selected-image {
-    width: 70px;
-    height: 70px;
+    width: 90px;
+    height: 90px;
   }
 
   .selected-name {

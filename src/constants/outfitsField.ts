@@ -1,0 +1,80 @@
+export const outfitsField = [
+  {
+    Name: 'Heavy Freedom Overcoat',
+    ID: 'trenchcoat_freedom_brown_outfit',
+    Repair: 'F',
+    Faction: 'freedom',
+  },
+  {
+    Name: 'Overcoat',
+    ID: 'trenchcoat_outfit',
+    Repair: 'F',
+    Faction: 'st_data_export_unknown',
+  },
+  {
+    Name: 'Black Leather Jacket',
+    ID: 'bandit_novice_outfit',
+    Repair: 'F',
+    Faction: 'bandit',
+  },
+  {
+    Name: "Firearm Enthusiast's Jacket",
+    ID: 'novice_outfit_camo',
+    Repair: 'F',
+    Faction: 'st_data_export_unknown',
+  },
+  {
+    Name: 'Tourist’s Jacket',
+    ID: 'novice_outfit_tourist',
+    Repair: 'F',
+    Faction: 'stalker',
+  },
+  {
+    Name: 'CS-1 Body Armor',
+    ID: 'cs_light_novice_outfit',
+    Repair: 'F',
+    Faction: 'csky',
+  },
+  {
+    Name: 'Clear Sky Leather Jacket',
+    ID: 'cs_novice_outfit',
+    Repair: 'F',
+    Faction: 'csky',
+  },
+  {
+    Name: 'Duty Leather Jacket',
+    ID: 'dolg_novice_outfit',
+    Repair: 'F',
+    Faction: 'dolg',
+  },
+  {
+    Name: 'Leather Jacket',
+    ID: 'novice_outfit',
+    Repair: 'F',
+    Faction: 'st_data_export_unknown',
+  },
+  {
+    Name: 'Freedom Leather Jacket',
+    ID: 'svoboda_novice_outfit',
+    Repair: 'F',
+    Faction: 'freedom',
+  },
+  {
+    Name: 'Military Service Outfit',
+    ID: 'army_outfit',
+    Repair: 'F',
+    Faction: 'army',
+  },
+  {
+    Name: 'Redline Leather Jacket',
+    ID: 'redline_novice_outfit',
+    Repair: 'F',
+    Faction: 'st_data_export_unknown',
+  },
+  {
+    Name: 'Armored Leather Jacket',
+    ID: 'bandit_novice_outfit_alt',
+    Repair: 'F',
+    Faction: 'bandit',
+  },
+];

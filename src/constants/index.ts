@@ -3,3 +3,8 @@ export * from './rifles';
 export * from './smgs';
 export * from './shotguns';
 export * from './pistols';
+export * from './outfitsExo';
+export * from './outfitsHeavy';
+export * from './outfitsLight';
+export * from './outfitsMedium';
+export * from './outfitsField';
