@@ -167,4 +167,10 @@ export const snipers = [
     repair: 'B',
     ammo: 'ammo_357_hp_mag',
   },
+  {
+    id: 'wpn_rpg7',
+    name: 'RPG-7',
+    repair: 'D',
+    ammo: 'ammo_og-7b',
+  },
 ];
