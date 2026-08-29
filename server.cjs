@@ -105,11 +105,11 @@ app.get('/gamma', (req, res) => {
  */
 
 app.post('/give-loadout', (req, res) => {
-  const { weapons, outfits } = req.body;
+  const { weapons, outfits, helmets } = req.body;
 
-  if (!Array.isArray(weapons) && !Array.isArray(outfits)) {
+  if (!Array.isArray(weapons) && !Array.isArray(outfits) && !Array.isArray(helmets)) {
     return res.status(400).json({
-      error: 'weapons or outfits are required',
+      error: 'weapons, outfits, or helmets are required',
     });
   }
 
@@ -150,6 +150,17 @@ app.post('/give-loadout', (req, res) => {
       }
     }
 
+    // Helmets
+    if (Array.isArray(helmets)) {
+      for (const helmet of helmets) {
+        if (!helmet.itemId) {
+          continue;
+        }
+
+        lines.push(`HELMET|${helmet.itemId}`);
+      }
+    }
+
     if (lines.length === 0) {
       return res.status(400).json({
         error: 'Loadout is empty',
@@ -169,6 +180,7 @@ app.post('/give-loadout', (req, res) => {
       loadout: {
         weapons: weapons || [],
         outfits: outfits || [],
+        helmets: helmets || [],
       },
     });
   } catch (error) {
