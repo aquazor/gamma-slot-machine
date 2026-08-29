@@ -12,6 +12,10 @@ import {
   outfitsMedium,
   outfitsHeavy,
   outfitsExo,
+  helmetsField,
+  helmetsLight,
+  helmetsMedium,
+  helmetsHeavyExo,
   loadouts,
 } from './constants';
 
@@ -25,7 +29,7 @@ const EFFECT_COUNT = 46;
 const WINNING_EFFECTS_COUNT = 12;
 
 /* ========================================
-   TYPES
+TYPES
 ======================================== */
 
 interface Weapon {
@@ -42,12 +46,19 @@ interface Outfit {
   repair: string;
 }
 
+interface Helmet {
+  id: string;
+  name: string;
+  repair: string;
+}
+
 interface SlotReelProps {
-  items: (Weapon | Outfit)[];
+  items: (Weapon | Outfit | Helmet)[];
   title: string;
   savedItemId?: string;
-  type: 'weapon' | 'outfit';
+  type: 'weapon' | 'outfit' | 'helmet';
   onResult: (itemId: string) => void;
+  onRemove: () => void;
 }
 
 interface WeaponCategory {
@@ -63,10 +74,18 @@ interface OutfitCategory {
   items: Outfit[];
 }
 
+interface HelmetCategory {
+  key: string;
+  name: string;
+  repair: string;
+  items: Helmet[];
+}
+
 interface Loadout {
   name: string;
   weapons: string[];
   outfits: string[];
+  helmets: string[];
 }
 
 interface WinningEffect {
@@ -78,7 +97,7 @@ interface WinningEffect {
 }
 
 /* ========================================
-   SHUFFLE
+SHUFFLE
 ======================================== */
 
 const shuffle = <T,>(array: T[]): T[] => {
@@ -94,7 +113,7 @@ const shuffle = <T,>(array: T[]): T[] => {
 };
 
 /* ========================================
-   WEAPON CATEGORIES
+WEAPON CATEGORIES
 ======================================== */
 
 const weaponCategories: WeaponCategory[] = [
@@ -126,31 +145,62 @@ const weaponCategories: WeaponCategory[] = [
 ];
 
 /* ========================================
-   OUTFIT CATEGORIES
+HELMET CATEGORIES
+======================================== */
+
+const helmetCategories: HelmetCategory[] = [
+  {
+    key: 'field',
+    name: 'Field Helmet',
+    repair: 'F',
+    items: helmetsField,
+  },
+  {
+    key: 'light',
+    name: 'Light Helmet',
+    repair: 'L',
+    items: helmetsLight,
+  },
+  {
+    key: 'medium',
+    name: 'Medium Helmet',
+    repair: 'M',
+    items: helmetsMedium,
+  },
+  {
+    key: 'heavy-exo',
+    name: 'Heavy / Exo Helmet',
+    repair: 'H',
+    items: helmetsHeavyExo,
+  },
+];
+
+/* ========================================
+OUTFIT CATEGORIES
 ======================================== */
 
 const outfitCategories: OutfitCategory[] = [
   {
     key: 'field',
-    name: 'Field',
+    name: 'Field Armor',
     repair: 'F',
     items: outfitsField,
   },
   {
     key: 'light',
-    name: 'Light',
+    name: 'Light Armor',
     repair: 'L',
     items: outfitsLight,
   },
   {
     key: 'medium',
-    name: 'Medium',
+    name: 'Medium Armor',
     repair: 'M',
     items: outfitsMedium,
   },
   {
     key: 'heavy',
-    name: 'Heavy',
+    name: 'Heavy Armor',
     repair: 'H',
     items: outfitsHeavy,
   },
@@ -163,18 +213,19 @@ const outfitCategories: OutfitCategory[] = [
 ];
 
 /* ========================================
-   SLOT REEL
+SLOT REEL
 ======================================== */
 
-function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) {
-  /*
-   * Shuffle weapons/outfits once when the slot loads.
-   */
+function SlotReel({
+  items,
+  title,
+  savedItemId,
+  type,
+  onResult,
+  onRemove,
+}: SlotReelProps) {
   const shuffledItems = useMemo(() => shuffle(items), [items]);
 
-  /*
-   * Spin sound.
-   */
   const spinSound = useRef<HTMLAudioElement | null>(null);
 
   const playSpinSound = (): void => {
@@ -189,9 +240,6 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
     void spinSound.current.play();
   };
 
-  /*
-   * Find saved item inside the newly shuffled array.
-   */
   const initialSelectedIndex = useMemo(() => {
     if (!savedItemId) {
       return 0;
@@ -202,16 +250,11 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
     return savedIndex >= 0 ? savedIndex : 0;
   }, [shuffledItems, savedItemId]);
 
-  const [hasSpun, setHasSpun] = useState<boolean>(!!savedItemId);
-
   const [selectedIndex, setSelectedIndex] = useState<number>(initialSelectedIndex);
 
   const [spinning, setSpinning] = useState<boolean>(false);
-
   const [copied, setCopied] = useState<boolean>(false);
-
   const [showWinningGif, setShowWinningGif] = useState<boolean>(false);
-
   const [winningEffects, setWinningEffects] = useState<WinningEffect[]>([]);
 
   const initialPosition =
@@ -219,16 +262,25 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
 
   const [position, setPosition] = useState<number>(initialPosition);
 
-  /*
-   * Repeat shuffled items.
-   */
-  const repeatedItems = useMemo<(Weapon | Outfit)[]>(() => {
+  const repeatedItems = useMemo<(Weapon | Outfit | Helmet)[]>(() => {
     return Array.from({ length: 20 }, () => shuffledItems).flat();
   }, [shuffledItems]);
 
+  const getIconFolder = (): string => {
+    if (type === 'weapon') {
+      return 'wpn-icons';
+    }
+
+    if (type === 'outfit') {
+      return 'outfit-icons';
+    }
+
+    return 'helmet-icons';
+  };
+
   /* ========================================
-     SPIN
-  ======================================== */
+SPIN
+======================================== */
 
   const spin = (): void => {
     if (spinning || shuffledItems.length === 0) {
@@ -261,7 +313,6 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
 
       setSelectedIndex(targetIndex);
       setSpinning(false);
-      setHasSpun(true);
 
       onResult(item.id);
 
@@ -283,9 +334,6 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
         setWinningEffects([]);
       }, 5000);
 
-      /*
-       * Normalize reel position after spin.
-       */
       const normalizedCycle = 10;
 
       const normalizedIndex = normalizedCycle * shuffledItems.length + targetIndex;
@@ -295,8 +343,8 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
   };
 
   /* ========================================
-     COPY ID
-  ======================================== */
+COPY ID
+======================================== */
 
   const copyId = async (): Promise<void> => {
     const item = shuffledItems[selectedIndex];
@@ -319,12 +367,13 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
   };
 
   const selectedItem = shuffledItems[selectedIndex];
+  const iconFolder = getIconFolder();
+
+  const hasSpun = Boolean(savedItemId);
 
   return (
     <div className="reel-container">
       <h2 className="reel-title">{title}</h2>
-
-      {/* SLOT */}
 
       <div className="reel-wrapper">
         {showWinningGif && (
@@ -353,7 +402,6 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
             className="reel"
             style={{
               transform: `translateY(-${position - ITEM_HEIGHT}px)`,
-
               transition: spinning
                 ? `transform ${SPIN_DURATION}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
                 : 'none',
@@ -361,12 +409,7 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
           >
             {repeatedItems.map((item, index) => (
               <div className="reel-item" key={`${item.id}-${index}`}>
-                <img
-                  src={`/${
-                    type === 'weapon' ? 'wpn-icons' : 'outfit-icons'
-                  }/${item.id}.png`}
-                  alt={item.name}
-                />
+                <img src={`/${iconFolder}/${item.id}.png`} alt={item.name} />
 
                 <span>{item.name}</span>
               </div>
@@ -375,18 +418,13 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
 
           <div className="top-gradient" />
           <div className="bottom-gradient" />
-
           <div className="reel-indicator" />
         </div>
       </div>
 
-      {/* SPIN BUTTON */}
-
       <button className="spin-button" onClick={spin} disabled={spinning}>
         {spinning ? 'SPINNING...' : 'SPIN'}
       </button>
-
-      {/* RESULT */}
 
       <div
         className={`selected-box ${
@@ -399,9 +437,7 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
           <>
             <img
               className="selected-image"
-              src={`/${
-                type === 'weapon' ? 'wpn-icons' : 'outfit-icons'
-              }/${selectedItem.id}.png`}
+              src={`/${iconFolder}/${selectedItem.id}.png`}
               alt={selectedItem.name}
             />
 
@@ -412,6 +448,10 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
 
               <button className="action-button" onClick={copyId}>
                 {copied ? 'COPIED!' : 'COPY ID'}
+              </button>
+
+              <button className="action-button remove-button" onClick={onRemove}>
+                REMOVE
               </button>
             </div>
           </>
@@ -424,7 +464,7 @@ function SlotReel({ items, title, savedItemId, type, onResult }: SlotReelProps) 
 }
 
 /* ========================================
-   APP
+APP
 ======================================== */
 
 export default function App() {
@@ -435,7 +475,7 @@ export default function App() {
       return savedLoadout;
     }
 
-    return loadouts[loadouts.length - 1]?.name ?? '';
+    return loadouts[0]?.name ?? '';
   });
 
   const [savedResults, setSavedResults] = useState<Record<string, string>>(() => {
@@ -458,15 +498,12 @@ export default function App() {
 
   const [givingLoadout, setGivingLoadout] = useState<boolean>(false);
 
-  /*
-   * Find currently selected loadout.
-   */
   const selectedLoadout: Loadout =
     loadouts.find((loadout) => loadout.name === selectedLoadoutName) ?? loadouts[0];
 
   /* ========================================
-     SAVE RESULT
-  ======================================== */
+SAVE RESULT
+======================================== */
 
   const handleResult = (category: string, itemId: string): void => {
     setSavedResults((previous) => {
@@ -481,19 +518,27 @@ export default function App() {
     });
   };
 
+  const handleRemoveResult = (category: string): void => {
+    setSavedResults((previous) => {
+      const next = { ...previous };
+
+      delete next[category];
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+      return next;
+    });
+  };
+
   /* ========================================
-     GIVE LOADOUT
-  ======================================== */
+GIVE LOADOUT
+======================================== */
 
   const giveLoadout = async (): Promise<void> => {
     if (givingLoadout) {
       return;
     }
 
-    /*
-     * Only collect weapons that belong
-     * to the currently selected loadout.
-     */
     const weapons = weaponCategories
       .filter((category) => selectedLoadout.weapons.includes(category.key))
       .map((category) => {
@@ -521,10 +566,31 @@ export default function App() {
         } => weapon !== null,
       );
 
-    /*
-     * Only collect outfits that belong
-     * to the currently selected loadout.
-     */
+    const helmets = helmetCategories
+      .filter((category) => selectedLoadout.helmets.includes(category.repair))
+      .map((category) => {
+        const itemId = savedResults[category.name];
+
+        if (!itemId) {
+          return null;
+        }
+
+        const helmet = category.items.find((item) => item.id === itemId);
+
+        return helmet
+          ? {
+              itemId: helmet.id,
+            }
+          : null;
+      })
+      .filter(
+        (
+          helmet,
+        ): helmet is {
+          itemId: string;
+        } => helmet !== null,
+      );
+
     const outfits = outfitCategories
       .filter((category) => selectedLoadout.outfits.includes(category.repair))
       .map((category) => {
@@ -550,7 +616,7 @@ export default function App() {
         } => outfit !== null,
       );
 
-    if (weapons.length === 0 && outfits.length === 0) {
+    if (weapons.length === 0 && helmets.length === 0 && outfits.length === 0) {
       window.alert('Roll at least one item first.');
 
       return;
@@ -558,6 +624,7 @@ export default function App() {
 
     const loadout = {
       weapons,
+      helmets,
       outfits,
     };
 
@@ -591,8 +658,8 @@ export default function App() {
   };
 
   /* ========================================
-     RESET RESULTS
-  ======================================== */
+RESET RESULTS
+======================================== */
 
   const resetResults = (): void => {
     const confirmed = window.confirm('Are you sure you want to reset all saved results?');
@@ -609,8 +676,8 @@ export default function App() {
   };
 
   /* ========================================
-     LOADOUT CHANGE
-  ======================================== */
+LOADOUT CHANGE
+======================================== */
 
   const handleLoadoutChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
     const loadoutName = event.target.value;
@@ -620,16 +687,18 @@ export default function App() {
     localStorage.setItem(LOADOUT_STORAGE_KEY, loadoutName);
   };
 
-  /*
-   * Filter visible weapon slots.
-   */
+  /* ========================================
+VISIBLE CATEGORIES
+======================================== */
+
   const visibleWeaponCategories = weaponCategories.filter((category) =>
     selectedLoadout.weapons.includes(category.key),
   );
 
-  /*
-   * Filter visible outfit slots.
-   */
+  const visibleHelmetCategories = helmetCategories.filter((category) =>
+    selectedLoadout.helmets.includes(category.repair),
+  );
+
   const visibleOutfitCategories = outfitCategories.filter((category) =>
     selectedLoadout.outfits.includes(category.repair),
   );
@@ -645,9 +714,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* ========================================
-            LOADOUT SELECTOR
-        ======================================== */}
+        {/* LOADOUT SELECTOR */}
 
         <div className="loadout-selector">
           <label className="loadout-label" htmlFor="loadout-select">
@@ -669,8 +736,8 @@ export default function App() {
         </div>
 
         {/* ========================================
-            WEAPONS
-        ======================================== */}
+        WEAPONS
+    ======================================== */}
 
         {visibleWeaponCategories.length > 0 && (
           <div className="reels">
@@ -682,33 +749,62 @@ export default function App() {
                 savedItemId={savedResults[category.name]}
                 type="weapon"
                 onResult={(itemId) => handleResult(category.name, itemId)}
+                onRemove={() => handleRemoveResult(category.name)}
               />
             ))}
           </div>
         )}
 
         {/* ========================================
-            OUTFITS
-        ======================================== */}
+        HELMETS
+    ======================================== */}
+        <div
+          className={
+            selectedLoadoutName === loadouts[0].name
+              ? 'helmet-outfit-section'
+              : 'helmet-outfit-section doubled'
+          }
+        >
+          {visibleHelmetCategories.length > 0 && (
+            <div className="reels">
+              {visibleHelmetCategories.map((category) => (
+                <SlotReel
+                  key={`${category.name}-${resetKey}`}
+                  title={category.name}
+                  items={category.items}
+                  savedItemId={savedResults[category.name]}
+                  type="helmet"
+                  onResult={(itemId) => handleResult(category.name, itemId)}
+                  onRemove={() => handleRemoveResult(category.name)}
+                />
+              ))}
+            </div>
+          )}
 
-        {visibleOutfitCategories.length > 0 && (
-          <div className="reels">
-            {visibleOutfitCategories.map((category) => (
-              <SlotReel
-                key={`${category.name}-${resetKey}`}
-                title={category.name}
-                items={category.items}
-                savedItemId={savedResults[category.name]}
-                type="outfit"
-                onResult={(itemId) => handleResult(category.name, itemId)}
-              />
-            ))}
-          </div>
-        )}
+          {/* ========================================
+        OUTFITS
+    ======================================== */}
+
+          {visibleOutfitCategories.length > 0 && (
+            <div className="reels">
+              {visibleOutfitCategories.map((category) => (
+                <SlotReel
+                  key={`${category.name}-${resetKey}`}
+                  title={category.name}
+                  items={category.items}
+                  savedItemId={savedResults[category.name]}
+                  type="outfit"
+                  onResult={(itemId) => handleResult(category.name, itemId)}
+                  onRemove={() => handleRemoveResult(category.name)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ========================================
-            GIVE LOADOUT
-        ======================================== */}
+        GIVE LOADOUT
+    ======================================== */}
 
         <div className="loadout-actions">
           <button
@@ -717,8 +813,7 @@ export default function App() {
             disabled={givingLoadout}
           >
             <span className="button-icon">🎁</span>
-
-            {givingLoadout ? 'GIVING LOADOUT...' : 'GIVE LOADOUT'}
+            GIVE LOADOUT
           </button>
         </div>
       </div>

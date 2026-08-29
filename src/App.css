@@ -627,7 +627,8 @@ select {
    REPAIR COLORS
 ======================================== */
 
-.repair-a {
+.repair-a,
+.repair-f {
   border-color: #7eaab8;
 
   box-shadow:
@@ -635,7 +636,8 @@ select {
     inset 0 0 10px rgba(126, 170, 184, 0.15);
 }
 
-.repair-b {
+.repair-b,
+.repair-l {
   border-color: #7a9a56;
 
   box-shadow:
@@ -643,7 +645,8 @@ select {
     inset 0 0 10px rgba(122, 154, 86, 0.15);
 }
 
-.repair-d {
+.repair-c,
+.repair-m {
   border-color: #c0504a;
 
   box-shadow:
@@ -651,7 +654,8 @@ select {
     inset 0 0 10px rgba(192, 80, 74, 0.15);
 }
 
-.repair-d {
+.repair-d,
+.repair-h {
   border-color: #b8863e;
 
   box-shadow:
@@ -659,37 +663,16 @@ select {
     inset 0 0 10px rgba(184, 134, 62, 0.15);
 }
 
-/* ========================================
-   OUTFIT REPAIR COLORS
-======================================== */
-
-/* Field */
-.repair-f {
-  border-color: #9ca3af;
-}
-
-/* Light */
-.repair-l {
-  border-color: #60a5fa;
-}
-
-/* Medium */
-.repair-m {
-  border-color: #22c55e;
-}
-
-/* Heavy */
-.repair-h {
-  border-color: #f59e0b;
-}
-
-/* Exoskeleton / Epic */
 .repair-e {
   border-color: #a855f7;
   box-shadow:
     0 0 10px rgba(168, 85, 247, 0.5),
     0 0 25px rgba(168, 85, 247, 0.25);
 }
+
+/* ========================================
+   OUTFIT REPAIR COLORS
+======================================== */
 
 /* ========================================
    SELECTED IMAGE
@@ -825,6 +808,26 @@ select {
   text-shadow: 0 0 10px rgba(255, 180, 40, 0.15);
 
   user-select: none;
+}
+
+.remove-button {
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #ff7070;
+}
+
+.remove-button:hover {
+  background: rgba(255, 60, 60, 0.15);
+  border-color: #ff5050;
+  color: #ff5050;
+}
+
+.helmet-outfit-section.doubled {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 350px));
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
 }
 
 /* ========================================
