@@ -785,11 +785,19 @@ export default function App() {
             RESET RESULTS
           </button>
         </div>
+
         {/* LOADOUT SELECTOR */}
+
         <div className="loadout-selector">
-          <label className="loadout-label" htmlFor="loadout-select">
-            LOADOUT
-          </label>
+          <div className="loadout-selector-header">
+            <label className="loadout-label" htmlFor="loadout-select">
+              LOADOUT PRESETS
+            </label>
+
+            <span className="loadout-warning">
+              ⚠ Changing the preset will clear your current results
+            </span>
+          </div>
 
           <select
             id="loadout-select"
@@ -804,9 +812,11 @@ export default function App() {
             ))}
           </select>
         </div>
+
         {/* ========================================
             WEAPONS
             ======================================== */}
+
         {visibleWeaponCategories.length > 0 && (
           <div className="reels">
             {visibleWeaponCategories.map((category) => (
@@ -822,9 +832,11 @@ export default function App() {
             ))}
           </div>
         )}
+
         {/* ========================================
             HELMETS
             ======================================== */}
+
         <div
           className={
             selectedLoadoutName === loadouts[0].name
