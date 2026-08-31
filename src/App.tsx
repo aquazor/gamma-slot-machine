@@ -279,8 +279,8 @@ function SlotReel({
   };
 
   /* ========================================
-SPIN
-======================================== */
+    SPIN
+    ======================================== */
 
   const spin = (): void => {
     if (spinning || shuffledItems.length === 0) {
@@ -343,8 +343,8 @@ SPIN
   };
 
   /* ========================================
-COPY ID
-======================================== */
+    COPY ID
+    ======================================== */
 
   const copyId = async (): Promise<void> => {
     const item = shuffledItems[selectedIndex];
@@ -502,8 +502,8 @@ export default function App() {
     loadouts.find((loadout) => loadout.name === selectedLoadoutName) ?? loadouts[0];
 
   /* ========================================
-SAVE RESULT
-======================================== */
+    SAVE RESULT
+    ======================================== */
 
   const handleResult = (category: string, itemId: string): void => {
     setSavedResults((previous) => {
@@ -531,8 +531,8 @@ SAVE RESULT
   };
 
   /* ========================================
-GIVE LOADOUT
-======================================== */
+    GIVE LOADOUT
+    ======================================== */
 
   const giveLoadout = async (): Promise<void> => {
     if (givingLoadout) {
@@ -658,16 +658,10 @@ GIVE LOADOUT
   };
 
   /* ========================================
-RESET RESULTS
-======================================== */
+    RESET RESULTS
+    ======================================== */
 
   const resetResults = (): void => {
-    const confirmed = window.confirm('Are you sure you want to reset all saved results?');
-
-    if (!confirmed) {
-      return;
-    }
-
     localStorage.removeItem(STORAGE_KEY);
 
     setSavedResults({});
@@ -675,21 +669,33 @@ RESET RESULTS
     setResetKey((previous) => previous + 1);
   };
 
+  const resetResultsConfirm = (): void => {
+    const confirmed = window.confirm('Are you sure you want to reset all saved results?');
+
+    if (!confirmed) {
+      return;
+    }
+
+    resetResults();
+  };
+
   /* ========================================
-LOADOUT CHANGE
-======================================== */
+    LOADOUT CHANGE
+    ======================================== */
 
   const handleLoadoutChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
     const loadoutName = event.target.value;
 
     setSelectedLoadoutName(loadoutName);
 
+    resetResults();
+
     localStorage.setItem(LOADOUT_STORAGE_KEY, loadoutName);
   };
 
   /* ========================================
-VISIBLE CATEGORIES
-======================================== */
+    VISIBLE CATEGORIES
+    ======================================== */
 
   const visibleWeaponCategories = weaponCategories.filter((category) =>
     selectedLoadout.weapons.includes(category.key),
@@ -703,19 +709,83 @@ VISIBLE CATEGORIES
     selectedLoadout.outfits.includes(category.repair),
   );
 
+  /* ========================================
+     CURRENT LOADOUT ITEMS
+     ======================================== */
+
+  const currentLoadoutItems = [
+    ...weaponCategories.map((category) => {
+      const itemId = savedResults[category.name];
+
+      if (!itemId) {
+        return null;
+      }
+
+      const item = category.items.find((item) => item.id === itemId);
+
+      if (!item) {
+        return null;
+      }
+
+      return {
+        category: category.name,
+        item,
+        type: 'weapon' as const,
+      };
+    }),
+
+    ...helmetCategories.map((category) => {
+      const itemId = savedResults[category.name];
+
+      if (!itemId) {
+        return null;
+      }
+
+      const item = category.items.find((item) => item.id === itemId);
+
+      if (!item) {
+        return null;
+      }
+
+      return {
+        category: category.name,
+        item,
+        type: 'helmet' as const,
+      };
+    }),
+
+    ...outfitCategories.map((category) => {
+      const itemId = savedResults[category.name];
+
+      if (!itemId) {
+        return null;
+      }
+
+      const item = category.items.find((item) => item.id === itemId);
+
+      if (!item) {
+        return null;
+      }
+
+      return {
+        category: category.name,
+        item,
+        type: 'outfit' as const,
+      };
+    }),
+  ].filter((item): item is NonNullable<typeof item> => item !== null);
+
   return (
     <div className="app">
       <div className="slot-machine">
         <div className="header">
           <h1 className="title">🎰 GAMMA Weapon and Armor Slot Machine</h1>
 
-          <button className="reset-button" onClick={resetResults}>
+          <button className="reset-button" onClick={resetResultsConfirm}>
             RESET RESULTS
           </button>
         </div>
-
         {/* LOADOUT SELECTOR */}
-
         <div className="loadout-selector">
           <label className="loadout-label" htmlFor="loadout-select">
             LOADOUT
@@ -734,11 +804,9 @@ VISIBLE CATEGORIES
             ))}
           </select>
         </div>
-
         {/* ========================================
-        WEAPONS
-    ======================================== */}
-
+            WEAPONS
+            ======================================== */}
         {visibleWeaponCategories.length > 0 && (
           <div className="reels">
             {visibleWeaponCategories.map((category) => (
@@ -754,10 +822,9 @@ VISIBLE CATEGORIES
             ))}
           </div>
         )}
-
         {/* ========================================
-        HELMETS
-    ======================================== */}
+            HELMETS
+            ======================================== */}
         <div
           className={
             selectedLoadoutName === loadouts[0].name
@@ -782,8 +849,8 @@ VISIBLE CATEGORIES
           )}
 
           {/* ========================================
-        OUTFITS
-    ======================================== */}
+            OUTFITS
+            ======================================== */}
 
           {visibleOutfitCategories.length > 0 && (
             <div className="reels">
@@ -803,8 +870,59 @@ VISIBLE CATEGORIES
         </div>
 
         {/* ========================================
-        GIVE LOADOUT
-    ======================================== */}
+            CURRENT LOADOUT
+            ======================================== */}
+
+        <div className="current-loadout">
+          <h2 className="current-loadout-title">CURRENT LOADOUT</h2>
+          <button
+            className="reset-button reset-button-loadout"
+            onClick={resetResultsConfirm}
+          >
+            RESET RESULTS
+          </button>
+          {currentLoadoutItems.length > 0 ? (
+            <div className="current-loadout-list">
+              {currentLoadoutItems.map(({ category, item, type }) => {
+                const iconFolder =
+                  type === 'weapon'
+                    ? 'wpn-icons'
+                    : type === 'outfit'
+                      ? 'outfit-icons'
+                      : 'helmet-icons';
+                return (
+                  <div
+                    key={category}
+                    className={`current-loadout-item repair-${item.repair.toLowerCase()}`}
+                  >
+                    <img
+                      className="current-loadout-image"
+                      src={`/${iconFolder}/${item.id}.png`}
+                      alt={item.name}
+                    />
+                    <div className="current-loadout-info">
+                      <div className="current-loadout-category"> {category} </div>
+                      <div className="current-loadout-name"> {item.name} </div>
+                      <div className="current-loadout-id"> {item.id} </div>
+                    </div>
+                    <button
+                      className="current-loadout-remove"
+                      onClick={() => handleRemoveResult(category)}
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="current-loadout-empty"> No items in current loadout. </p>
+          )}
+        </div>
+
+        {/* ========================================
+            GIVE LOADOUT
+            ======================================== */}
 
         <div className="loadout-actions">
           <button

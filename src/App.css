@@ -289,7 +289,7 @@ select {
 
 .reels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 350px));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 300px));
   justify-content: center;
   align-items: center;
   gap: 18px;
@@ -596,6 +596,133 @@ select {
 }
 
 /* ========================================
+   CURRENT LOADOUT
+======================================== */
+
+.current-loadout {
+  position: relative;
+  width: 100%;
+  max-width: calc(300px * 5 + 18px * 4);
+  margin-top: 40px;
+  margin-bottom: 40px;
+  margin-inline: auto;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.current-loadout-title {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffd76a;
+  font-family: Georgia, 'Times New Roman', serif;
+  text-shadow:
+    0 1px 0 #6e3e00,
+    0 2px 0 #5b3000,
+    0 0 8px rgba(255, 190, 50, 0.8),
+    0 0 25px rgba(255, 150, 20, 0.45);
+}
+
+.current-loadout-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.current-loadout-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.current-loadout-image {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  object-fit: contain;
+  margin-right: 12px;
+}
+
+.current-loadout-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.current-loadout-category {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.6;
+  margin-bottom: 3px;
+}
+
+.current-loadout-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-loadout-id {
+  margin-top: 3px;
+  font-family: monospace;
+  font-size: 11px;
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-loadout-remove {
+  flex-shrink: 0;
+  margin-left: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 70, 70, 0.4);
+  border-radius: 5px;
+  background: rgba(255, 50, 50, 0.08);
+  color: #ff6b6b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.current-loadout-remove:hover {
+  background: rgba(255, 50, 50, 0.18);
+  border-color: rgba(255, 70, 70, 0.8);
+  color: #ff4444;
+  transform: translateY(-1px);
+}
+
+.current-loadout-remove:active {
+  transform: translateY(0);
+}
+
+.current-loadout-empty {
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+/* ========================================
    SELECTED RESULT
 ======================================== */
 
@@ -823,11 +950,17 @@ select {
 
 .helmet-outfit-section.doubled {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 350px));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 300px));
   justify-content: center;
   align-items: center;
   gap: 18px;
   margin-bottom: 20px;
+}
+
+.reset-button.reset-button-loadout {
+  top: 10px;
+  right: 10px;
+  transform: translateY(0);
 }
 
 /* ========================================
