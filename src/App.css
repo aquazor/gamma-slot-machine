@@ -2,24 +2,23 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
+.app {
+  position: relative;
+}
+
+.app-img {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
 }
 
 body {
   margin: 0;
 
   font-family: Inter, Arial, Helvetica, sans-serif;
-
-  background: radial-gradient(
-    ellipse at 50% 20%,
-    #4a1015 0%,
-    #26090d 35%,
-    #100407 75%,
-    #050203 100%
-  );
 
   color: #fff;
 }
@@ -44,10 +43,6 @@ select {
   align-items: flex-start;
 
   padding: 45px 35px;
-
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 190, 60, 0.08), transparent 35%),
-    radial-gradient(circle at 50% 50%, rgba(180, 20, 35, 0.15), transparent 55%);
 }
 
 /* ========================================
@@ -61,11 +56,9 @@ select {
 
   padding: 35px;
 
-  background: linear-gradient(145deg, #3a1014 0%, #21080b 45%, #120406 100%);
-
   border: 3px solid #9b6a20;
   border-radius: 22px;
-
+  background-color: rgba(0, 0, 0, 0.6);
   box-shadow:
     0 0 0 2px #3c1d08,
     0 0 0 5px #8a5a18,
@@ -173,15 +166,24 @@ select {
 
 .loadout-selector {
   width: 100%;
-  max-width: 250px;
+  max-width: 300px;
   margin: 0 auto 30px;
+
+  padding: 12px 15px;
+
+  background-color: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(173, 119, 38, 0.4);
+  border-radius: 12px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 210, 100, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .loadout-selector-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
   margin-bottom: 8px;
 }
 
@@ -193,7 +195,7 @@ select {
 }
 
 .loadout-warning {
-  font-size: 11px;
+  font-size: 12px;
   color: #d8a84e;
   opacity: 0.85;
   text-align: right;
@@ -272,7 +274,7 @@ select {
 
   text-align: center;
 
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.2));
+  background-color: rgba(0, 0, 0, 0.75);
 
   border: 1px solid rgba(173, 119, 38, 0.4);
   border-radius: 12px;
@@ -569,10 +571,13 @@ select {
   margin-bottom: 40px;
   margin-inline: auto;
   padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  border: 1px solid rgba(173, 119, 38, 0.4);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.35);
-  box-sizing: border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 210, 100, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+  background-color: rgba(0, 0, 0, 0.75);
 }
 
 .current-loadout-title {
@@ -935,16 +940,14 @@ select {
   top: 50%;
   left: 50%;
 
-  width: 140%;
+  width: 120%;
   height: 140%;
-
-  object-fit: contain;
 
   transform: translate(-50%, -50%);
 
   pointer-events: none;
 
-  z-index: 110;
+  z-index: 10;
 }
 
 .winning-effect {
