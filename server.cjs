@@ -108,8 +108,8 @@ let pendingDeviceFlow = null;
  */
 const eventSub = new TwitchEventSub();
 
-eventSub.on('connected', ({ sessionId }) => {
-  console.log(`Twitch EventSub connected (session ${sessionId})`);
+eventSub.on('connected', () => {
+  console.log(`Twitch EventSub connected`);
 });
 
 eventSub.on('subscribed', (types) => {
@@ -168,7 +168,9 @@ eventSub.on('event', (event) => {
 });
 
 roulette.on('roll', (job) => {
-  console.log(`Roulette: rolling ${job.id} (${job.results.map((r) => r.slot).join(', ')})`);
+  console.log(
+    `Roulette: rolling ${job.id} (${job.results.map((r) => r.slot).join(', ')})`,
+  );
 
   broadcastOverlay('roll', job);
 });
@@ -426,11 +428,21 @@ app.listen(PORT, () => {
     .then((tokens) => {
       if (tokens) {
         startEventSub();
+      } else {
+        console.log('----------------------------------------');
+        console.log('Twitch is NOT connected — the roulette will not react to');
+        console.log('subs, gift subs or bits until you link your account.');
+        console.log(`Open ${url}/settings and click "Connect Twitch".`);
+        console.log('----------------------------------------');
       }
     })
     .catch((error) => {
       console.error('Twitch token check failed:', error.message);
+
+      console.log(`Open ${url}/settings to (re)connect your Twitch account.`);
     });
 
-  exec(`start "" "${url}"`);
+  // Open on the settings page — that's where the streamer links Twitch
+  // and checks status. The slot machine is a click away in the navbar.
+  exec(`start "" "${url}/settings"`);
 });

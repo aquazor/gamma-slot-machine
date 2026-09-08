@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import './App.css';
 
+import Navbar from './Navbar';
+
 import {
   pistols,
   shotguns,
@@ -841,10 +843,13 @@ export default function App() {
   ======================================== */
 
   return (
-    <div className="app">
-      <img className="app-img" src="/background.webp" alt="Background" />
+    <>
+      <Navbar />
 
-      <div className="slot-machine">
+      <div className="app">
+        <img className="app-img" src="/background.webp" alt="Background" />
+
+        <div className="slot-machine">
         <div className="header">
           <h1 className="title">🎰 GAMMA Weapon and Armor Slot Machine</h1>
 
@@ -1024,7 +1029,8 @@ export default function App() {
             GIVE LOADOUT
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

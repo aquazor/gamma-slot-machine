@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './Settings.css';
 
+import Navbar from './Navbar';
+
 const API = 'http://localhost:7770';
 
 interface TwitchStatus {
@@ -33,6 +35,8 @@ export default function Settings() {
   const [flow, setFlow] = useState<DeviceFlow | null>(null);
   const [authState, setAuthState] = useState<string>('idle');
   const [busy, setBusy] = useState<boolean>(false);
+  const [ready, setReady] = useState<boolean>(false);
+  const [reachable, setReachable] = useState<boolean>(true);
 
   const pollTimer = useRef<number | null>(null);
 
@@ -47,8 +51,11 @@ export default function Settings() {
       setTwitch(t);
       setEventSub(e);
       setRoulette(r);
+      setReachable(true);
     } catch {
-      // server not up yet
+      setReachable(false);
+    } finally {
+      setReady(true);
     }
   }, []);
 
@@ -115,7 +122,9 @@ export default function Settings() {
   };
 
   const disconnect = async (): Promise<void> => {
-    if (!window.confirm('Disconnect Twitch? The roulette will stop reacting to events.')) {
+    if (
+      !window.confirm('Disconnect Twitch? The roulette will stop reacting to events.')
+    ) {
       return;
     }
 
@@ -144,105 +153,155 @@ export default function Settings() {
     refresh();
   };
 
+  const [copied, setCopied] = useState<boolean>(false);
+
+  const copyOverlayUrl = async (): Promise<void> => {
+    const url = `${API}/overlay`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = url;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+
+      document.body.appendChild(area);
+      area.select();
+
+      try {
+        document.execCommand('copy');
+      } catch {
+        // clipboard unavailable
+      }
+
+      area.remove();
+    }
+
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <div className="set-root">
-      <div className="set-card">
-        <h1 className="set-title">🎰 Loot Roulette — Settings</h1>
+    <>
+      <Navbar />
 
-        <a className="set-back" href="/">
-          ← Back to slot machine
-        </a>
+      <div className="set-root">
+        <div className="set-card">
+          <h1 className="set-title">🎰 Loot Roulette — Settings</h1>
 
-        {/* ---- TWITCH ---- */}
-
-        <section className="set-section">
-          <h2 className="set-heading">Twitch connection</h2>
-
-          {twitch.connected ? (
-            <div className="set-row">
-              <span className="set-badge set-badge--ok">Connected</span>
-              <span className="set-muted">as {twitch.login}</span>
-              <button className="set-btn" onClick={disconnect}>
-                Disconnect
-              </button>
+          {!ready ? (
+            <div className="set-loading">
+              <span className="set-spinner" />
+              Loading…
+            </div>
+          ) : !reachable ? (
+            <div className="set-loading">
+              Can’t reach the server on <code>{API}</code>. Is it running?
             </div>
           ) : (
-            <div className="set-row">
-              <span className="set-badge set-badge--off">Not connected</span>
-              <button className="set-btn set-btn--primary" onClick={connect} disabled={busy}>
-                Connect Twitch
-              </button>
-            </div>
+            <>
+              {/* ---- TWITCH ---- */}
+
+              <section className="set-section">
+                <h2 className="set-heading">Twitch connection</h2>
+
+                {twitch.connected ? (
+                  <div className="set-row">
+                    <span className="set-badge set-badge--ok">Connected</span>
+                    <span className="set-muted">as {twitch.login}</span>
+                    <button className="set-btn" onClick={disconnect}>
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <div className="set-row">
+                    <span className="set-badge set-badge--off">Not connected</span>
+                    <button
+                      className="set-btn set-btn--primary"
+                      onClick={connect}
+                      disabled={busy}
+                    >
+                      {busy ? 'Starting…' : 'Connect Twitch'}
+                    </button>
+                  </div>
+                )}
+
+                {flow && (
+                  <div className="set-flow">
+                    <p>
+                      Open <strong>{flow.verificationUri}</strong> and enter this code:
+                    </p>
+                    <div className="set-code">{flow.userCode}</div>
+                    <p className="set-muted">
+                      {authState === 'pending'
+                        ? 'Waiting for you to approve on Twitch…'
+                        : authState}
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              {/* ---- EVENTSUB ---- */}
+
+              <section className="set-section">
+                <h2 className="set-heading">Event listener</h2>
+                <div className="set-row">
+                  <span
+                    className={`set-badge ${
+                      eventSub?.connected ? 'set-badge--ok' : 'set-badge--off'
+                    }`}
+                  >
+                    {eventSub?.connected ? 'Listening' : 'Offline'}
+                  </span>
+                  <span className="set-muted">
+                    subs · resubs · gift subs · bits (cheer 100 / 300 / 500)
+                  </span>
+                </div>
+              </section>
+
+              {/* ---- ROULETTE ---- */}
+
+              <section className="set-section">
+                <h2 className="set-heading">Roulette</h2>
+
+                <label className="set-toggle">
+                  <input
+                    type="checkbox"
+                    checked={roulette?.autoGive ?? false}
+                    onChange={toggleAutoGive}
+                  />
+                  <span>
+                    Auto-give rolled items in game
+                    <span className="set-muted"> — off = roll shows on overlay only</span>
+                  </span>
+                </label>
+
+                <div className="set-row">
+                  <span
+                    className={`set-badge ${
+                      roulette?.overlayPresent ? 'set-badge--ok' : 'set-badge--off'
+                    }`}
+                  >
+                    Overlay {roulette?.overlayPresent ? 'connected' : 'not open'}
+                  </span>
+                  {typeof roulette?.queued === 'number' && roulette.queued > 0 && (
+                    <span className="set-muted">{roulette.queued} queued</span>
+                  )}
+                </div>
+
+                <div className="set-obs">
+                  <span className="set-muted">OBS Browser Source URL</span>
+                  <code>{API}/overlay</code>
+                  <button className="set-btn set-obs-copy" onClick={copyOverlayUrl}>
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </section>
+            </>
           )}
-
-          {flow && (
-            <div className="set-flow">
-              <p>
-                Open <strong>{flow.verificationUri}</strong> and enter this code:
-              </p>
-              <div className="set-code">{flow.userCode}</div>
-              <p className="set-muted">
-                {authState === 'pending'
-                  ? 'Waiting for you to approve on Twitch…'
-                  : authState}
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* ---- EVENTSUB ---- */}
-
-        <section className="set-section">
-          <h2 className="set-heading">Event listener</h2>
-          <div className="set-row">
-            <span
-              className={`set-badge ${
-                eventSub?.connected ? 'set-badge--ok' : 'set-badge--off'
-              }`}
-            >
-              {eventSub?.connected ? 'Listening' : 'Offline'}
-            </span>
-            <span className="set-muted">
-              subs · resubs · gift subs · bits (cheer 100 / 300 / 500)
-            </span>
-          </div>
-        </section>
-
-        {/* ---- ROULETTE ---- */}
-
-        <section className="set-section">
-          <h2 className="set-heading">Roulette</h2>
-
-          <label className="set-toggle">
-            <input
-              type="checkbox"
-              checked={roulette?.autoGive ?? false}
-              onChange={toggleAutoGive}
-            />
-            <span>
-              Auto-give rolled items in game
-              <span className="set-muted"> — off = roll shows on overlay only</span>
-            </span>
-          </label>
-
-          <div className="set-row">
-            <span
-              className={`set-badge ${
-                roulette?.overlayPresent ? 'set-badge--ok' : 'set-badge--off'
-              }`}
-            >
-              Overlay {roulette?.overlayPresent ? 'connected' : 'not open'}
-            </span>
-            {typeof roulette?.queued === 'number' && roulette.queued > 0 && (
-              <span className="set-muted">{roulette.queued} queued</span>
-            )}
-          </div>
-
-          <p className="set-muted set-obs">
-            OBS Browser Source URL: <code>{API}/overlay</code>
-          </p>
-        </section>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
