@@ -1,0 +1,176 @@
+/* ========================================
+   NAVBAR
+======================================== */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  padding: 0 24px;
+  height: 56px;
+
+  /* self-contained: don't inherit whichever page's body font */
+  font-family: Inter, Arial, Helvetica, sans-serif;
+
+  background: linear-gradient(180deg, rgba(18, 12, 5, 0.97), rgba(10, 7, 3, 0.97));
+
+  border-bottom: 2px solid #8a5a18;
+
+  box-shadow:
+    0 2px 0 rgba(255, 200, 90, 0.08),
+    0 6px 20px rgba(0, 0, 0, 0.5);
+
+  backdrop-filter: blur(4px);
+}
+
+/* ---- brand ---- */
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #ffd76a;
+
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+
+  text-decoration: none;
+  text-shadow: 0 0 10px rgba(255, 190, 50, 0.35);
+
+  white-space: nowrap;
+}
+
+.navbar-brand-icon {
+  font-size: 20px;
+}
+
+/* ---- links ---- */
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  flex: 1;
+}
+
+.navbar-link {
+  padding: 7px 14px;
+
+  color: #cdb79a;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  border-radius: 8px;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.navbar-link:hover {
+  color: #fff2d6;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.navbar-link.is-active {
+  color: #201200;
+  background: #e0a52e;
+}
+
+/* ---- twitch status ---- */
+
+.navbar-twitch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 12px;
+
+  color: #cdb79a;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  border: 1px solid rgba(179, 128, 31, 0.45);
+  border-radius: 999px;
+
+  white-space: nowrap;
+
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.navbar-twitch:hover {
+  color: #fff2d6;
+  border-color: #b3801f;
+}
+
+.navbar-dot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+.navbar-dot.is-on {
+  background: #8fdc86;
+  box-shadow: 0 0 8px rgba(143, 220, 134, 0.7);
+}
+
+.navbar-dot.is-off {
+  background: #e08a8a;
+  box-shadow: 0 0 8px rgba(224, 138, 138, 0.5);
+}
+
+.navbar-dot.is-loading {
+  background: #9c8d74;
+  animation: navbar-dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes navbar-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 700px) {
+  .navbar {
+    gap: 12px;
+    padding: 0 14px;
+  }
+
+  .navbar-brand {
+    font-size: 15px;
+  }
+
+  .navbar-brand-icon {
+    font-size: 17px;
+  }
+
+  .navbar-link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
