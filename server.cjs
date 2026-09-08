@@ -5,6 +5,7 @@ const path = require('path');
 const { isSea, getAsset } = require('node:sea');
 const { exec } = require('child_process');
 const twitchAuth = require('./twitch-auth.cjs');
+const { TwitchEventSub } = require('./twitch-eventsub.cjs');
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -202,6 +203,51 @@ app.post('/give-loadout', (req, res) => {
 // in-memory state for an in-progress device code flow
 let pendingDeviceFlow = null;
 
+/*
+ * EventSub client — a single long-lived connection to Twitch.
+ * For now it just logs incoming events; roulette.cjs will
+ * consume them later.
+ */
+const eventSub = new TwitchEventSub();
+
+eventSub.on('connected', ({ sessionId }) => {
+  console.log(`Twitch EventSub connected (session ${sessionId})`);
+});
+
+eventSub.on('subscribed', (types) => {
+  console.log(`Twitch EventSub subscribed to: ${types.join(', ') || 'nothing'}`);
+});
+
+eventSub.on('reconnected', () => {
+  console.log('Twitch EventSub reconnected');
+});
+
+eventSub.on('disconnected', ({ code, reason }) => {
+  console.log(`Twitch EventSub disconnected (${code} ${reason})`);
+});
+
+eventSub.on('revocation', (subscription) => {
+  console.warn(`Twitch EventSub subscription revoked: ${subscription.type}`);
+});
+
+eventSub.on('error', (error) => {
+  console.error('Twitch EventSub:', error.message);
+});
+
+eventSub.on('event', (event) => {
+  console.log('----------------------------------------');
+  console.log('Twitch event:', JSON.stringify(event, null, 2));
+  console.log('----------------------------------------');
+});
+
+async function startEventSub() {
+  try {
+    await eventSub.start();
+  } catch (error) {
+    console.error('Failed to start Twitch EventSub:', error.message);
+  }
+}
+
 app.get('/twitch/status', async (req, res) => {
   try {
     const tokens = await twitchAuth.ensureValidToken();
@@ -234,6 +280,8 @@ app.post('/twitch/auth/start', async (req, res) => {
       .pollForToken(deviceData.device_code, deviceData.interval, deviceData.expires_in)
       .then(() => {
         pendingDeviceFlow = { status: 'connected', error: null };
+
+        startEventSub();
       })
       .catch((error) => {
         console.error(error);
@@ -255,7 +303,12 @@ app.get('/twitch/auth/poll-status', (req, res) => {
   res.json(pendingDeviceFlow);
 });
 
+app.get('/twitch/eventsub/status', (req, res) => {
+  res.json(eventSub.getState());
+});
+
 app.post('/twitch/disconnect', (req, res) => {
+  eventSub.stop();
   twitchAuth.clearTokens();
 
   res.json({ success: true });
@@ -328,6 +381,18 @@ app.listen(PORT, () => {
   const gammaPath = getGammaPath();
 
   console.log(`GAMMA path: ${gammaPath || 'NOT FOUND'}`);
+
+  // If the user authorized Twitch in a previous run, reconnect now.
+  twitchAuth
+    .ensureValidToken()
+    .then((tokens) => {
+      if (tokens) {
+        startEventSub();
+      }
+    })
+    .catch((error) => {
+      console.error('Twitch token check failed:', error.message);
+    });
 
   exec(`start "" "${url}"`);
 });
