@@ -1,0 +1,1758 @@
+{
+  "weapons": [
+    {
+      "id": "wpn_tt33",
+      "name": "TT-33 7.62x25 TT",
+      "ammo": "ammo_7.62x25_p;ammo_7.62x25_ps"
+    },
+    {
+      "id": "wpn_tt33_modern",
+      "name": "TT-33 7.62x25 TT [modern]",
+      "ammo": "ammo_7.62x25_p;ammo_7.62x25_ps"
+    },
+    {
+      "id": "wpn_aps",
+      "name": "APS Stechkin",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_beretta",
+      "name": "Beretta M9A3",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_beretta_camo",
+      "name": "Beretta Px4 Storm",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_colt1911_custom",
+      "name": "Colt 1911 Nightsword Custom (NSC)",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_colt1911",
+      "name": "Colt M1911A1 .45 ACP",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_colt1911_n",
+      "name": "Colt M1911A1 .45 ACP [n]",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_m45a1",
+      "name": "Colt M45A1 .45 ACP",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_desert_eagle",
+      "name": "Desert Eagle",
+      "ammo": "ammo_357_hp_mag"
+    },
+    {
+      "id": "wpn_desert_eagle_nimble",
+      "name": "Desert Eagle \"Steppe Eagle\"",
+      "ammo": "ammo_357_hp_mag"
+    },
+    {
+      "id": "wpn_fn57",
+      "name": "FN Five-seveN",
+      "ammo": "ammo_5.7x28_ss195"
+    },
+    {
+      "id": "wpn_fnp45",
+      "name": "FNP-45",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_fnx45_custom",
+      "name": "FNX-45 [custom]",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_fort",
+      "name": "Fort-17 [fort]",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_fort17",
+      "name": "Fort-17 [fort17]",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_glock17_m1",
+      "name": "Glock 17 \"Bruder\"",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_glock",
+      "name": "Glock 19",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_glock_modern",
+      "name": "Glock 19 \"Hornet\"",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_usp",
+      "name": "HK MK23",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_usp_tac_45",
+      "name": "HK USP Tactical .45 ACP",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_korth_custom",
+      "name": "Kimber Rapide .45 ACP",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_colt1911_camo",
+      "name": "L.A.R. Grizzly Win Mag .357",
+      "ammo": "ammo_357_hp_mag"
+    },
+    {
+      "id": "wpn_pl15",
+      "name": "Lebedev PL-15",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pl15_pl15_scolaz",
+      "name": "Lebedev PL-15 \"Bearcat\" [Kit #1]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pl15_tan_pl15_scolaz",
+      "name": "Lebedev PL-15 \"Bearcat\" [Kit #2]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pl15_tan",
+      "name": "Lebedev PL-15 9x19 pistol",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pm_custom",
+      "name": "Makarov PM Pistol 9x18 [custom]",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_mp412",
+      "name": "MP-412 Rex",
+      "ammo": "ammo_357_hp_mag"
+    },
+    {
+      "id": "wpn_mp443",
+      "name": "MP-443 Grach",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_oc33",
+      "name": "OTs-33 \"Pernach\"",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_eft_rsh12",
+      "name": "RSh-12 Shorty 12.7x55mm",
+      "ammo": "ammo_12.7x55_fmj"
+    },
+    {
+      "id": "wpn_sr1m",
+      "name": "Serdyukov SR-1MP Gyurza 9x21 pistol",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_sr1m_gurza_up",
+      "name": "Serdyukov SR1M Gyurza Custom [Kit #1]",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_sr1m_sr1upgr1",
+      "name": "Serdyukov SR1M Gyurza Custom [Kit #2]",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_sig220",
+      "name": "SIG P220",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_sig220_n_u2p2g0r",
+      "name": "SIG P220 \"Stalker\" [Kit #1]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_sig220_u2p2g0r",
+      "name": "SIG P220 \"Stalker\" [Kit #2]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_sig220_n_upg220",
+      "name": "SIG P220 \"XXX\" [Kit #1]",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_sig220_upg220",
+      "name": "SIG P220 \"XXX\" [Kit #2]",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_sig220_n",
+      "name": "SIG P220 [n]",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_sig226",
+      "name": "SIG P226R [sig226]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_sig226_226sig_kit",
+      "name": "SIG P226R Custom [Kit #2]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pb",
+      "name": "Silenced Pistol PB 9x18",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_walther",
+      "name": "Walther P99",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_walther_p99",
+      "name": "Walther P99 [p99]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_walther_mod9",
+      "name": "Walther P99 Custom [Kit #1]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_walther_p99_mod9",
+      "name": "Walther P99 Custom [Kit #2]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_protecta",
+      "name": "Armsel Protecta",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_protecta_nimble",
+      "name": "Armsel Protecta Custom",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_ithacam37_mag",
+      "name": "Ithaca M37 Defense",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_ithacam37_stakeout_20x70",
+      "name": "Ithaca M37 Stakeout [20x70]",
+      "ammo": "ammo_20x70_buck"
+    },
+    {
+      "id": "wpn_ithacam37_trench",
+      "name": "Ithaca M37 Trenchgun",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_saiga12s_isg",
+      "name": "KS-12",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_ks23",
+      "name": "KS-23",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_ks23_23_up",
+      "name": "KS-23 Shortie",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_ks23_vorkuta",
+      "name": "KS-23M \"Vorkuta\"",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_ks23_kaban",
+      "name": "KS-23M Drozd",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_ks23_kaban_kab_up",
+      "name": "KS-23M Drozd \"Boar\"",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_ksg23",
+      "name": "KSG-23",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_benelli_m1014",
+      "name": "M1014",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_mossberg590_rail",
+      "name": "Mossberg 590A1 [rail]",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_mp133",
+      "name": "MP-133",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_mp153",
+      "name": "MP-153",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_mp155",
+      "name": "MP-155",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_eft_mts_255",
+      "name": "MTS-255",
+      "ammo": "ammo_20x70_buck"
+    },
+    {
+      "id": "wpn_raptr",
+      "name": "RAPTR [raptr]",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_remington870",
+      "name": "Remington 870",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_saiga12s_m1",
+      "name": "Saiga-12 [saiga12s_m1]",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_saiga12s_m2",
+      "name": "Saiga-12 Tactical",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_spas12",
+      "name": "SPAS-12",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_spas12_custom",
+      "name": "SPAS-12 [custom]",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_spas12_nimble",
+      "name": "SPAS-12 [nimble]",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_toz106",
+      "name": "TOZ-106",
+      "ammo": "ammo_20x70_buck"
+    },
+    {
+      "id": "wpn_toz106_m1",
+      "name": "TOZ-106",
+      "ammo": "ammo_20x70_buck"
+    },
+    {
+      "id": "wpn_wincheaster1300",
+      "name": "TOZ-194",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_toz34",
+      "name": "TOZ-34",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_toz34_mark4_23",
+      "name": "TOZ-34 \"Chimera Hunter\"",
+      "ammo": "ammo_23x75_shrapnel;ammo_23x75_barrikada"
+    },
+    {
+      "id": "wpn_toz34_obrez",
+      "name": "TOZ-34 (Sawn-off)",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_bm16_full",
+      "name": "TOZ-66",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_bm16",
+      "name": "TOZ-66 (Sawn-off)",
+      "ammo": "ammo_12x70_buck;ammo_12x76_zhekan"
+    },
+    {
+      "id": "wpn_mp9",
+      "name": "Brugger & Thomet MP9",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_p90",
+      "name": "FN P90",
+      "ammo": "ammo_5.7x28_ss195"
+    },
+    {
+      "id": "wpn_p90gamma",
+      "name": "FN P90 [gamma]",
+      "ammo": "ammo_5.7x28_ss195"
+    },
+    {
+      "id": "wpn_p90_gs",
+      "name": "FN P90 [gs]",
+      "ammo": "ammo_5.7x28_ss195"
+    },
+    {
+      "id": "wpn_mac10",
+      "name": "Ingram MAC-18",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_kriss_vector",
+      "name": "KRISS Vector",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_mp5",
+      "name": "MP5A3",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_mp5_nimble",
+      "name": "MP5A3 \"Frasier\"",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_mp5_kurtz",
+      "name": "MP5A3 [Kit]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_mp5sd",
+      "name": "MP5SD6",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_mp7",
+      "name": "MP7",
+      "ammo": "ammo_5.7x28_ss195"
+    },
+    {
+      "id": "wpn_kiparis",
+      "name": "OTs-02 Kiparis",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_bizon",
+      "name": "PP-19 Bizon",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_vityaz",
+      "name": "PP-19-01 Vityaz",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_vityaz_vitup",
+      "name": "PP-19-01 Vityaz [Kit]",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_pp2000",
+      "name": "PP-2000",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_ppsh41",
+      "name": "PPSh-41",
+      "ammo": "ammo_7.62x25_p;ammo_7.62x25_ps"
+    },
+    {
+      "id": "wpn_vz61",
+      "name": "Skorpion vz.68",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_sr2_m1",
+      "name": "SR-2M Veresk",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_sr2_veresk",
+      "name": "SR-2M Veresk",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_sr2_veresk_sr2_upkit",
+      "name": "SR-2M Veresk \"Tactical\"",
+      "ammo": "ammo_9x21_sp10"
+    },
+    {
+      "id": "wpn_aug_freedom",
+      "name": "Steyr AUG A3 9mm",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_thompson_m1a1",
+      "name": "Thompson M1A1",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_thompson_1921",
+      "name": "Thompson Model 1921",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_udp9",
+      "name": "UDP-9 Carbine",
+      "ammo": "ammo_9x19_fmj;ammo_9x19_pbp"
+    },
+    {
+      "id": "wpn_ump45_custom",
+      "name": "UMP45",
+      "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro"
+    },
+    {
+      "id": "wpn_kiparis_ots2_upgr_kit",
+      "name": "Upgraded OTs-02 Kiparis",
+      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm"
+    },
+    {
+      "id": "wpn_9a91",
+      "name": "9A-91",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_adar2_15",
+      "name": "ADAR 2-15",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_aek",
+      "name": "AEK-971",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak5c_bas",
+      "name": "AK 5C",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_ak5c_bas_5c_tik",
+      "name": "AK 5C \"ISG Special\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_akm_alfa",
+      "name": "AK Alfa",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_ak101",
+      "name": "AK-101 [1]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_ak103",
+      "name": "AK-103",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_ak104_alfa",
+      "name": "AK-104 \"Alpha\" [alfa]",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_ak105",
+      "name": "AK-105",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak105_shakal",
+      "name": "AK-105 \"Shakal\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak105_swamp",
+      "name": "AK-105 \"Swamp Thing\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_ak12_m1",
+      "name": "AK-12 [m1]",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak74_pmc",
+      "name": "AK-74 \"PMC\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak74m",
+      "name": "AK-74M",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak74m_beard",
+      "name": "AK-74M \"Venom\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak74",
+      "name": "AK-74N [74]",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_akms_alt",
+      "name": "AKMS",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_ak74u_tac",
+      "name": "AKS-74U \"Tactician\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_ak74u",
+      "name": "AKS-74UN",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_amb17",
+      "name": "AMB-17",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_abakan_n",
+      "name": "AN-94 [n]",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_val",
+      "name": "AS Val",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_brn180",
+      "name": "BRN-180",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_xm4",
+      "name": "CAR-15",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_xm4_admin",
+      "name": "CAR-15 \"Administrator\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_xm4_bd",
+      "name": "CAR-15 \"Blood Diamond\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_mk47",
+      "name": "CMMG Mk47 Mutant",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_dtmdr_black",
+      "name": "Desert Tech MDR 7.62x51",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_dtmdr_black_sup",
+      "name": "Desert Tech MDR 7.62x51 [Kit]",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_fn2000_nimble",
+      "name": "FN F2000 \"Competitor\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_scar_siber",
+      "name": "FN SCAR-H [siber]",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_g36v_rwap",
+      "name": "G36 [v_rwap]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_g36nimble_rwap",
+      "name": "G36C \"Merc\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_g36v_rwap_cut_kit",
+      "name": "G36c Spec. Op",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_g36ka4_rwap",
+      "name": "G36K [ka4_rwap]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_ace52",
+      "name": "Galil ACE-52 [52]",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_hk21",
+      "name": "HK21E",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_howa20",
+      "name": "Howa Type 20",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_l85_m2",
+      "name": "L85A2 [m2]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_m249",
+      "name": "M249 SAW",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_m4_tac",
+      "name": "M4A1 \"Protector\"",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_m4a1_siber",
+      "name": "M4A1 [m4a1_siber]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_grot_tan",
+      "name": "MSBS Grot C16A2 (FDE)",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_groza",
+      "name": "OC-14 Groza",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_groza_nimble",
+      "name": "OTs-14 Groza \"Storm\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_pkm_zenit_siber",
+      "name": "PKM \"Zenit\" [enit_siber]",
+      "ammo": "ammo_pkm_100"
+    },
+    {
+      "id": "wpn_pkm_siber",
+      "name": "PKM [siber]",
+      "ammo": "ammo_pkm_100"
+    },
+    {
+      "id": "wpn_pkp_siber",
+      "name": "PKP Pecheneg [siber]",
+      "ammo": "ammo_pkm_100"
+    },
+    {
+      "id": "wpn_ak74_isg",
+      "name": "RD 5.45 Custom \"ISG\"",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_akm_isg",
+      "name": "RD 706 \"ISG\"",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_ak74u_m1_isg",
+      "name": "RD Quickhatch 7.62 \"ISG\"",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_vintorez_isg",
+      "name": "RD-939",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_rpd",
+      "name": "RPD",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_rpk",
+      "name": "RPK",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_rpk74_16",
+      "name": "RPK-16 LMG",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_rpk74_16_drum",
+      "name": "RPK-16 LMG [drum]",
+      "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep"
+    },
+    {
+      "id": "wpn_m4_ru556",
+      "name": "Ruger SR-556",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_fal_aus",
+      "name": "SA-58 AUS",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_fal_sa58_osw",
+      "name": "SA-58 OSW",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_ash12",
+      "name": "ShAK-12",
+      "ammo": "ammo_12.7x55_fmj"
+    },
+    {
+      "id": "wpn_ash12_sup",
+      "name": "ShAK-12",
+      "ammo": "ammo_12.7x55_fmj"
+    },
+    {
+      "id": "wpn_sig550",
+      "name": "SIG SG 550 [0]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_sig550_custom",
+      "name": "SIG SG 550 [custom]",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_vihr",
+      "name": "SR-3M Vikhr",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_mk47_sup",
+      "name": "st_wpn_mk47_custom",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_aug",
+      "name": "Steyr AUG A1",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_aug_merc",
+      "name": "Thales EF88",
+      "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190"
+    },
+    {
+      "id": "wpn_vintorez_n1",
+      "name": "VSS Vintorez [n1]",
+      "ammo": "ammo_9x39_pab9"
+    },
+    {
+      "id": "wpn_l96a1m",
+      "name": "AWSM",
+      "ammo": "ammo_338_lapua"
+    },
+    {
+      "id": "wpn_m98b",
+      "name": "Barrett M98B",
+      "ammo": "ammo_338_lapua"
+    },
+    {
+      "id": "wpn_dvl10_m1",
+      "name": "DVL-10 M1 Saboteur",
+      "ammo": "ammo_338_federal"
+    },
+    {
+      "id": "wpn_dvl10",
+      "name": "DVL-10 M2 Urbana",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_gauss",
+      "name": "Gauss Rifle",
+      "ammo": "ammo_gauss"
+    },
+    {
+      "id": "wpn_k98",
+      "name": "Karabiner 98k",
+      "ammo": "ammo_7.92x33_fmj"
+    },
+    {
+      "id": "wpn_k98_mauser_kit",
+      "name": "Karabiner 98k Forester mk.2 [Kit #1]",
+      "ammo": "ammo_7.92x33_fmj"
+    },
+    {
+      "id": "wpn_k98_mod_silen98",
+      "name": "Karabiner 98k Forester mk.2 [Kit #2]",
+      "ammo": "ammo_7.92x33_fmj"
+    },
+    {
+      "id": "wpn_k98_mod",
+      "name": "Mauser 98k Forester mk.1",
+      "ammo": "ammo_7.92x33_fmj"
+    },
+    {
+      "id": "wpn_mosin",
+      "name": "Mosin Nagant",
+      "ammo": "ammo_7.62x54_7h1"
+    },
+    {
+      "id": "wpn_svu",
+      "name": "OTs-03 SVU",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_svu_nimble",
+      "name": "OTs-03A SVU-A",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_remington700",
+      "name": "Remington 700",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_remington700_archangel",
+      "name": "Remington 700 \"Archangel\"",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_remington700_lapua700",
+      "name": "Remington 700 \"Deer Hunter\" [Kit]",
+      "ammo": "ammo_338_federal"
+    },
+    {
+      "id": "wpn_remington700_magpul_pro",
+      "name": "Remington 700 \"Magpul PRO\"",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_remington700_mod_x_gen3",
+      "name": "Remington 700 \"MOD X Gen.3\"",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_sks_b",
+      "name": "SKS",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_sks_molot",
+      "name": "SKS Molot",
+      "ammo": "ammo_7.62x39_fmj"
+    },
+    {
+      "id": "wpn_sr25",
+      "name": "SR-25",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_steyr_scout_big",
+      "name": "Steyr Scout 7.62",
+      "ammo": "ammo_7.62x51_fmj"
+    },
+    {
+      "id": "wpn_sv98",
+      "name": "SV98",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_svd_m1",
+      "name": "SVD [m1]",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_svds",
+      "name": "SVDS",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_svds_pmc",
+      "name": "SVDS \"Retribution\"",
+      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14"
+    },
+    {
+      "id": "wpn_svt40",
+      "name": "SVT-40",
+      "ammo": "ammo_7.62x54_7h1"
+    },
+    {
+      "id": "wpn_vssk",
+      "name": "VSSK Vykhlop",
+      "ammo": "ammo_12.7x55_fmj"
+    },
+    {
+      "id": "wpn_winchester1873",
+      "name": "Winchester Model 1873",
+      "ammo": "ammo_357_hp_mag"
+    },
+    {
+      "id": "wpn_rpg7",
+      "name": "RPG-7",
+      "ammo": "ammo_og-7b"
+    }
+  ],
+  "helmets": [
+    {
+      "id": "helm_rp_bala",
+      "name": "Balaclava"
+    },
+    {
+      "id": "helm_bandana",
+      "name": "Bandana"
+    },
+    {
+      "id": "helm_cloth_mask",
+      "name": "Cloth Mask"
+    },
+    {
+      "id": "helm_resp",
+      "name": "Respirator"
+    },
+    {
+      "id": "helm_respirator_gp5",
+      "name": "GP-5 Gas Mask"
+    },
+    {
+      "id": "helm_respirator",
+      "name": "Refitted PBF Gas Mask Kit"
+    },
+    {
+      "id": "helm_hardhat",
+      "name": "Surplus Steel Helmet"
+    },
+    {
+      "id": "helm_ach7",
+      "name": "ACH-7 Headgear Set"
+    },
+    {
+      "id": "helm_ach7ex",
+      "name": "ACH-7EX Headgear Set"
+    },
+    {
+      "id": "helm_m40",
+      "name": "M40 Gas Mask"
+    },
+    {
+      "id": "helm_ppm88",
+      "name": "PPM-88 Gas Mask"
+    },
+    {
+      "id": "helm_protective",
+      "name": "SSP-99 Screen Helmet"
+    },
+    {
+      "id": "helm_metro",
+      "name": "\"Apocalypse\" Helmet"
+    },
+    {
+      "id": "helm_ranger",
+      "name": "GP-10z Ranger Gas Mask"
+    },
+    {
+      "id": "helm_m50",
+      "name": "M50z Gas Mask"
+    },
+    {
+      "id": "helm_battle",
+      "name": "Sphere M12 Helmet"
+    },
+    {
+      "id": "helm_tactic",
+      "name": "Sphere-08 Helmet"
+    },
+    {
+      "id": "helm_spartan",
+      "name": "Cz-M10 Spartan Helmet"
+    },
+    {
+      "id": "helm_exo",
+      "name": "ExoHelmet"
+    }
+  ],
+  "armor": [
+    {
+      "id": "trenchcoat_freedom_brown_outfit",
+      "name": "Heavy Freedom Overcoat"
+    },
+    {
+      "id": "trenchcoat_outfit",
+      "name": "Overcoat"
+    },
+    {
+      "id": "bandit_novice_outfit",
+      "name": "Black Leather Jacket"
+    },
+    {
+      "id": "novice_outfit_camo",
+      "name": "Firearm Enthusiast's Jacket"
+    },
+    {
+      "id": "novice_outfit_tourist",
+      "name": "Tourist’s Jacket"
+    },
+    {
+      "id": "cs_light_novice_outfit",
+      "name": "CS-1 Body Armor"
+    },
+    {
+      "id": "cs_novice_outfit",
+      "name": "Clear Sky Leather Jacket"
+    },
+    {
+      "id": "dolg_novice_outfit",
+      "name": "Duty Leather Jacket"
+    },
+    {
+      "id": "novice_outfit",
+      "name": "Leather Jacket"
+    },
+    {
+      "id": "svoboda_novice_outfit",
+      "name": "Freedom Leather Jacket"
+    },
+    {
+      "id": "army_outfit",
+      "name": "Military Service Outfit"
+    },
+    {
+      "id": "redline_novice_outfit",
+      "name": "Redline Leather Jacket"
+    },
+    {
+      "id": "bandit_novice_outfit_alt",
+      "name": "Armored Leather Jacket"
+    },
+    {
+      "id": "bandit_nbc_outfit",
+      "name": "Load-bearing 'Sunset' Tactical Suit"
+    },
+    {
+      "id": "travel_outfit",
+      "name": "\"Voyager\" Stalker Suit"
+    },
+    {
+      "id": "nbc_outfit",
+      "name": "Tactical Stalker Suit"
+    },
+    {
+      "id": "cs_nbc_outfit",
+      "name": "CS-2t Suit"
+    },
+    {
+      "id": "nbc_dolg_outfit",
+      "name": "PS5-Mt Suit"
+    },
+    {
+      "id": "nbc_freedom_outfit",
+      "name": "Keeper of Freedom"
+    },
+    {
+      "id": "monolith_nbc_outfit",
+      "name": "Tactical Monolith Suit"
+    },
+    {
+      "id": "nbc_merc_outfit",
+      "name": "Load-bearing 'Twilight' Tactical Suit"
+    },
+    {
+      "id": "stalker_outfit",
+      "name": "\"Sunrise\" Stalker Suit"
+    },
+    {
+      "id": "trenchcoat_green_outfit",
+      "name": "Heavy Green Overcoat"
+    },
+    {
+      "id": "stalker_predator_outfit",
+      "name": "\"Predator\" Stalker Suit"
+    },
+    {
+      "id": "banditmerc_outfit",
+      "name": "Fenced LC Suit"
+    },
+    {
+      "id": "merc_scout_outfit",
+      "name": "Mercenary LC-S Suit"
+    },
+    {
+      "id": "dolg_red_outfit",
+      "name": "PS5-M Hunter Suit"
+    },
+    {
+      "id": "stalker_salamander_outfit",
+      "name": "\"Salamander\" Stalker Suit"
+    },
+    {
+      "id": "ghillie_outfit",
+      "name": "Ghillie Suit"
+    },
+    {
+      "id": "stalker_autumn_outfit",
+      "name": "\"Autumn\" Stalker Suit"
+    },
+    {
+      "id": "cs_light_outfit",
+      "name": "CS-2a Body Armor"
+    },
+    {
+      "id": "isg_lcs_camo_outfit",
+      "name": "UNISG LC-C Suit"
+    },
+    {
+      "id": "merc_fighter_outfit",
+      "name": "Mercenary LC-F Suit"
+    },
+    {
+      "id": "merc_wolven_outfit",
+      "name": "Mercenary STS-W Body Armor"
+    },
+    {
+      "id": "stalker_bear_outfit",
+      "name": "\"Bear\" Stalker Suit"
+    },
+    {
+      "id": "stalker_drought_outfit",
+      "name": "\"Drought\" Stalker Suit"
+    },
+    {
+      "id": "stalker_graphite_outfit",
+      "name": "\"Graphite\" Stalker Suit"
+    },
+    {
+      "id": "nomad_outfit",
+      "name": "\"Nomad\" Stalker Suit"
+    },
+    {
+      "id": "bandit_sun_outfit",
+      "name": "\"Sunset\" Tactical Suit"
+    },
+    {
+      "id": "stalker_tigerstripe_outfit",
+      "name": "\"Tigerstripe\" Stalker Suit"
+    },
+    {
+      "id": "merc_sun_outfit",
+      "name": "\"Twilight\" Tactical Suit"
+    },
+    {
+      "id": "wastelander_outfit",
+      "name": "\"Wastelander\" Stalker Suit"
+    },
+    {
+      "id": "specops_outfit",
+      "name": "Berill-5M Armored Suit"
+    },
+    {
+      "id": "cs_stalker_outfit",
+      "name": "CS-2b Body Armor"
+    },
+    {
+      "id": "cs_medium_outfit",
+      "name": "CS-3a Body Armor"
+    },
+    {
+      "id": "cs_scientific_outfit",
+      "name": "CS-4a SEVA Suit"
+    },
+    {
+      "id": "specops_bandit_outfit",
+      "name": "Deserter's B-5M Armored Suit"
+    },
+    {
+      "id": "bandit_ps5_outfit",
+      "name": "Fenced PS5-M Universal Protection Suit"
+    },
+    {
+      "id": "svoboda_heavy_outfit",
+      "name": "Guardian of Freedom"
+    },
+    {
+      "id": "trenchcoat_brown_outfit",
+      "name": "Heavy Brown Overcoat"
+    },
+    {
+      "id": "trenchcoat_dolg_brown_outfit",
+      "name": "Heavy Duty Overcoat"
+    },
+    {
+      "id": "greh_armored_outfit",
+      "name": "Irij Flak Armor"
+    },
+    {
+      "id": "ecolog_guard_outfit",
+      "name": "ISRIT Guard Jumpsuit"
+    },
+    {
+      "id": "bandit_scientific_outfit",
+      "name": "Looted SEVA Suit"
+    },
+    {
+      "id": "specops_merc_outfit",
+      "name": "Mercenary B-5M Armored Suit"
+    },
+    {
+      "id": "merc_outfit",
+      "name": "Mercenary LC Suit"
+    },
+    {
+      "id": "merc_sunset_outfit",
+      "name": "Mercenary LCz Suit"
+    },
+    {
+      "id": "merc_jackal_outfit",
+      "name": "Mercenary LTS-J Body Suit"
+    },
+    {
+      "id": "merc_coyote_outfit",
+      "name": "Mercenary MTS-C Body Suit"
+    },
+    {
+      "id": "merc_scientific_armored_outfit",
+      "name": "Mercenary SEVA Body Armor"
+    },
+    {
+      "id": "merc_scientific_outfit",
+      "name": "Mercenary SEVA Suit"
+    },
+    {
+      "id": "monolith_scientific_light_outfit",
+      "name": "Monolith Patchwork Science Suit"
+    },
+    {
+      "id": "monolith_scientific_outfit",
+      "name": "Monolith Scientific Suit"
+    },
+    {
+      "id": "monolith_outfit",
+      "name": "Monolith X-18 Suit"
+    },
+    {
+      "id": "bandit_scientific_dark_outfit",
+      "name": "Patchwork Anomaly Suit"
+    },
+    {
+      "id": "dolg_scientific_wood_outfit",
+      "name": "PS5-9Md Light Pathfinder"
+    },
+    {
+      "id": "dolg_scientific_red_outfit",
+      "name": "PS5-9Md Light Scientific Suit"
+    },
+    {
+      "id": "dolg_scientific_outfit",
+      "name": "PS5-9Md Universal Scientific Suit"
+    },
+    {
+      "id": "specops_dolg_outfit",
+      "name": "PS5-B Battle Armor"
+    },
+    {
+      "id": "dolg_outfit",
+      "name": "PS5-M Universal Protection Suit"
+    },
+    {
+      "id": "dolg_scout_outfit",
+      "name": "PS5-R Scout Vest"
+    },
+    {
+      "id": "dolg_voin_outfit",
+      "name": "PS6-V Warrior Suit"
+    },
+    {
+      "id": "renegademerc_outfit",
+      "name": "Renegade LC Suit"
+    },
+    {
+      "id": "renegade_scientific_outfit",
+      "name": "Renegade SEVA Suit"
+    },
+    {
+      "id": "svoboda_heavy_outfit_2",
+      "name": "Sentinel of Freedom"
+    },
+    {
+      "id": "scientific_outfit",
+      "name": "SEVA Bodysuit"
+    },
+    {
+      "id": "ecolog_outfit_white",
+      "name": "SSP-99 \"Diamond\""
+    },
+    {
+      "id": "ecolog_outfit_orange",
+      "name": "SSP-99 Bodysuit"
+    },
+    {
+      "id": "ecolog_outfit_yello",
+      "name": "SSP-99 Topaz"
+    },
+    {
+      "id": "ecolog_outfit_red",
+      "name": "SSP-99М \"Ruby\""
+    },
+    {
+      "id": "ecolog_outfit_blue",
+      "name": "SSP-99M \"Sapphire\""
+    },
+    {
+      "id": "ecolog_outfit_green",
+      "name": "SSP-99M Bodysuit"
+    },
+    {
+      "id": "isg_lcs_outfit",
+      "name": "UNISG LC Suit"
+    },
+    {
+      "id": "isg_lcs_urban_outfit",
+      "name": "UNISG LC-UC Suit"
+    },
+    {
+      "id": "isg_outfit",
+      "name": "UNISG Mk1 Tactical Body Armor"
+    },
+    {
+      "id": "isg_camo_outfit",
+      "name": "UNISG Mk2 Tactical Body Armor"
+    },
+    {
+      "id": "isg_scientific_outfit",
+      "name": "UNISG SEVA Suit"
+    },
+    {
+      "id": "greh_ps5_outfit",
+      "name": "Volos Flak Armor"
+    },
+    {
+      "id": "greh_armored_camo_outfit",
+      "name": "Vyriy Flak Armor"
+    },
+    {
+      "id": "svoboda_scientific_outfit",
+      "name": "Watchman of Freedom"
+    },
+    {
+      "id": "svoboda_light_outfit",
+      "name": "Wind of Freedom"
+    },
+    {
+      "id": "stalker_proto_exo_outfit",
+      "name": "\"Sunrise\" Exoskeleton"
+    },
+    {
+      "id": "cs_stalker_proto_exo_outfit",
+      "name": "CS-2b Exoskeleton"
+    },
+    {
+      "id": "cs_heavy_outfit",
+      "name": "CS-3b Body Armor"
+    },
+    {
+      "id": "cs_scientific_outfit_good",
+      "name": "CS-4a Pathfinder"
+    },
+    {
+      "id": "military_sky_outfit",
+      "name": "CS-4b Armored Suit"
+    },
+    {
+      "id": "cs_exolight_outfit",
+      "name": "CS-5 Exosuit"
+    },
+    {
+      "id": "light_freedom_outfit",
+      "name": "Defender of Freedom"
+    },
+    {
+      "id": "exolight_outfit",
+      "name": "Exosuit"
+    },
+    {
+      "id": "freedom_exo_vineleaf_outfit",
+      "name": "Hero of Freedom"
+    },
+    {
+      "id": "hybrid_outfit",
+      "name": "Hybrid Armored Suit"
+    },
+    {
+      "id": "light_dolg_outfit",
+      "name": "IBAz Universal Protection Suit"
+    },
+    {
+      "id": "light_loner_outfit",
+      "name": "Interceptor Body Armor"
+    },
+    {
+      "id": "military_freedom_outfit",
+      "name": "Liberated Skat-9 Armored Suit"
+    },
+    {
+      "id": "bandit_exolight_outfit",
+      "name": "Looted Exosuit"
+    },
+    {
+      "id": "military_bandit_outfit",
+      "name": "Looted Skat-9 Armored Suit"
+    },
+    {
+      "id": "merc_ace_outfit",
+      "name": "Mercenary ACE Scientific Suit"
+    },
+    {
+      "id": "merc_exolight_outfit",
+      "name": "Mercenary Exosuit"
+    },
+    {
+      "id": "exo_merc_grass_outfit",
+      "name": "Mercenary Grassland Exosuit"
+    },
+    {
+      "id": "light_merc_outfit",
+      "name": "Mercenary IBAz Suit"
+    },
+    {
+      "id": "merc_combat_scientific_outfit",
+      "name": "Mercenary Pathfinder"
+    },
+    {
+      "id": "military_merc_outfit",
+      "name": "Mercenary Skat-9 Armored Suit"
+    },
+    {
+      "id": "merc_nighthunter_outfit",
+      "name": "Mercenary STS-N Body Armor"
+    },
+    {
+      "id": "exo_merc_urban_outfit",
+      "name": "Mercenary Urban Exosuit"
+    },
+    {
+      "id": "exo_merc_wood_outfit",
+      "name": "Mercenary Woodland Exosuit"
+    },
+    {
+      "id": "military_exolight_outfit",
+      "name": "Military Stalker Exosuit"
+    },
+    {
+      "id": "light_voen_outfit",
+      "name": "Military Stalker IBAz Suit"
+    },
+    {
+      "id": "monolith_exolight_outfit",
+      "name": "Monolith Exosuit"
+    },
+    {
+      "id": "light_monolit_outfit",
+      "name": "Monolith IBAz Assault Suit"
+    },
+    {
+      "id": "monolith_trenchcoat_outfit",
+      "name": "Monolith Overcoat"
+    },
+    {
+      "id": "military_monolit_outfit",
+      "name": "Monolith Skat-9 Armored Suit"
+    },
+    {
+      "id": "dolg_specops_red_outfit",
+      "name": "PS5-B2 Veteran Battlesuit"
+    },
+    {
+      "id": "dolg_proto_exo_outfit",
+      "name": "PS5-M Exoskeleton"
+    },
+    {
+      "id": "dolg_exolight_outfit",
+      "name": "PSZ-10d Duty Battlesuit"
+    },
+    {
+      "id": "exo_dolg_outfit",
+      "name": "PSZ-10d Duty Battlesuit"
+    },
+    {
+      "id": "exo_dolg_red_outfit",
+      "name": "PSZ-10d Venator Battlesuit"
+    },
+    {
+      "id": "exo_dolg_urban_outfit",
+      "name": "PSZ-10g Urban Battlesuit"
+    },
+    {
+      "id": "exo_dolg_wood_outfit",
+      "name": "PSZ-10l Forest Battlesuit"
+    },
+    {
+      "id": "dolg_pantsir_outfit",
+      "name": "PSZ-7p Shell Armor"
+    },
+    {
+      "id": "dolg_heavy_outfit",
+      "name": "PSZ-9d Body Armor"
+    },
+    {
+      "id": "dolg_heavy_redline_outfit",
+      "name": "PSZ-9kl Command Armor"
+    },
+    {
+      "id": "greh_trenchcoat_outfit",
+      "name": "Sin Heavy Overcoat"
+    },
+    {
+      "id": "military_outfit",
+      "name": "Skat-9 Armored Suit"
+    },
+    {
+      "id": "ecolog_proto_exo_outfit",
+      "name": "SSP-99M Exoskeleton"
+    },
+    {
+      "id": "isg_exolight_outfit",
+      "name": "UNISG Exosuit"
+    },
+    {
+      "id": "light_isg_outfit",
+      "name": "UNISG IBAz Suit"
+    },
+    {
+      "id": "isg_proto_exo_outfit",
+      "name": "UNISG Tactical Exoskeleton"
+    },
+    {
+      "id": "svoboda_exolight_outfit",
+      "name": "Warrior of Freedom"
+    },
+    {
+      "id": "svoboda_light_proto_exo_outfit",
+      "name": "Wind of Freedom Exoskeleton"
+    },
+    {
+      "id": "exo_wood_outfit",
+      "name": "Woodland Exosuit"
+    },
+    {
+      "id": "monolith_proto_exo_outfit",
+      "name": "X-18 Exoskeleton"
+    },
+    {
+      "id": "freedom_nosorog_outfit",
+      "name": "Champion of Freedom"
+    },
+    {
+      "id": "cs_exo_outfit",
+      "name": "CS-5 Exoskeleton"
+    },
+    {
+      "id": "exo_outfit",
+      "name": "Exoskeleton"
+    },
+    {
+      "id": "merc_exo_outfit",
+      "name": "Mercenary Exoskeleton"
+    },
+    {
+      "id": "merc_nosorog_outfit",
+      "name": "Mercenary Nosorog"
+    },
+    {
+      "id": "military_exo_outfit",
+      "name": "Military Stalker Exoskeleton"
+    },
+    {
+      "id": "army_nosorog_outfit",
+      "name": "Military Stalker Nosorog"
+    },
+    {
+      "id": "monolith_exo_outfit",
+      "name": "Monolith Exoskeleton"
+    },
+    {
+      "id": "monolith_nosorog_outfit",
+      "name": "Monolith Nosorog"
+    },
+    {
+      "id": "svoboda_exo_outfit",
+      "name": "Paragon of Freedom"
+    },
+    {
+      "id": "dolg_exo_outfit",
+      "name": "PSZ-10d Exoskeleton"
+    },
+    {
+      "id": "dolg_nosorog_outfit",
+      "name": "PSZ-10d Nosorog"
+    },
+    {
+      "id": "dolg_heavy_proto_exo_outfit",
+      "name": "PSZ-9d Exoskeleton"
+    },
+    {
+      "id": "renegade_exo_outfit",
+      "name": "Renegade Exoskeleton"
+    },
+    {
+      "id": "ecolog_exo_outfit",
+      "name": "Scientific Exoskeleton"
+    },
+    {
+      "id": "military_proto_exo_outfit",
+      "name": "Skat-9 Exoskeleton"
+    },
+    {
+      "id": "bandit_exo_outfit",
+      "name": "Stolen Exoskeleton"
+    },
+    {
+      "id": "isg_exo_outfit",
+      "name": "UNISG Exoskeleton"
+    },
+    {
+      "id": "isg_nosorog_outfit",
+      "name": "UNISG Nosorog"
+    },
+    {
+      "id": "greh_exo_outfit",
+      "name": "Vyraj Power Armor"
+    }
+  ]
+}

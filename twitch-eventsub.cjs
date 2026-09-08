@@ -36,6 +36,7 @@ const TOPICS = [
   { type: 'channel.cheer', version: '1' },
   { type: 'channel.subscribe', version: '1' },
   { type: 'channel.subscription.gift', version: '1' },
+  { type: 'channel.subscription.message', version: '1' }, // resubs
 ];
 
 const SEEN_MESSAGE_TTL_MS = 10 * 60 * 1000; // Twitch may redeliver within 10 min
@@ -381,6 +382,17 @@ class TwitchEventSub extends EventEmitter {
         userLogin: event.user_login || null,
         tier: event.tier, // "1000" | "2000" | "3000"
         isGift: Boolean(event.is_gift),
+      };
+    } else if (type === 'channel.subscription.message') {
+      normalized = {
+        kind: 'resub',
+        user: event.user_name || event.user_login || null,
+        userLogin: event.user_login || null,
+        tier: event.tier,
+        months: event.cumulative_months || null,
+        streakMonths: event.streak_months || null,
+        durationMonths: event.duration_months || null,
+        message: (event.message && event.message.text) || '',
       };
     } else if (type === 'channel.subscription.gift') {
       normalized = {

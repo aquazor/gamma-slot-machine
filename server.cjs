@@ -6,6 +6,10 @@ const { isSea, getAsset } = require('node:sea');
 const { exec } = require('child_process');
 const twitchAuth = require('./twitch-auth.cjs');
 const { TwitchEventSub } = require('./twitch-eventsub.cjs');
+const { Roulette } = require('./roulette.cjs');
+const bridge = require('./gamma-bridge.cjs');
+
+const { getGammaPath, getCommandFile } = bridge;
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -30,65 +34,10 @@ app.use(express.json());
 
 /*
  * ---------------------------------------------------------
- * GAMMA PATH
- * ---------------------------------------------------------
- */
-
-function getCommandFile(gammaPath) {
-  return path.join(
-    gammaPath,
-    'mods',
-    'GAMMA Weapon and Armor Slot Machine by rip_perri',
-    'gamedata',
-    'scripts',
-    'bridge',
-    'command.txt',
-  );
-}
-
-function isValidGammaPath(gammaPath) {
-  if (!gammaPath) {
-    return false;
-  }
-
-  return fs.existsSync(getCommandFile(gammaPath));
-}
-
-/*
- * Try to automatically find GAMMA.
- */
-function findGamma() {
-  // Windows drives: C:\, D:\, E:\, etc.
-  for (let i = 67; i <= 90; i++) {
-    const drive = `${String.fromCharCode(i)}:\\`;
-
-    if (!fs.existsSync(drive)) {
-      continue;
-    }
-
-    const gammaPath = path.join(drive, 'GAMMA');
-
-    if (isValidGammaPath(gammaPath)) {
-      return gammaPath;
-    }
-  }
-
-  console.log('GAMMA installation not found.');
-
-  return null;
-}
-
-/*
- * Find GAMMA whenever needed.
- */
-function getGammaPath() {
-  return findGamma();
-}
-
-/*
- * ---------------------------------------------------------
  * GAMMA API
  * ---------------------------------------------------------
+ * GAMMA path detection + command.txt writing lives in
+ * gamma-bridge.cjs (shared with roulette.cjs).
  */
 
 app.get('/gamma', (req, res) => {
@@ -115,83 +64,32 @@ app.post('/give-loadout', (req, res) => {
     });
   }
 
-  const gammaPath = getGammaPath();
+  const lines = bridge.buildCommandLines({ weapons, outfits, helmets });
 
-  if (!gammaPath) {
-    return res.status(400).json({
-      error: 'GAMMA installation not found',
-    });
+  if (lines.length === 0) {
+    return res.status(400).json({ error: 'Loadout is empty' });
   }
 
-  const commandFile = getCommandFile(gammaPath);
+  const result = bridge.writeCommandLines(lines);
 
-  try {
-    const lines = [];
+  if (!result.ok) {
+    const status = result.error === 'GAMMA installation not found' ? 400 : 500;
 
-    // Weapons
-    if (Array.isArray(weapons)) {
-      for (const weapon of weapons) {
-        if (!weapon.itemId) {
-          continue;
-        }
-
-        const ammo = weapon.ammo || '';
-
-        lines.push(`WEAPON|${weapon.itemId}|${ammo}`);
-      }
-    }
-
-    // Outfits
-    if (Array.isArray(outfits)) {
-      for (const outfit of outfits) {
-        if (!outfit.itemId) {
-          continue;
-        }
-
-        lines.push(`OUTFIT|${outfit.itemId}`);
-      }
-    }
-
-    // Helmets
-    if (Array.isArray(helmets)) {
-      for (const helmet of helmets) {
-        if (!helmet.itemId) {
-          continue;
-        }
-
-        lines.push(`HELMET|${helmet.itemId}`);
-      }
-    }
-
-    if (lines.length === 0) {
-      return res.status(400).json({
-        error: 'Loadout is empty',
-      });
-    }
-
-    const command = lines.join('\n');
-
-    fs.writeFileSync(commandFile, command, 'utf8');
-
-    console.log('Loadout sent to GAMMA:');
-    console.log(command);
-    console.log('----------------------------------------');
-
-    res.json({
-      success: true,
-      loadout: {
-        weapons: weapons || [],
-        outfits: outfits || [],
-        helmets: helmets || [],
-      },
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      error: 'Failed to write loadout command',
-    });
+    return res.status(status).json({ error: result.error });
   }
+
+  console.log('Loadout sent to GAMMA:');
+  console.log(result.command);
+  console.log('----------------------------------------');
+
+  res.json({
+    success: true,
+    loadout: {
+      weapons: weapons || [],
+      outfits: outfits || [],
+      helmets: helmets || [],
+    },
+  });
 });
 
 /*
@@ -234,12 +132,6 @@ eventSub.on('error', (error) => {
   console.error('Twitch EventSub:', error.message);
 });
 
-eventSub.on('event', (event) => {
-  console.log('----------------------------------------');
-  console.log('Twitch event:', JSON.stringify(event, null, 2));
-  console.log('----------------------------------------');
-});
-
 async function startEventSub() {
   try {
     await eventSub.start();
@@ -247,6 +139,139 @@ async function startEventSub() {
     console.error('Failed to start Twitch EventSub:', error.message);
   }
 }
+
+/*
+ * ---------------------------------------------------------
+ * ROULETTE + OVERLAY (SSE)
+ * ---------------------------------------------------------
+ */
+
+const roulette = new Roulette();
+
+// Connected overlay clients (Server-Sent Events).
+const overlayClients = new Set();
+
+function broadcastOverlay(type, data) {
+  const payload = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+
+  for (const client of overlayClients) {
+    client.write(payload);
+  }
+}
+
+eventSub.on('event', (event) => {
+  const job = roulette.handleEvent(event);
+
+  if (job) {
+    console.log(`Roulette: ${event.kind} from ${job.user} -> ${job.label}`);
+  }
+});
+
+roulette.on('roll', (job) => {
+  console.log(`Roulette: rolling ${job.id} (${job.results.map((r) => r.slot).join(', ')})`);
+
+  broadcastOverlay('roll', job);
+});
+
+roulette.on('complete', (record) => {
+  const items = record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
+
+  console.log(
+    `Roulette: ${record.id} done (${record.reason})` +
+      `${record.given ? ` — gave [${items}]` : ` — not given${record.giveError ? ` (${record.giveError})` : ''}`}`,
+  );
+
+  broadcastOverlay('complete', record);
+});
+
+/*
+ * Overlay event stream. The OBS Browser Source connects here
+ * and stays connected; jobs are pushed as they happen.
+ */
+app.get('/overlay/stream', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.flushHeaders();
+
+  res.write(`event: hello\ndata: ${JSON.stringify(roulette.getState())}\n\n`);
+
+  overlayClients.add(res);
+  roulette.setOverlayPresent(true);
+
+  const keepAlive = setInterval(() => {
+    res.write(': keep-alive\n\n');
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    overlayClients.delete(res);
+    roulette.setOverlayPresent(overlayClients.size > 0);
+  });
+});
+
+/*
+ * Overlay reports its animation for `id` finished.
+ */
+app.post('/overlay/done', (req, res) => {
+  const { id } = req.body || {};
+
+  roulette.finish(id);
+
+  res.json({ ok: true });
+});
+
+app.get('/roulette/status', (req, res) => {
+  res.json(roulette.getState());
+});
+
+app.post('/roulette/config', (req, res) => {
+  if (typeof req.body?.autoGive === 'boolean') {
+    roulette.setAutoGive(req.body.autoGive);
+  }
+
+  res.json(roulette.getState());
+});
+
+/*
+ * Simulate a Twitch event — for testing without live subs/bits.
+ *   { kind: "cheer",  bits: 300 }
+ *   { kind: "subscribe" }
+ *   { kind: "resub", months: 6 }
+ *   { kind: "gift",  total: 5 }
+ */
+app.post('/roulette/test', (req, res) => {
+  const {
+    kind = 'subscribe',
+    user = 'TestViewer',
+    bits,
+    total,
+    months,
+    tier,
+    isGift = false,
+  } = req.body || {};
+
+  const event = {
+    kind,
+    user,
+    userLogin: user.toLowerCase(),
+    bits: Number(bits) || 0,
+    total: Number(total) || 1,
+    months: Number(months) || null,
+    tier: tier || '1000',
+    isGift: Boolean(isGift),
+  };
+
+  const job = roulette.handleEvent(event);
+
+  if (!job) {
+    return res.status(400).json({ error: 'Event did not produce a roll', event });
+  }
+
+  res.json({ job });
+});
 
 app.get('/twitch/status', async (req, res) => {
   try {

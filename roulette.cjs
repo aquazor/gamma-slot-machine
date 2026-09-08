@@ -1,0 +1,313 @@
+const { EventEmitter } = require('events');
+
+const items = require('./items.data.json');
+const bridge = require('./gamma-bridge.cjs');
+
+/*
+ * ---------------------------------------------------------
+ * POOLS
+ * ---------------------------------------------------------
+ * Flat, equal-probability pools per slot. Rarity / weighting
+ * can be layered on later without touching the queue logic.
+ */
+
+const POOLS = {
+  weapon: items.weapons,
+  helmet: items.helmets,
+  armor: items.armor,
+};
+
+const ALL_SLOTS = ['weapon', 'helmet', 'armor'];
+
+/*
+ * Safety cap: if the overlay never reports its animation
+ * finished, complete the job anyway after this long.
+ */
+const OVERLAY_TIMEOUT_MS = 45 * 1000;
+
+/*
+ * When no overlay is connected, don't stall the queue waiting
+ * for an animation that will never play.
+ */
+const NO_OVERLAY_DELAY_MS = 1500;
+
+/*
+ * ---------------------------------------------------------
+ * ROLLING
+ * ---------------------------------------------------------
+ */
+
+function randInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function pick(arr) {
+  return arr[randInt(arr.length)];
+}
+
+function shuffle(arr) {
+  const copy = [...arr];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = randInt(i + 1);
+
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
+
+/*
+ * Choose which slots to roll:
+ *   3+ -> weapon + helmet + armor
+ *   1-2 -> that many distinct random slots
+ */
+function pickSlots(count) {
+  if (count >= ALL_SLOTS.length) {
+    return [...ALL_SLOTS];
+  }
+
+  return shuffle(ALL_SLOTS).slice(0, Math.max(1, count));
+}
+
+function rollItems(count) {
+  return pickSlots(count).map((slot) => {
+    const item = pick(POOLS[slot]);
+
+    const result = { slot, itemId: item.id, name: item.name };
+
+    if (slot === 'weapon') {
+      result.ammo = item.ammo || '';
+    }
+
+    return result;
+  });
+}
+
+/*
+ * ---------------------------------------------------------
+ * EVENT -> ROLL PLAN
+ * ---------------------------------------------------------
+ * `event` is the normalized object from twitch-eventsub.cjs.
+ * Returns { label, count } or null to skip.
+ */
+
+function planForEvent(event) {
+  switch (event.kind) {
+    case 'subscribe':
+      // Gifted-sub recipients arrive here with isGift=true; the
+      // gifter's `gift` event is what we reward, so skip these.
+      if (event.isGift) {
+        return null;
+      }
+
+      return { label: 'NEW SUB', count: 1 };
+
+    case 'resub':
+      return {
+        label: event.months ? `RESUB x${event.months}` : 'RESUB',
+        count: 1,
+      };
+
+    case 'gift': {
+      const total = event.total || 1;
+
+      return {
+        label: `${total} GIFT SUB${total > 1 ? 'S' : ''}`,
+        count: total >= 5 ? 3 : 1,
+      };
+    }
+
+    case 'cheer': {
+      const bits = event.bits || 0;
+
+      if (bits >= 500) {
+        return { label: `${bits} BITS`, count: 3 };
+      }
+
+      if (bits >= 300) {
+        return { label: `${bits} BITS`, count: 2 };
+      }
+
+      if (bits >= 100) {
+        return { label: `${bits} BITS`, count: 1 };
+      }
+
+      return null;
+    }
+
+    default:
+      return null;
+  }
+}
+
+/*
+ * ---------------------------------------------------------
+ * COMMAND PAYLOAD
+ * ---------------------------------------------------------
+ */
+
+function resultsToLoadout(results) {
+  return {
+    weapons: results
+      .filter((r) => r.slot === 'weapon')
+      .map((r) => ({ itemId: r.itemId, ammo: r.ammo || '' })),
+    helmets: results
+      .filter((r) => r.slot === 'helmet')
+      .map((r) => ({ itemId: r.itemId })),
+    outfits: results
+      .filter((r) => r.slot === 'armor')
+      .map((r) => ({ itemId: r.itemId })),
+  };
+}
+
+/*
+ * ---------------------------------------------------------
+ * QUEUE
+ * ---------------------------------------------------------
+ * Events emitted:
+ *   'queued'   job
+ *   'roll'     job       (overlay should animate this now)
+ *   'complete' record    (animation done / timed out; item given)
+ */
+
+class Roulette extends EventEmitter {
+  constructor() {
+    super();
+
+    this.queue = [];
+    this.current = null;
+    this.processing = false;
+
+    this.autoGive = true;
+    this.overlayPresent = false;
+
+    this.history = [];
+    this._seq = 0;
+    this._timer = null;
+  }
+
+  setAutoGive(value) {
+    this.autoGive = Boolean(value);
+  }
+
+  setOverlayPresent(value) {
+    const wasPresent = this.overlayPresent;
+
+    this.overlayPresent = Boolean(value);
+
+    // Overlay just went away mid-job — don't hold the queue for
+    // the full safety timeout waiting on an animation nobody sees.
+    if (wasPresent && !this.overlayPresent && this.current) {
+      clearTimeout(this._timer);
+
+      this._timer = setTimeout(() => {
+        this._completeCurrent('no-overlay');
+      }, NO_OVERLAY_DELAY_MS);
+    }
+  }
+
+  getState() {
+    return {
+      autoGive: this.autoGive,
+      overlayPresent: this.overlayPresent,
+      queued: this.queue.length,
+      current: this.current,
+      history: this.history.slice(0, 10),
+    };
+  }
+
+  /*
+   * Feed a normalized Twitch event. Returns the created job,
+   * or null if the event doesn't trigger a roll.
+   */
+  handleEvent(event) {
+    const plan = planForEvent(event);
+
+    if (!plan) {
+      return null;
+    }
+
+    const job = {
+      id: `roll_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      kind: event.kind,
+      results: rollItems(plan.count),
+      createdAt: Date.now(),
+    };
+
+    this.queue.push(job);
+    this.emit('queued', job);
+    this._processNext();
+
+    return job;
+  }
+
+  /*
+   * Overlay reports its animation for `id` finished.
+   */
+  finish(id) {
+    if (this.current && this.current.id === id) {
+      this._completeCurrent('overlay');
+    }
+  }
+
+  _processNext() {
+    if (this.processing || this.queue.length === 0) {
+      return;
+    }
+
+    this.processing = true;
+    this.current = this.queue.shift();
+
+    this.emit('roll', this.current);
+
+    const wait = this.overlayPresent ? OVERLAY_TIMEOUT_MS : NO_OVERLAY_DELAY_MS;
+
+    this._timer = setTimeout(() => {
+      this._completeCurrent(this.overlayPresent ? 'timeout' : 'no-overlay');
+    }, wait);
+  }
+
+  _completeCurrent(reason) {
+    if (!this.current) {
+      return;
+    }
+
+    clearTimeout(this._timer);
+    this._timer = null;
+
+    const job = this.current;
+
+    let give = { ok: false, error: 'auto-give disabled' };
+
+    if (this.autoGive) {
+      give = bridge.giveLoadout(resultsToLoadout(job.results));
+
+      if (!give.ok) {
+        console.error(`Roulette: failed to give ${job.id}: ${give.error}`);
+      }
+    }
+
+    const record = {
+      ...job,
+      completedAt: Date.now(),
+      reason,
+      given: give.ok,
+      giveError: give.ok ? null : give.error,
+    };
+
+    this.history.unshift(record);
+    this.history = this.history.slice(0, 50);
+
+    this.emit('complete', record);
+
+    this.current = null;
+    this.processing = false;
+
+    this._processNext();
+  }
+}
+
+module.exports = { Roulette, planForEvent, rollItems, POOLS };
