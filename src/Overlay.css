@@ -1,0 +1,495 @@
+/* ========================================
+   OVERLAY  —  OBS Browser Source
+   Transparent when idle (component renders null).
+   Reel visuals are copied verbatim from App.css so the
+   overlay matches the manual slot machine exactly.
+======================================== */
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: transparent;
+
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  color: #fff;
+}
+
+/* ========================================
+   ROOT / FADE
+======================================== */
+
+.ov-root {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+
+  padding: 40px;
+
+  pointer-events: none;
+}
+
+.ov-root--in {
+  animation: ov-fade-in 400ms ease-out both;
+}
+
+.ov-root--out {
+  animation: ov-fade-out 550ms ease-in both;
+}
+
+@keyframes ov-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ov-fade-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.98);
+  }
+}
+
+/* ========================================
+   BANNER
+======================================== */
+
+.ov-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 10px 26px;
+
+  background: linear-gradient(180deg, rgba(20, 12, 4, 0.94), rgba(8, 6, 3, 0.94));
+
+  border: 2px solid #b3801f;
+  border-radius: 999px;
+
+  box-shadow:
+    0 0 22px rgba(255, 180, 60, 0.25),
+    inset 0 1px 0 rgba(255, 220, 130, 0.15);
+}
+
+.ov-banner-user {
+  color: #ffd873;
+
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+
+  text-shadow: 0 0 10px rgba(255, 190, 60, 0.5);
+}
+
+.ov-banner-label {
+  padding: 3px 12px;
+
+  background: #e0a52e;
+
+  color: #201200;
+
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  border-radius: 999px;
+
+  text-transform: uppercase;
+}
+
+/* ========================================
+   REELS ROW
+======================================== */
+
+.ov-reels {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 18px;
+}
+
+.ov-reels .reel-container {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   INDIVIDUAL REEL  (copied from App.css)
+======================================== */
+
+.reel-container {
+  position: relative;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 12px 10px 15px;
+
+  text-align: center;
+
+  background-color: rgba(0, 0, 0, 0.75);
+
+  border: 1px solid rgba(173, 119, 38, 0.4);
+  border-radius: 12px;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 210, 100, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.reel-title {
+  margin: 0 0 12px;
+
+  color: #e5bd65;
+
+  font-family: Georgia, 'Times New Roman', serif;
+
+  font-size: 19px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+
+  text-shadow: 0 0 8px rgba(255, 190, 60, 0.3);
+
+  white-space: nowrap;
+}
+
+.reel-wrapper {
+  position: relative;
+}
+
+.reel-window {
+  position: relative;
+
+  width: 100%;
+  height: 240px;
+
+  overflow: hidden;
+
+  background: linear-gradient(
+    90deg,
+    #d7d7d7 0%,
+    #ffffff 10%,
+    #eeeeee 50%,
+    #ffffff 90%,
+    #d0d0d0 100%
+  );
+
+  border: 5px solid #9a681e;
+  border-radius: 10px;
+
+  box-shadow:
+    0 0 0 2px #2b1405,
+    0 8px 25px rgba(0, 0, 0, 0.65),
+    inset 0 0 20px rgba(0, 0, 0, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+
+.reel {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+
+  will-change: transform;
+}
+
+.reel-item {
+  width: 100%;
+  height: 80px;
+  min-height: 80px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 6px;
+
+  background: linear-gradient(180deg, #ffffff 0%, #ededed 50%, #dcdcdc 100%);
+
+  color: #161616;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  text-align: center;
+
+  border-bottom: 1px solid #bcbcbc;
+
+  text-shadow: 0 1px 0 #fff;
+}
+
+.reel-item img {
+  width: 75px;
+  height: 75px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+.reel-item span {
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-gradient {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 80px;
+
+  pointer-events: none;
+
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+
+  z-index: 5;
+}
+
+.bottom-gradient {
+  position: absolute;
+
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  height: 80px;
+
+  pointer-events: none;
+
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+
+  z-index: 5;
+}
+
+.reel-indicator {
+  position: absolute;
+
+  top: 80px;
+  left: 0;
+  right: 0;
+
+  height: 80px;
+
+  pointer-events: none;
+
+  border-top: 3px solid #e5b94f;
+  border-bottom: 3px solid #e5b94f;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 195, 55, 0.04),
+    rgba(255, 195, 55, 0.12),
+    rgba(255, 195, 55, 0.04)
+  );
+
+  box-shadow:
+    0 0 8px rgba(255, 190, 50, 0.8),
+    inset 0 0 15px rgba(255, 190, 50, 0.1);
+
+  z-index: 10;
+}
+
+/* ========================================
+   LANDED  —  repair-grade border + glow
+   (colours copied verbatim from App.css)
+======================================== */
+
+.ov-reel--landed {
+  border-width: 2px;
+  border-style: solid;
+}
+
+.ov-reel--landed.repair-a,
+.ov-reel--landed.repair-f {
+  border-color: #7eaab8;
+
+  box-shadow:
+    0 0 16px rgba(126, 170, 184, 0.75),
+    inset 0 0 12px rgba(126, 170, 184, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-reel--landed.repair-b,
+.ov-reel--landed.repair-l {
+  border-color: #7a9a56;
+
+  box-shadow:
+    0 0 16px rgba(122, 154, 86, 0.75),
+    inset 0 0 12px rgba(122, 154, 86, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-reel--landed.repair-c,
+.ov-reel--landed.repair-m {
+  border-color: #c0504a;
+
+  box-shadow:
+    0 0 16px rgba(192, 80, 74, 0.75),
+    inset 0 0 12px rgba(192, 80, 74, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-reel--landed.repair-d,
+.ov-reel--landed.repair-h {
+  border-color: #b8863e;
+
+  box-shadow:
+    0 0 16px rgba(184, 134, 62, 0.75),
+    inset 0 0 12px rgba(184, 134, 62, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-reel--landed.repair-e {
+  border-color: #a855f7;
+
+  box-shadow:
+    0 0 16px rgba(168, 85, 247, 0.6),
+    0 0 32px rgba(168, 85, 247, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ========================================
+   WINNING GIF / EMOTE BURST
+   (copied verbatim from App.css)
+======================================== */
+
+.winning-gif {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 120%;
+  height: 140%;
+
+  transform: translate(-50%, -50%);
+
+  pointer-events: none;
+
+  z-index: 10;
+}
+
+.winning-effect {
+  position: absolute;
+
+  width: auto;
+  height: 32px;
+
+  pointer-events: none;
+  user-select: none;
+
+  z-index: 111;
+
+  animation: winning-effect-pop 0.35s ease-out both;
+}
+
+@keyframes winning-effect-pop {
+  0% {
+    opacity: 0;
+    scale: 0;
+  }
+
+  70% {
+    opacity: 1;
+    scale: 1.15;
+  }
+
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* ========================================
+   RESULT LINE  (under the reel, once landed)
+======================================== */
+
+.ov-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  height: 34px;
+  margin-top: 10px;
+
+  opacity: 0;
+}
+
+.ov-result.is-shown {
+  animation: ov-result-pop 320ms ease-out both;
+}
+
+@keyframes ov-result-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ov-result img {
+  width: 28px;
+  height: 28px;
+
+  object-fit: contain;
+}
+
+.ov-result span {
+  max-width: 240px;
+
+  overflow: hidden;
+
+  color: #ffe6a8;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
