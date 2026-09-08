@@ -361,6 +361,22 @@ export default function Overlay() {
       cursor = start + SPIN_MS + GAP_MS;
     }
 
+    const allLandedAt = cursor - GAP_MS;
+
+    // The moment every reel has stopped: tell the server to hand the
+    // loadout to the game now — don't make it wait for the fade-out.
+    timers.current.push(
+      window.setTimeout(() => {
+        fetch(`${API}/overlay/rolled`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: nextJob.id }),
+        }).catch(() => {
+          // server may be gone; nothing to do
+        });
+      }, allLandedAt),
+    );
+
     timers.current.push(
       window.setTimeout(() => {
         setPhase('out');

@@ -173,13 +173,18 @@ roulette.on('roll', (job) => {
   broadcastOverlay('roll', job);
 });
 
-roulette.on('complete', (record) => {
+roulette.on('delivered', (record) => {
   const items = record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
 
   console.log(
-    `Roulette: ${record.id} done (${record.reason})` +
-      `${record.given ? ` — gave [${items}]` : ` — not given${record.giveError ? ` (${record.giveError})` : ''}`}`,
+    `Roulette: ${record.id} ${record.given ? `gave [${items}]` : `not given${record.giveError ? ` (${record.giveError})` : ''}`} (${record.reason})`,
   );
+
+  broadcastOverlay('delivered', record);
+});
+
+roulette.on('complete', (record) => {
+  console.log(`Roulette: ${record.id} finished (${record.reason})`);
 
   broadcastOverlay('complete', record);
 });
@@ -213,12 +218,20 @@ app.get('/overlay/stream', (req, res) => {
 });
 
 /*
- * Overlay reports its animation for `id` finished.
+ * Overlay reports all reels have landed — give the loadout now,
+ * before the result screen fades.
+ */
+app.post('/overlay/rolled', (req, res) => {
+  roulette.deliver((req.body || {}).id);
+
+  res.json({ ok: true });
+});
+
+/*
+ * Overlay reports its result screen has faded — advance the queue.
  */
 app.post('/overlay/done', (req, res) => {
-  const { id } = req.body || {};
-
-  roulette.finish(id);
+  roulette.finish((req.body || {}).id);
 
   res.json({ ok: true });
 });

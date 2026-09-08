@@ -245,7 +245,18 @@ class Roulette extends EventEmitter {
   }
 
   /*
-   * Overlay reports its animation for `id` finished.
+   * Overlay reports all reels have landed — hand the loadout to the
+   * game NOW, without waiting for the result screen to fade out.
+   */
+  deliver(id) {
+    if (this.current && this.current.id === id && !this.current.delivered) {
+      this._deliverCurrent('overlay');
+    }
+  }
+
+  /*
+   * Overlay reports its result screen has fully faded — safe to
+   * advance the queue to the next job.
    */
   finish(id) {
     if (this.current && this.current.id === id) {
@@ -270,15 +281,17 @@ class Roulette extends EventEmitter {
     }, wait);
   }
 
-  _completeCurrent(reason) {
-    if (!this.current) {
+  /*
+   * Write the job's items to the game. Runs as soon as the reels
+   * land (via deliver()), or as a fallback from _completeCurrent()
+   * if the overlay never signalled.
+   */
+  _deliverCurrent(reason) {
+    const job = this.current;
+
+    if (!job || job.delivered) {
       return;
     }
-
-    clearTimeout(this._timer);
-    this._timer = null;
-
-    const job = this.current;
 
     let give = { ok: false, error: 'auto-give disabled' };
 
@@ -289,6 +302,38 @@ class Roulette extends EventEmitter {
         console.error(`Roulette: failed to give ${job.id}: ${give.error}`);
       }
     }
+
+    job.delivered = true;
+    job.deliverReason = reason;
+    job.give = give;
+
+    this.emit('delivered', {
+      id: job.id,
+      user: job.user,
+      label: job.label,
+      results: job.results,
+      given: give.ok,
+      giveError: give.ok ? null : give.error,
+      reason,
+    });
+  }
+
+  _completeCurrent(reason) {
+    if (!this.current) {
+      return;
+    }
+
+    clearTimeout(this._timer);
+    this._timer = null;
+
+    const job = this.current;
+
+    // Fallback: no overlay, or it never told us the reels landed.
+    if (!job.delivered) {
+      this._deliverCurrent(reason);
+    }
+
+    const give = job.give || { ok: false, error: 'not given' };
 
     const record = {
       ...job,
