@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { isSea, getAsset } = require('node:sea');
 const { exec } = require('child_process');
+const twitchAuth = require('./twitch-auth.cjs');
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -21,7 +22,7 @@ const MIME_TYPES = {
 };
 
 const app = express();
-const PORT = 3000;
+const PORT = 7770;
 
 app.use(cors());
 app.use(express.json());
@@ -191,6 +192,75 @@ app.post('/give-loadout', (req, res) => {
     });
   }
 });
+
+/*
+ * ---------------------------------------------------------
+ * TWITCH AUTH
+ * ---------------------------------------------------------
+ */
+
+// in-memory state for an in-progress device code flow
+let pendingDeviceFlow = null;
+
+app.get('/twitch/status', async (req, res) => {
+  try {
+    const tokens = await twitchAuth.ensureValidToken();
+
+    res.json({
+      connected: Boolean(tokens),
+      login: tokens ? tokens.login : null,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.json({ connected: false, login: null });
+  }
+});
+
+app.post('/twitch/auth/start', async (req, res) => {
+  try {
+    const deviceData = await twitchAuth.requestDeviceCode();
+
+    pendingDeviceFlow = { status: 'pending', error: null };
+
+    res.json({
+      userCode: deviceData.user_code,
+      verificationUri: deviceData.verification_uri,
+      expiresIn: deviceData.expires_in,
+    });
+
+    // Poll in the background; frontend checks progress via /twitch/auth/poll-status
+    twitchAuth
+      .pollForToken(deviceData.device_code, deviceData.interval, deviceData.expires_in)
+      .then(() => {
+        pendingDeviceFlow = { status: 'connected', error: null };
+      })
+      .catch((error) => {
+        console.error(error);
+
+        pendingDeviceFlow = { status: 'error', error: error.message };
+      });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: 'Failed to start Twitch authorization' });
+  }
+});
+
+app.get('/twitch/auth/poll-status', (req, res) => {
+  if (!pendingDeviceFlow) {
+    return res.json({ status: 'idle' });
+  }
+
+  res.json(pendingDeviceFlow);
+});
+
+app.post('/twitch/disconnect', (req, res) => {
+  twitchAuth.clearTokens();
+
+  res.json({ success: true });
+});
+
 /*
  * ---------------------------------------------------------
  * REACT / SEA ASSETS
@@ -231,7 +301,11 @@ if (isSea()) {
     }
   });
 } else {
-  const DIST_PATH = path.join(__dirname, '..', 'dist');
+  // In dev, server.cjs sits in the project root next to dist/.
+  // In the bundled build, build/server.cjs sits one level below dist/.
+  const DIST_PATH = fs.existsSync(path.join(__dirname, 'dist'))
+    ? path.join(__dirname, 'dist')
+    : path.join(__dirname, '..', 'dist');
 
   app.use(express.static(DIST_PATH));
 

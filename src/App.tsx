@@ -679,7 +679,7 @@ export default function App() {
     console.log('Giving loadout:', loadout);
 
     try {
-      const response = await fetch('http://localhost:3000/give-loadout', {
+      const response = await fetch('http://localhost:7770/give-loadout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
