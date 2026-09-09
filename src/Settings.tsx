@@ -17,7 +17,6 @@ interface EventSubStatus {
 }
 
 interface RouletteStatus {
-  autoGive: boolean;
   overlayPresent: boolean;
   preset: string;
   presets: string[];
@@ -150,22 +149,22 @@ export default function Settings() {
     refresh();
   };
 
-  const toggleAutoGive = async (): Promise<void> => {
-    if (!roulette) {
-      return;
+  const [triggerUser, setTriggerUser] = useState<string>('');
+  const [triggerBusy, setTriggerBusy] = useState<boolean>(false);
+
+  const manualRoll = async (count: number): Promise<void> => {
+    setTriggerBusy(true);
+
+    try {
+      await fetch(`${API}/roulette/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: triggerUser.trim() || 'Streamer', count }),
+      });
+    } finally {
+      setTriggerBusy(false);
+      refresh();
     }
-
-    const next = !roulette.autoGive;
-
-    setRoulette({ ...roulette, autoGive: next });
-
-    await fetch(`${API}/roulette/config`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ autoGive: next }),
-    });
-
-    refresh();
   };
 
   const selectPreset = async (name: string): Promise<void> => {
@@ -253,62 +252,85 @@ export default function Settings() {
             </div>
           ) : (
             <>
-              {/* ---- TWITCH ---- */}
+              {/* ---- INTEGRATIONS ---- */}
 
               <section className="set-section">
-                <h2 className="set-heading">Twitch connection</h2>
+                <h2 className="set-heading">Integrations</h2>
 
-                {twitch.connected ? (
+                <div className="set-integration">
+                  <h3 className="set-subheading">Twitch</h3>
+
+                  {twitch.connected ? (
+                    <>
+                      <div className="set-row">
+                        <span className="set-badge set-badge--ok">Connected</span>
+                        <span className="set-muted">as {twitch.login}</span>
+                        <button className="set-btn" onClick={disconnect}>
+                          Disconnect
+                        </button>
+                      </div>
+
+                      <div className="set-row">
+                        <span
+                          className={`set-badge ${
+                            eventSub?.connected ? 'set-badge--ok' : 'set-badge--off'
+                          }`}
+                        >
+                          {eventSub?.connected ? 'Listening' : 'Not listening'}
+                        </span>
+                        <span className="set-muted">
+                          subs · resubs · gift subs · bits · channel points
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="set-row">
+                      <span className="set-badge set-badge--off">Not connected</span>
+                      <button
+                        className="set-btn set-btn--primary"
+                        onClick={connect}
+                        disabled={busy}
+                      >
+                        {busy ? 'Starting…' : 'Connect Twitch'}
+                      </button>
+                    </div>
+                  )}
+
+                  {flow && (
+                    <div className="set-flow">
+                      <p>
+                        Open <strong>{flow.verificationUri}</strong> and enter this code:
+                      </p>
+                      <div className="set-code">{flow.userCode}</div>
+                      <p className="set-muted">
+                        {authState === 'pending'
+                          ? 'Waiting for you to approve on Twitch…'
+                          : authState}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="set-integration">
+                  <h3 className="set-subheading">OBS overlay</h3>
+
                   <div className="set-row">
-                    <span className="set-badge set-badge--ok">Connected</span>
-                    <span className="set-muted">as {twitch.login}</span>
-                    <button className="set-btn" onClick={disconnect}>
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <div className="set-row">
-                    <span className="set-badge set-badge--off">Not connected</span>
-                    <button
-                      className="set-btn set-btn--primary"
-                      onClick={connect}
-                      disabled={busy}
+                    <span
+                      className={`set-badge ${
+                        roulette?.overlayPresent ? 'set-badge--ok' : 'set-badge--off'
+                      }`}
                     >
-                      {busy ? 'Starting…' : 'Connect Twitch'}
+                      {roulette?.overlayPresent ? 'Connected' : 'Not open'}
+                    </span>
+                  </div>
+
+                  <div className="set-obs">
+                    <span className="set-muted">Browser Source URL</span>
+                    <code>{API}/overlay</code>
+                    <button className="set-btn set-obs-copy" onClick={copyOverlayUrl}>
+                      {copied ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
-                )}
-
-                {flow && (
-                  <div className="set-flow">
-                    <p>
-                      Open <strong>{flow.verificationUri}</strong> and enter this code:
-                    </p>
-                    <div className="set-code">{flow.userCode}</div>
-                    <p className="set-muted">
-                      {authState === 'pending'
-                        ? 'Waiting for you to approve on Twitch…'
-                        : authState}
-                    </p>
-                  </div>
-                )}
-              </section>
-
-              {/* ---- EVENTSUB ---- */}
-
-              <section className="set-section">
-                <h2 className="set-heading">Event listener</h2>
-                <div className="set-row">
-                  <span
-                    className={`set-badge ${
-                      eventSub?.connected ? 'set-badge--ok' : 'set-badge--off'
-                    }`}
-                  >
-                    {eventSub?.connected ? 'Listening' : 'Offline'}
-                  </span>
-                  <span className="set-muted">
-                    subs · resubs · gift subs · bits · channel points
-                  </span>
                 </div>
               </section>
 
@@ -400,38 +422,29 @@ export default function Settings() {
                   </div>
                 )}
 
-                <label className="set-toggle">
+                <div className="set-trigger">
+                  <span className="set-muted">Manual roll</span>
                   <input
-                    type="checkbox"
-                    checked={roulette?.autoGive ?? false}
-                    onChange={toggleAutoGive}
+                    className="set-input"
+                    placeholder="viewer name (optional)"
+                    value={triggerUser}
+                    onChange={(event) => setTriggerUser(event.target.value)}
                   />
-                  <span>
-                    Auto-give rolled items in game
-                    <span className="set-muted"> — off = roll shows on overlay only</span>
-                  </span>
-                </label>
-
-                <div className="set-row">
-                  <span
-                    className={`set-badge ${
-                      roulette?.overlayPresent ? 'set-badge--ok' : 'set-badge--off'
-                    }`}
-                  >
-                    Overlay {roulette?.overlayPresent ? 'connected' : 'not open'}
-                  </span>
-                  {typeof roulette?.queued === 'number' && roulette.queued > 0 && (
-                    <span className="set-muted">{roulette.queued} queued</span>
-                  )}
+                  {[1, 2, 3].map((n) => (
+                    <button
+                      key={n}
+                      className="set-btn"
+                      onClick={() => manualRoll(n)}
+                      disabled={triggerBusy}
+                    >
+                      {n} item{n > 1 ? 's' : ''}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="set-obs">
-                  <span className="set-muted">OBS Browser Source URL</span>
-                  <code>{API}/overlay</code>
-                  <button className="set-btn set-obs-copy" onClick={copyOverlayUrl}>
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
+                {typeof roulette?.queued === 'number' && roulette.queued > 0 && (
+                  <p className="set-muted">{roulette.queued} roll(s) queued</p>
+                )}
               </section>
             </>
           )}

@@ -125,11 +125,54 @@ body {
   color: #b98f4a;
 }
 
+/* ---- integration sub-blocks ---- */
+
+.set-integration {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+
+  background: rgba(255, 255, 255, 0.03);
+
+  border: 1px solid rgba(179, 128, 31, 0.2);
+  border-radius: 10px;
+}
+
+.set-integration:last-child {
+  margin-bottom: 0;
+}
+
+.set-subheading {
+  margin: 0 0 10px;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+
+  color: #cdb79a;
+}
+
+.set-integration .set-row {
+  margin-bottom: 8px;
+}
+
+.set-integration .set-row:last-child {
+  margin-bottom: 0;
+}
+
+.set-integration .set-obs {
+  margin-top: 8px;
+}
+
+.set-integration > p:last-child {
+  margin-bottom: 0;
+}
+
 .set-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .set-badge {
@@ -322,7 +365,9 @@ body {
 
   cursor: pointer;
 
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .set-preset:first-child {
@@ -337,4 +382,33 @@ body {
 .set-preset.is-active {
   background: #e0a52e;
   color: #201200;
+}
+
+/* ---- manual trigger ---- */
+
+.set-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  margin-bottom: 14px;
+}
+
+.set-input {
+  padding: 6px 10px;
+
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0e6d2;
+
+  font-size: 13px;
+
+  border: 1px solid rgba(179, 128, 31, 0.5);
+  border-radius: 8px;
+
+  width: 190px;
+}
+
+.set-input::placeholder {
+  color: #8a7c66;
 }

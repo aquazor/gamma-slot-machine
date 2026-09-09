@@ -120,8 +120,13 @@ function planForEvent(event, rewardMap) {
         return null;
       }
 
-      return { label: 'CHANNEL POINTS', count: def.count || 1 };
+      const name = event.rewardTitle || def.title || 'Channel points';
+
+      return { label: name.toUpperCase(), count: def.count || 1 };
     }
+
+    case 'manual':
+      return { label: 'MANUAL ROLL', count: event.manualCount || 1 };
 
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
@@ -208,7 +213,6 @@ class Roulette extends EventEmitter {
     this.current = null;
     this.processing = false;
 
-    this.autoGive = true;
     this.overlayPresent = false;
     this.rewardMap = null;
     this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
@@ -216,10 +220,6 @@ class Roulette extends EventEmitter {
     this.history = [];
     this._seq = 0;
     this._timer = null;
-  }
-
-  setAutoGive(value) {
-    this.autoGive = Boolean(value);
   }
 
   setRewardMap(map) {
@@ -254,7 +254,6 @@ class Roulette extends EventEmitter {
 
   getState() {
     return {
-      autoGive: this.autoGive,
       overlayPresent: this.overlayPresent,
       preset: this.preset,
       presets: Object.keys(PRESETS),
@@ -344,14 +343,10 @@ class Roulette extends EventEmitter {
       return;
     }
 
-    let give = { ok: false, error: 'auto-give disabled' };
+    const give = bridge.giveLoadout(resultsToLoadout(job.results));
 
-    if (this.autoGive) {
-      give = bridge.giveLoadout(resultsToLoadout(job.results));
-
-      if (!give.ok) {
-        console.error(`Roulette: failed to give ${job.id}: ${give.error}`);
-      }
+    if (!give.ok) {
+      console.error(`Roulette: failed to give ${job.id}: ${give.error}`);
     }
 
     job.delivered = true;

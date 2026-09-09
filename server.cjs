@@ -259,14 +259,6 @@ app.get('/roulette/status', (req, res) => {
   res.json(roulette.getState());
 });
 
-app.post('/roulette/config', (req, res) => {
-  if (typeof req.body?.autoGive === 'boolean') {
-    roulette.setAutoGive(req.body.autoGive);
-  }
-
-  res.json(roulette.getState());
-});
-
 app.post('/roulette/preset', (req, res) => {
   const name = (req.body || {}).preset;
 
@@ -277,6 +269,27 @@ app.post('/roulette/preset', (req, res) => {
   console.log(`Roulette preset -> ${name}`);
 
   res.json(roulette.getState());
+});
+
+/*
+ * Manual roll fired from the settings page (no Twitch event).
+ */
+app.post('/roulette/trigger', (req, res) => {
+  const { user, count } = req.body || {};
+
+  const job = roulette.handleEvent({
+    kind: 'manual',
+    user: (typeof user === 'string' && user.trim()) || 'Streamer',
+    manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
+  });
+
+  if (!job) {
+    return res.status(400).json({ error: 'Could not roll' });
+  }
+
+  console.log(`Roulette: manual roll for ${job.user} -> ${job.label}`);
+
+  res.json({ job });
 });
 
 /*
