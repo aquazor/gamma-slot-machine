@@ -19,7 +19,19 @@ interface EventSubStatus {
 interface RouletteStatus {
   autoGive: boolean;
   overlayPresent: boolean;
+  preset: string;
+  presets: string[];
   queued: number;
+}
+
+interface Reward {
+  id: string;
+  title: string;
+  cost: number;
+  enabled: boolean;
+  count: number;
+  maxPerUserPerStream: number | null;
+  cooldownSeconds: number | null;
 }
 
 interface DeviceFlow {
@@ -31,6 +43,7 @@ export default function Settings() {
   const [twitch, setTwitch] = useState<TwitchStatus>({ connected: false, login: null });
   const [eventSub, setEventSub] = useState<EventSubStatus | null>(null);
   const [roulette, setRoulette] = useState<RouletteStatus | null>(null);
+  const [rewardList, setRewardList] = useState<Reward[]>([]);
 
   const [flow, setFlow] = useState<DeviceFlow | null>(null);
   const [authState, setAuthState] = useState<string>('idle');
@@ -42,15 +55,17 @@ export default function Settings() {
 
   const refresh = useCallback(async () => {
     try {
-      const [t, e, r] = await Promise.all([
+      const [t, e, r, rw] = await Promise.all([
         fetch(`${API}/twitch/status`).then((res) => res.json()),
         fetch(`${API}/twitch/eventsub/status`).then((res) => res.json()),
         fetch(`${API}/roulette/status`).then((res) => res.json()),
+        fetch(`${API}/twitch/rewards`).then((res) => res.json()),
       ]);
 
       setTwitch(t);
       setEventSub(e);
       setRoulette(r);
+      setRewardList(Array.isArray(rw.rewards) ? rw.rewards : []);
       setReachable(true);
     } catch {
       setReachable(false);
@@ -148,6 +163,22 @@ export default function Settings() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ autoGive: next }),
+    });
+
+    refresh();
+  };
+
+  const selectPreset = async (name: string): Promise<void> => {
+    if (!roulette || roulette.preset === name) {
+      return;
+    }
+
+    setRoulette({ ...roulette, preset: name });
+
+    await fetch(`${API}/roulette/preset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preset: name }),
     });
 
     refresh();
@@ -255,15 +286,78 @@ export default function Settings() {
                     {eventSub?.connected ? 'Listening' : 'Offline'}
                   </span>
                   <span className="set-muted">
-                    subs · resubs · gift subs · bits (cheer 100 / 300 / 500)
+                    subs · resubs · gift subs · bits · channel points
                   </span>
                 </div>
+              </section>
+
+              {/* ---- CHANNEL POINTS ---- */}
+
+              <section className="set-section">
+                <h2 className="set-heading">Channel point rewards</h2>
+
+                {rewardList.length > 0 ? (
+                  <div className="set-rewards">
+                    {rewardList.map((reward) => (
+                      <div className="set-reward" key={reward.id}>
+                        <span
+                          className={`set-badge ${
+                            reward.enabled ? 'set-badge--ok' : 'set-badge--off'
+                          }`}
+                        >
+                          {reward.enabled ? 'Live' : 'Disabled'}
+                        </span>
+                        <span className="set-reward-title">{reward.title}</span>
+                        <span className="set-muted">
+                          {reward.cost.toLocaleString()} pts → {reward.count} item
+                          {reward.count > 1 ? 's' : ''}
+                          {reward.maxPerUserPerStream != null &&
+                            ` · ${reward.maxPerUserPerStream}/user`}
+                          {reward.cooldownSeconds != null &&
+                            (reward.cooldownSeconds < 60
+                              ? ` · ${reward.cooldownSeconds}s cooldown`
+                              : ` · ${Math.round(reward.cooldownSeconds / 60)} min cooldown`)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="set-muted">
+                    {twitch.connected
+                      ? 'Rewards will be created automatically once the connection has the channel-points permission — reconnect Twitch if you just updated.'
+                      : 'Connect Twitch to create the reward.'}
+                  </p>
+                )}
+
+                <p className="set-muted set-obs">
+                  Redemptions stay in your Twitch queue — fulfill or refund them
+                  manually in the Stream Manager.
+                </p>
               </section>
 
               {/* ---- ROULETTE ---- */}
 
               <section className="set-section">
                 <h2 className="set-heading">Roulette</h2>
+
+                {roulette && roulette.presets?.length > 0 && (
+                  <div className="set-presets">
+                    <span className="set-muted">Loot tier</span>
+                    <div className="set-preset-group">
+                      {roulette.presets.map((name) => (
+                        <button
+                          key={name}
+                          className={`set-preset ${
+                            roulette.preset === name ? 'is-active' : ''
+                          }`}
+                          onClick={() => selectPreset(name)}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <label className="set-toggle">
                   <input

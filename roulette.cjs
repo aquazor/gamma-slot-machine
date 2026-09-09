@@ -2,6 +2,7 @@ const { EventEmitter } = require('events');
 
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
+const { PRESETS, DEFAULT_PRESET } = require('./config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -70,9 +71,26 @@ function pickSlots(count) {
   return shuffle(ALL_SLOTS).slice(0, Math.max(1, count));
 }
 
-function rollItems(count) {
+/*
+ * Slot pool narrowed to the preset's allowed `repair` grades.
+ * Falls back to the full pool if the filter leaves nothing.
+ */
+function poolForSlot(slot, grades) {
+  const full = POOLS[slot];
+  const allowed = grades && grades[slot];
+
+  if (!allowed || allowed.length === 0) {
+    return full;
+  }
+
+  const filtered = full.filter((item) => allowed.includes(item.repair));
+
+  return filtered.length > 0 ? filtered : full;
+}
+
+function rollItems(count, grades) {
   return pickSlots(count).map((slot) => {
-    const item = pick(POOLS[slot]);
+    const item = pick(poolForSlot(slot, grades));
 
     const result = { slot, itemId: item.id, name: item.name };
 
@@ -92,8 +110,19 @@ function rollItems(count) {
  * Returns { label, count } or null to skip.
  */
 
-function planForEvent(event) {
+function planForEvent(event, rewardMap) {
   switch (event.kind) {
+    case 'reward': {
+      // Only our own managed channel-point rewards trigger a roll.
+      const def = rewardMap && rewardMap.get(event.rewardId);
+
+      if (!def) {
+        return null;
+      }
+
+      return { label: 'CHANNEL POINTS', count: def.count || 1 };
+    }
+
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
       // gifter's `gift` event is what we reward, so skip these.
@@ -181,6 +210,8 @@ class Roulette extends EventEmitter {
 
     this.autoGive = true;
     this.overlayPresent = false;
+    this.rewardMap = null;
+    this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
 
     this.history = [];
     this._seq = 0;
@@ -189,6 +220,20 @@ class Roulette extends EventEmitter {
 
   setAutoGive(value) {
     this.autoGive = Boolean(value);
+  }
+
+  setRewardMap(map) {
+    this.rewardMap = map || null;
+  }
+
+  setPreset(name) {
+    if (PRESETS[name]) {
+      this.preset = name;
+
+      return true;
+    }
+
+    return false;
   }
 
   setOverlayPresent(value) {
@@ -211,6 +256,8 @@ class Roulette extends EventEmitter {
     return {
       autoGive: this.autoGive,
       overlayPresent: this.overlayPresent,
+      preset: this.preset,
+      presets: Object.keys(PRESETS),
       queued: this.queue.length,
       current: this.current,
       history: this.history.slice(0, 10),
@@ -222,18 +269,22 @@ class Roulette extends EventEmitter {
    * or null if the event doesn't trigger a roll.
    */
   handleEvent(event) {
-    const plan = planForEvent(event);
+    const plan = planForEvent(event, this.rewardMap);
 
     if (!plan) {
       return null;
     }
+
+    const grades = PRESETS[this.preset];
 
     const job = {
       id: `roll_${Date.now()}_${++this._seq}`,
       user: event.user || 'Anonymous',
       label: plan.label,
       kind: event.kind,
-      results: rollItems(plan.count),
+      preset: this.preset,
+      grades, // { weapon: [...], helmet: [...], armor: [...] } — for the overlay reel
+      results: rollItems(plan.count, grades),
       createdAt: Date.now(),
     };
 

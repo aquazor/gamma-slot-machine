@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const twitchAuth = require('./twitch-auth.cjs');
 const { TwitchEventSub } = require('./twitch-eventsub.cjs');
 const { Roulette } = require('./roulette.cjs');
+const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
 
 const { getGammaPath, getCommandFile } = bridge;
@@ -141,6 +142,22 @@ async function startEventSub() {
 }
 
 /*
+ * Create / sync the channel-point rewards and hand the id -> definition
+ * map to the roulette so redemptions can trigger rolls.
+ */
+async function syncRewards() {
+  try {
+    const map = await rewards.ensureRewards();
+
+    roulette.setRewardMap(map);
+
+    console.log(`Channel-point rewards ready: ${map.size}`);
+  } catch (error) {
+    console.error('Failed to sync channel-point rewards:', error.message);
+  }
+}
+
+/*
  * ---------------------------------------------------------
  * ROULETTE + OVERLAY (SSE)
  * ---------------------------------------------------------
@@ -250,12 +267,25 @@ app.post('/roulette/config', (req, res) => {
   res.json(roulette.getState());
 });
 
+app.post('/roulette/preset', (req, res) => {
+  const name = (req.body || {}).preset;
+
+  if (!roulette.setPreset(name)) {
+    return res.status(400).json({ error: `Unknown preset: ${name}` });
+  }
+
+  console.log(`Roulette preset -> ${name}`);
+
+  res.json(roulette.getState());
+});
+
 /*
  * Simulate a Twitch event — for testing without live subs/bits.
  *   { kind: "cheer",  bits: 300 }
  *   { kind: "subscribe" }
  *   { kind: "resub", months: 6 }
  *   { kind: "gift",  total: 5 }
+ *   { kind: "reward" }               (uses the first managed reward, or a stub)
  */
 app.post('/roulette/test', (req, res) => {
   const {
@@ -279,6 +309,25 @@ app.post('/roulette/test', (req, res) => {
     isGift: Boolean(isGift),
   };
 
+  if (kind === 'reward') {
+    const hasRealRewards =
+      roulette.rewardMap &&
+      [...roulette.rewardMap.values()].some((def) => def.rewardId);
+
+    if (hasRealRewards) {
+      event.rewardId = req.body.rewardId || [...roulette.rewardMap.keys()][0];
+    } else {
+      // no real rewards synced (not authed) — use a throwaway stub
+      roulette.setRewardMap(
+        new Map([['test-reward', { count: Number(req.body.count) || 1 }]]),
+      );
+
+      event.rewardId = 'test-reward';
+    }
+
+    event.rewardTitle = 'Test Reward';
+  }
+
   const job = roulette.handleEvent(event);
 
   if (!job) {
@@ -297,8 +346,6 @@ app.get('/twitch/status', async (req, res) => {
       login: tokens ? tokens.login : null,
     });
   } catch (error) {
-    console.error(error);
-
     res.json({ connected: false, login: null });
   }
 });
@@ -322,6 +369,7 @@ app.post('/twitch/auth/start', async (req, res) => {
         pendingDeviceFlow = { status: 'connected', error: null };
 
         startEventSub();
+        syncRewards();
       })
       .catch((error) => {
         console.error(error);
@@ -347,8 +395,20 @@ app.get('/twitch/eventsub/status', (req, res) => {
   res.json(eventSub.getState());
 });
 
-app.post('/twitch/disconnect', (req, res) => {
+app.get('/twitch/rewards', async (req, res) => {
+  try {
+    res.json({ rewards: await rewards.listRewards() });
+  } catch (error) {
+    res.json({ rewards: [], error: error.message });
+  }
+});
+
+app.post('/twitch/disconnect', async (req, res) => {
   eventSub.stop();
+  roulette.setRewardMap(null);
+
+  await rewards.disableRewards();
+
   twitchAuth.clearTokens();
 
   res.json({ success: true });
@@ -428,10 +488,12 @@ app.listen(PORT, () => {
     .then((tokens) => {
       if (tokens) {
         startEventSub();
+        syncRewards();
       } else {
         console.log('----------------------------------------');
         console.log('Twitch is NOT connected — the roulette will not react to');
-        console.log('subs, gift subs or bits until you link your account.');
+        console.log('subs, gift subs, bits or channel points until you link');
+        console.log('your account.');
         console.log(`Open ${url}/settings and click "Connect Twitch".`);
         console.log('----------------------------------------');
       }

@@ -37,6 +37,7 @@ const TOPICS = [
   { type: 'channel.subscribe', version: '1' },
   { type: 'channel.subscription.gift', version: '1' },
   { type: 'channel.subscription.message', version: '1' }, // resubs
+  { type: 'channel.channel_points_custom_reward_redemption.add', version: '1' },
 ];
 
 const SEEN_MESSAGE_TTL_MS = 10 * 60 * 1000; // Twitch may redeliver within 10 min
@@ -403,6 +404,17 @@ class TwitchEventSub extends EventEmitter {
         tier: event.tier,
         cumulativeTotal: event.cumulative_total ?? null,
         isAnonymous: Boolean(event.is_anonymous),
+      };
+    } else if (type === 'channel.channel_points_custom_reward_redemption.add') {
+      normalized = {
+        kind: 'reward',
+        user: event.user_name || event.user_login || null,
+        userLogin: event.user_login || null,
+        rewardId: event.reward && event.reward.id,
+        rewardTitle: event.reward && event.reward.title,
+        rewardCost: event.reward && event.reward.cost,
+        userInput: event.user_input || '',
+        redemptionId: event.id,
       };
     }
 
