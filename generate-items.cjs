@@ -30,32 +30,42 @@ const constants = require(tmp);
 fs.unlinkSync(tmp);
 
 /*
- * Group into the three roulette categories. Weapons keep their
- * `ammo` field (needed for the WEAPON|id|ammo command); armor and
- * helmets only need id + name for display.
+ * Group into the three roulette categories. Every item keeps its
+ * `repair` grade so the roulette can filter by preset (Basic /
+ * Advanced / Expert). Weapons also keep `ammo` (for the WEAPON|id|ammo
+ * command).
+ *
+ * Armor: heavy comes from `outfits-heavy-no-exo` — plain `outfits-heavy`
+ * and `outfits-exo` are deliberately excluded from the roulette pool.
  */
+const grade = (item) => (item.repair || '').toUpperCase();
+
 const weapons = [
   ...constants.pistols,
   ...constants.shotguns,
   ...constants.smgs,
   ...constants.rifles,
   ...constants.snipers,
-].map((item) => ({ id: item.id, name: item.name, ammo: item.ammo || '' }));
+].map((item) => ({
+  id: item.id,
+  name: item.name,
+  ammo: item.ammo || '',
+  repair: grade(item),
+}));
 
 const helmets = [
   ...constants.helmetsField,
   ...constants.helmetsLight,
   ...constants.helmetsMedium,
   ...constants.helmetsHeavyExo,
-].map((item) => ({ id: item.id, name: item.name }));
+].map((item) => ({ id: item.id, name: item.name, repair: grade(item) }));
 
 const armor = [
   ...constants.outfitsField,
   ...constants.outfitsLight,
   ...constants.outfitsMedium,
-  ...constants.outfitsHeavy,
-  ...constants.outfitsExo,
-].map((item) => ({ id: item.id, name: item.name }));
+  ...constants.outfitsHeavyNoExo,
+].map((item) => ({ id: item.id, name: item.name, repair: grade(item) }));
 
 const data = { weapons, helmets, armor };
 

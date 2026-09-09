@@ -66,6 +66,8 @@ interface Job {
   user: string;
   label: string;
   kind: string;
+  preset?: string;
+  grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
 }
 
@@ -138,13 +140,28 @@ function playSpinSound(): void {
 
 interface ReelProps {
   result: RollResult;
+  grades?: string[];
   spin: boolean;
   landed: boolean;
 }
 
-function Reel({ result, spin, landed }: ReelProps) {
+function Reel({ result, grades, spin, landed }: ReelProps) {
   const pool = POOLS[result.slot];
   const folder = ICON_FOLDER[result.slot];
+
+  // Scrolling filler stays on-theme with the current preset's grades.
+  const fillPool = useMemo(() => {
+    if (!grades || grades.length === 0) {
+      return pool;
+    }
+
+    const filtered = pool.filter((item) =>
+      grades.includes((item.repair ?? '').toUpperCase()),
+    );
+
+    return filtered.length > 0 ? filtered : pool;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const real = pool.find((item) => item.id === result.itemId);
   const targetName = real?.name ?? result.name;
@@ -191,7 +208,8 @@ function Reel({ result, spin, landed }: ReelProps) {
 
     const need = target + VISIBLE_ROWS + 2;
 
-    const randomItem = (): Item => pool[Math.floor(Math.random() * pool.length)];
+    const randomItem = (): Item =>
+      fillPool[Math.floor(Math.random() * fillPool.length)];
 
     // Fill with random items, never repeating an item within 3 adjacent
     // rows — so the slowdown never shows the same item twice near the marker.
@@ -437,6 +455,7 @@ export default function Overlay() {
           <Reel
             key={`${job.id}-${index}`}
             result={result}
+            grades={job.grades?.[result.slot]}
             spin={spinning[index] ?? false}
             landed={landed[index] ?? false}
           />
