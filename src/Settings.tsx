@@ -184,6 +184,27 @@ export default function Settings() {
     refresh();
   };
 
+  const [rewardsBusy, setRewardsBusy] = useState<boolean>(false);
+
+  const setRewardsEnabled = async (enabled: boolean): Promise<void> => {
+    setRewardsBusy(true);
+
+    try {
+      const res = await fetch(`${API}/twitch/rewards/enabled`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      }).then((r) => r.json());
+
+      if (Array.isArray(res.rewards)) {
+        setRewardList(res.rewards);
+      }
+    } finally {
+      setRewardsBusy(false);
+      refresh();
+    }
+  };
+
   const [copied, setCopied] = useState<boolean>(false);
 
   const copyOverlayUrl = async (): Promise<void> => {
@@ -297,6 +318,7 @@ export default function Settings() {
                 <h2 className="set-heading">Channel point rewards</h2>
 
                 {rewardList.length > 0 ? (
+                  <>
                   <div className="set-rewards">
                     {rewardList.map((reward) => (
                       <div className="set-reward" key={reward.id}>
@@ -321,6 +343,25 @@ export default function Settings() {
                       </div>
                     ))}
                   </div>
+
+                  {rewardList.some((reward) => reward.enabled) ? (
+                    <button
+                      className="set-btn"
+                      onClick={() => setRewardsEnabled(false)}
+                      disabled={rewardsBusy}
+                    >
+                      {rewardsBusy ? 'Working…' : 'Disable rewards'}
+                    </button>
+                  ) : (
+                    <button
+                      className="set-btn set-btn--primary"
+                      onClick={() => setRewardsEnabled(true)}
+                      disabled={rewardsBusy}
+                    >
+                      {rewardsBusy ? 'Working…' : 'Enable rewards'}
+                    </button>
+                  )}
+                  </>
                 ) : (
                   <p className="set-muted">
                     {twitch.connected

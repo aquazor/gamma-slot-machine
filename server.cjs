@@ -403,6 +403,32 @@ app.get('/twitch/rewards', async (req, res) => {
   }
 });
 
+/*
+ * Turn the channel-point rewards on / off without disconnecting Twitch.
+ * Off = viewers can't redeem while the roulette isn't running.
+ */
+app.post('/twitch/rewards/enabled', async (req, res) => {
+  const enabled = Boolean((req.body || {}).enabled);
+
+  try {
+    if (enabled) {
+      const map = await rewards.ensureRewards();
+
+      roulette.setRewardMap(map);
+
+      console.log('Channel-point rewards enabled');
+    } else {
+      roulette.setRewardMap(null);
+
+      await rewards.disableRewards();
+    }
+
+    res.json({ rewards: await rewards.listRewards() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/twitch/disconnect', async (req, res) => {
   eventSub.stop();
   roulette.setRewardMap(null);
