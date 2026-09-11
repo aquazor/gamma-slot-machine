@@ -36,57 +36,115 @@ const TWITCH_SCOPES = [
 //              as many total creatures as three separate "x1" rolls, not 3x.
 const CHANNEL_POINT_REWARDS = [
   {
-    key: 'loot-roll-1',
-    title: 'Loot Roll 1 item',
-    cost: 100,
-    prompt: 'Spin the GAMMA loot roulette for one random item.',
-    kind: 'loot',
-    count: 1,
-  },
-  {
-    key: 'loot-roll-3',
-    title: 'Loot Roll 3 items',
-    cost: 300,
-    prompt: 'Spin the GAMMA loot roulette for three random items.',
-    kind: 'loot',
-    count: 3,
-  },
-  {
-    key: 'spawn-mutants',
-    title: 'Spawn Mutants',
-    cost: 100,
-    prompt: 'Drop a pack of mutants near the streamer.',
-    kind: 'spawn',
-    category: 'mutants',
-    rolls: 1,
-  },
-  {
-    key: 'spawn-mutants-3',
-    title: 'Spawn Mutants x3',
-    cost: 300,
-    prompt: 'Drop three packs of mutants near the streamer.',
-    kind: 'spawn',
-    category: 'mutants',
-    rolls: 3,
-  },
-  {
     key: 'spawn-enemies',
     title: 'Spawn Enemies',
-    cost: 300,
+    cost: 2000,
     prompt: 'Drop a hostile squad near the streamer.',
     kind: 'spawn',
     category: 'enemies',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
     rolls: 1,
   },
   {
     key: 'spawn-enemies-3',
     title: 'Spawn Enemies x3',
-    cost: 600,
+    cost: 6000,
     prompt: 'Drop three hostile squads near the streamer.',
+    kind: 'spawn',
+    category: 'enemies',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+    rolls: 3,
+  },
+  {
+    key: 'spawn-mutants',
+    title: 'Spawn Mutants',
+    cost: 2000,
+    prompt: 'Drop a pack of mutants near the streamer.',
+    kind: 'spawn',
+    category: 'mutants',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+    rolls: 1,
+  },
+  {
+    key: 'spawn-mutants-3',
+    title: 'Spawn Mutants x3',
+    cost: 6000,
+    prompt: 'Drop three packs of mutants near the streamer.',
+    kind: 'spawn',
+    category: 'mutants',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+    rolls: 3,
+  },
+  {
+    key: 'loot-roll-1',
+    title: 'Loot Roll 1 item',
+    cost: 2000,
+    prompt: 'Spin the GAMMA loot roulette for one random item.',
+    kind: 'loot',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+    count: 1,
+  },
+  {
+    key: 'loot-roll-3',
+    title: 'Loot Roll 3 items',
+    cost: 6000,
+    prompt: 'Spin the GAMMA loot roulette for three random items.',
+    kind: 'loot',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+    count: 3,
+  },
+];
+
+// Master switch for the whole bits-triggers-a-roll feature. false =
+// cheering never rolls anything (roulette.cjs's cheer case short-
+// circuits), and the "Bits rewards" section in /settings hides itself
+// (GET /roulette/bits-rewards returns an empty list). Nothing below is
+// deleted — flip back to true to bring it all back as-is.
+const BITS_REWARDS_ENABLED = false;
+
+// Bits (cheer) thresholds — not a Twitch Custom Reward (no reward id to
+// enable/disable there), just how a plain `cheer<amount>` in chat maps to
+// a roll. All tiers (loot AND spawn) share ONE ladder: whichever tier has
+// the highest `bits` at or below what was cheered wins; below the lowest
+// threshold, nothing rolls. Ordered enemies -> mutants -> loot, same as
+// CHANNEL_POINT_REWARDS above.
+//   bits     — minimum bits cheered to trigger this tier — the ONLY
+//              streamer-tunable field here, same as `cost` on a channel-
+//              point reward. `kind`/`count`/`category`/`rolls` define
+//              what a tier DOES and are fixed, not editable from /settings.
+//   kind     — 'loot' spins the item roulette, 'spawn' the mutant/enemy one
+//   count    — (loot) how many items the roll produces
+//   category — (spawn) 'mutants' | 'enemies'
+//   rolls    — (spawn) how many groups to roll at once — see the matching
+//              comment on CHANNEL_POINT_REWARDS above
+// Test values — retune thresholds from /settings once real usage shows
+// what feels right.
+const BITS_REWARDS = [
+  { key: 'bits-spawn-enemies', bits: 50, kind: 'spawn', category: 'enemies', rolls: 1 },
+  {
+    key: 'bits-spawn-enemies-3',
+    bits: 200,
     kind: 'spawn',
     category: 'enemies',
     rolls: 3,
   },
+  { key: 'bits-spawn-mutants', bits: 75, kind: 'spawn', category: 'mutants', rolls: 1 },
+  {
+    key: 'bits-spawn-mutants-3',
+    bits: 300,
+    kind: 'spawn',
+    category: 'mutants',
+    rolls: 3,
+  },
+  { key: 'bits-roll-1', bits: 50, kind: 'loot', count: 1 },
+  { key: 'bits-roll-2', bits: 100, kind: 'loot', count: 2 },
+  { key: 'bits-roll-3', bits: 150, kind: 'loot', count: 3 },
 ];
 
 // Difficulty presets for the Twitch roulette — the streamer switches
@@ -112,6 +170,8 @@ module.exports = {
   TWITCH_REDIRECT_URI,
   TWITCH_SCOPES,
   CHANNEL_POINT_REWARDS,
+  BITS_REWARDS,
+  BITS_REWARDS_ENABLED,
   PRESETS,
   DEFAULT_PRESET,
   DEFAULT_SPAWN_TIER,
