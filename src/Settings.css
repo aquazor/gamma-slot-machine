@@ -31,7 +31,7 @@ body {
 
 .set-card {
   width: 100%;
-  max-width: 560px;
+  max-width: 900px;
 
   padding: 28px 30px 32px;
 
@@ -47,7 +47,7 @@ body {
   margin: 0 0 4px;
 
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 24px;
+  font-size: 26px;
   color: #e5bd65;
 
   text-shadow: 0 0 10px rgba(255, 190, 60, 0.25);
@@ -58,7 +58,7 @@ body {
   margin-bottom: 18px;
 
   color: #b98f4a;
-  font-size: 13px;
+  font-size: 15px;
   text-decoration: none;
 }
 
@@ -82,7 +82,7 @@ body {
   padding: 24px 0 8px;
 
   color: #9c8d74;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .set-loading code {
@@ -91,7 +91,7 @@ body {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 5px;
 
-  font-size: 12px;
+  font-size: 14px;
   color: #ffd873;
 }
 
@@ -117,12 +117,40 @@ body {
 .set-heading {
   margin: 0 0 12px;
 
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
 
   color: #b98f4a;
+}
+
+.set-heading--toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  width: 100%;
+
+  padding: 0;
+
+  background: none;
+  border: 0;
+
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.set-chevron {
+  display: inline-block;
+
+  transition: transform 0.15s ease;
+}
+
+.set-chevron.is-open {
+  transform: rotate(90deg);
 }
 
 /* ---- integration sub-blocks ---- */
@@ -144,7 +172,7 @@ body {
 .set-subheading {
   margin: 0 0 10px;
 
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.8px;
 
@@ -178,7 +206,7 @@ body {
 .set-badge {
   padding: 3px 10px;
 
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.5px;
 
@@ -199,7 +227,7 @@ body {
 
 .set-muted {
   color: #9c8d74;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .set-btn {
@@ -208,7 +236,7 @@ body {
   background: rgba(255, 255, 255, 0.08);
   color: #f0e6d2;
 
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 
   border: 1px solid rgba(179, 128, 31, 0.5);
@@ -245,14 +273,14 @@ body {
   border: 1px solid rgba(224, 165, 46, 0.3);
   border-radius: 10px;
 
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .set-code {
   margin: 8px 0;
 
   font-family: 'Courier New', monospace;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: 6px;
 
@@ -266,7 +294,7 @@ body {
 
   margin-bottom: 14px;
 
-  font-size: 14px;
+  font-size: 16px;
 
   cursor: pointer;
 }
@@ -296,7 +324,7 @@ body {
 
   border-radius: 5px;
 
-  font-size: 12px;
+  font-size: 14px;
   color: #ffd873;
 
   user-select: all;
@@ -305,20 +333,43 @@ body {
 .set-obs-copy {
   padding: 5px 12px;
 
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* ---- channel point rewards ---- */
 
 .set-rewards {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 
   margin-bottom: 10px;
 }
 
+.set-rewards--bits {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+@media (max-width: 720px) {
+  .set-rewards {
+    grid-template-columns: 1fr;
+  }
+}
+
 .set-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 10px 12px;
+
+  background: rgba(255, 255, 255, 0.03);
+
+  border: 1px solid rgba(179, 128, 31, 0.2);
+  border-radius: 10px;
+}
+
+.set-reward-info {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -326,9 +377,68 @@ body {
 }
 
 .set-reward-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #f0e6d2;
+}
+
+.set-reward-toggle {
+  margin-left: auto;
+
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.set-reward-config {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.set-reward-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+
+  color: #9c8d74;
+}
+
+.set-reward-input {
+  width: 92px;
+  padding: 5px 8px;
+
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0e6d2;
+
+  font-size: 15px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+
+  border: 1px solid rgba(179, 128, 31, 0.5);
+  border-radius: 6px;
+}
+
+.set-reward-input::placeholder {
+  color: #8a7c66;
+}
+
+.set-reward-save {
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+.set-reward-error {
+  margin: 0;
+
+  color: #e08a8a;
+  font-size: 14px;
 }
 
 /* ---- preset selector ---- */
@@ -357,7 +467,7 @@ body {
   background: transparent;
   color: #cdb79a;
 
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 
   border: 0;
@@ -411,7 +521,7 @@ body {
   align-items: center;
   gap: 8px;
 
-  font-size: 13px;
+  font-size: 15px;
   color: #cdb79a;
 
   cursor: pointer;

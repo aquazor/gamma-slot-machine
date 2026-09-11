@@ -27,6 +27,7 @@ interface RouletteStatus {
 
 interface Reward {
   id: string;
+  key: string;
   title: string;
   cost: number;
   enabled: boolean;
@@ -36,6 +37,46 @@ interface Reward {
   rolls: number | null;
   maxPerUserPerStream: number | null;
   cooldownSeconds: number | null;
+}
+
+interface RewardDraft {
+  cost: string;
+  maxPerUserPerStream: string;
+  cooldownSeconds: string;
+}
+
+function draftFromReward(reward: Reward): RewardDraft {
+  return {
+    cost: String(reward.cost),
+    maxPerUserPerStream:
+      reward.maxPerUserPerStream != null ? String(reward.maxPerUserPerStream) : '',
+    cooldownSeconds: reward.cooldownSeconds != null ? String(reward.cooldownSeconds) : '',
+  };
+}
+
+interface BitsReward {
+  key: string;
+  bits: number;
+  kind: 'loot' | 'spawn';
+  count: number | null;
+  category: 'mutants' | 'enemies' | null;
+  rolls: number | null;
+}
+
+interface BitsDraft {
+  bits: string;
+}
+
+function draftFromBitsReward(reward: BitsReward): BitsDraft {
+  return { bits: String(reward.bits) };
+}
+
+function bitsRewardLabel(reward: BitsReward): string {
+  return reward.kind === 'spawn'
+    ? `Spawn ${reward.category === 'enemies' ? 'Enemies' : 'Mutants'}${
+        reward.rolls && reward.rolls > 1 ? ` ×${reward.rolls}` : ''
+      }`
+    : `Loot Roll ×${reward.count ?? 1}`;
 }
 
 interface EnemyFaction {
@@ -55,7 +96,24 @@ export default function Settings() {
   const [eventSub, setEventSub] = useState<EventSubStatus | null>(null);
   const [roulette, setRoulette] = useState<RouletteStatus | null>(null);
   const [rewardList, setRewardList] = useState<Reward[]>([]);
+  const [bitsList, setBitsList] = useState<BitsReward[]>([]);
   const [factions, setFactions] = useState<EnemyFaction[]>([]);
+
+  // one editable draft per reward — seeded from the server once, then left
+  // alone across background refreshes so typing isn't clobbered mid-edit
+  const [rewardDrafts, setRewardDrafts] = useState<Record<string, RewardDraft>>({});
+  const [rewardSaving, setRewardSaving] = useState<Record<string, boolean>>({});
+  const [rewardErrors, setRewardErrors] = useState<Record<string, string>>({});
+  const [rewardToggling, setRewardToggling] = useState<Record<string, boolean>>({});
+
+  // collapsed by default — editable reward lists, hidden so nothing gets
+  // bumped by accident; expand with the arrow next to the heading
+  const [rewardsCollapsed, setRewardsCollapsed] = useState<boolean>(true);
+  const [bitsCollapsed, setBitsCollapsed] = useState<boolean>(true);
+
+  const [bitsDrafts, setBitsDrafts] = useState<Record<string, BitsDraft>>({});
+  const [bitsSaving, setBitsSaving] = useState<Record<string, boolean>>({});
+  const [bitsErrors, setBitsErrors] = useState<Record<string, string>>({});
 
   const [flow, setFlow] = useState<DeviceFlow | null>(null);
   const [authState, setAuthState] = useState<string>('idle');
@@ -67,18 +125,49 @@ export default function Settings() {
 
   const refresh = useCallback(async () => {
     try {
-      const [t, e, r, rw, f] = await Promise.all([
+      const [t, e, r, rw, f, br] = await Promise.all([
         fetch(`${API}/twitch/status`).then((res) => res.json()),
         fetch(`${API}/twitch/eventsub/status`).then((res) => res.json()),
         fetch(`${API}/roulette/status`).then((res) => res.json()),
         fetch(`${API}/twitch/rewards`).then((res) => res.json()),
         fetch(`${API}/roulette/enemies`).then((res) => res.json()),
+        fetch(`${API}/roulette/bits-rewards`).then((res) => res.json()),
       ]);
 
       setTwitch(t);
       setEventSub(e);
       setRoulette(r);
-      setRewardList(Array.isArray(rw.rewards) ? rw.rewards : []);
+
+      const rewardsList: Reward[] = Array.isArray(rw.rewards) ? rw.rewards : [];
+
+      setRewardList(rewardsList);
+      setRewardDrafts((prev) => {
+        const next = { ...prev };
+
+        for (const reward of rewardsList) {
+          if (!(reward.key in next)) {
+            next[reward.key] = draftFromReward(reward);
+          }
+        }
+
+        return next;
+      });
+
+      const bitsRewardsList: BitsReward[] = Array.isArray(br.rewards) ? br.rewards : [];
+
+      setBitsList(bitsRewardsList);
+      setBitsDrafts((prev) => {
+        const next = { ...prev };
+
+        for (const reward of bitsRewardsList) {
+          if (!(reward.key in next)) {
+            next[reward.key] = draftFromBitsReward(reward);
+          }
+        }
+
+        return next;
+      });
+
       setFactions(Array.isArray(f.factions) ? f.factions : []);
       setReachable(true);
     } catch {
@@ -181,7 +270,10 @@ export default function Settings() {
     }
   };
 
-  const manualSpawn = async (category: 'mutants' | 'enemies', rolls: number): Promise<void> => {
+  const manualSpawn = async (
+    category: 'mutants' | 'enemies',
+    rolls: number,
+  ): Promise<void> => {
     setTriggerBusy(true);
 
     try {
@@ -247,6 +339,101 @@ export default function Settings() {
     }
   };
 
+  const updateRewardDraft = (
+    key: string,
+    field: keyof RewardDraft,
+    value: string,
+  ): void => {
+    setRewardDrafts((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+  };
+
+  const isRewardDirty = (reward: Reward): boolean => {
+    const draft = rewardDrafts[reward.key];
+
+    if (!draft) {
+      return false;
+    }
+
+    const cost = Number(draft.cost);
+    const maxPerUser =
+      draft.maxPerUserPerStream.trim() === '' ? null : Number(draft.maxPerUserPerStream);
+    const cooldown =
+      draft.cooldownSeconds.trim() === '' ? null : Number(draft.cooldownSeconds);
+
+    return (
+      cost !== reward.cost ||
+      maxPerUser !== reward.maxPerUserPerStream ||
+      cooldown !== reward.cooldownSeconds
+    );
+  };
+
+  const saveRewardConfig = async (key: string): Promise<void> => {
+    const draft = rewardDrafts[key];
+
+    if (!draft) {
+      return;
+    }
+
+    setRewardSaving((prev) => ({ ...prev, [key]: true }));
+    setRewardErrors((prev) => ({ ...prev, [key]: '' }));
+
+    try {
+      const res = await fetch(`${API}/twitch/rewards/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key,
+          cost: Number(draft.cost),
+          maxPerUserPerStream:
+            draft.maxPerUserPerStream.trim() === ''
+              ? null
+              : Number(draft.maxPerUserPerStream),
+          cooldownSeconds:
+            draft.cooldownSeconds.trim() === '' ? null : Number(draft.cooldownSeconds),
+        }),
+      }).then((r) => r.json());
+
+      if (res.error) {
+        setRewardErrors((prev) => ({ ...prev, [key]: res.error }));
+
+        return;
+      }
+
+      if (Array.isArray(res.rewards)) {
+        setRewardList(res.rewards);
+
+        const updated = (res.rewards as Reward[]).find((r) => r.key === key);
+
+        if (updated) {
+          setRewardDrafts((prev) => ({ ...prev, [key]: draftFromReward(updated) }));
+        }
+      }
+    } catch {
+      setRewardErrors((prev) => ({ ...prev, [key]: 'Could not reach the server' }));
+    } finally {
+      setRewardSaving((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const toggleRewardEnabled = async (reward: Reward): Promise<void> => {
+    setRewardToggling((prev) => ({ ...prev, [reward.key]: true }));
+
+    try {
+      const res = await fetch(`${API}/twitch/rewards/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: reward.key, enabled: !reward.enabled }),
+      }).then((r) => r.json());
+
+      if (Array.isArray(res.rewards)) {
+        setRewardList(res.rewards);
+      }
+    } finally {
+      setRewardToggling((prev) => ({ ...prev, [reward.key]: false }));
+      refresh();
+    }
+  };
+
   const [rewardsBusy, setRewardsBusy] = useState<boolean>(false);
 
   const setRewardsEnabled = async (enabled: boolean): Promise<void> => {
@@ -265,6 +452,56 @@ export default function Settings() {
     } finally {
       setRewardsBusy(false);
       refresh();
+    }
+  };
+
+  const updateBitsDraft = (key: string, field: keyof BitsDraft, value: string): void => {
+    setBitsDrafts((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+  };
+
+  const isBitsDirty = (reward: BitsReward): boolean => {
+    const draft = bitsDrafts[reward.key];
+
+    return Boolean(draft) && Number(draft.bits) !== reward.bits;
+  };
+
+  const saveBitsConfig = async (reward: BitsReward): Promise<void> => {
+    const key = reward.key;
+    const draft = bitsDrafts[key];
+
+    if (!draft) {
+      return;
+    }
+
+    setBitsSaving((prev) => ({ ...prev, [key]: true }));
+    setBitsErrors((prev) => ({ ...prev, [key]: '' }));
+
+    try {
+      const res = await fetch(`${API}/roulette/bits-rewards/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, bits: Number(draft.bits) }),
+      }).then((r) => r.json());
+
+      if (res.error) {
+        setBitsErrors((prev) => ({ ...prev, [key]: res.error }));
+
+        return;
+      }
+
+      if (Array.isArray(res.rewards)) {
+        setBitsList(res.rewards);
+
+        const updated = (res.rewards as BitsReward[]).find((r) => r.key === key);
+
+        if (updated) {
+          setBitsDrafts((prev) => ({ ...prev, [key]: draftFromBitsReward(updated) }));
+        }
+      }
+    } catch {
+      setBitsErrors((prev) => ({ ...prev, [key]: 'Could not reach the server' }));
+    } finally {
+      setBitsSaving((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -401,56 +638,137 @@ export default function Settings() {
               {/* ---- CHANNEL POINTS ---- */}
 
               <section className="set-section">
-                <h2 className="set-heading">Channel point rewards</h2>
+                <button
+                  className="set-heading set-heading--toggle"
+                  onClick={() => setRewardsCollapsed((prev) => !prev)}
+                >
+                  <span className={`set-chevron ${rewardsCollapsed ? '' : 'is-open'}`}>▸</span>
+                  Channel point rewards
+                </button>
 
-                {rewardList.length > 0 ? (
+                {!rewardsCollapsed && (rewardList.length > 0 ? (
                   <>
-                  <div className="set-rewards">
-                    {rewardList.map((reward) => (
-                      <div className="set-reward" key={reward.id}>
-                        <span
-                          className={`set-badge ${
-                            reward.enabled ? 'set-badge--ok' : 'set-badge--off'
-                          }`}
-                        >
-                          {reward.enabled ? 'Live' : 'Disabled'}
-                        </span>
-                        <span className="set-reward-title">{reward.title}</span>
-                        <span className="set-muted">
-                          {reward.cost.toLocaleString()} pts →{' '}
-                          {reward.kind === 'spawn'
-                            ? `${reward.category === 'enemies' ? 'enemies' : 'mutants'}${
-                                reward.rolls && reward.rolls > 1 ? ` × ${reward.rolls}` : ''
-                              }`
-                            : `${reward.count ?? 1} item${(reward.count ?? 1) > 1 ? 's' : ''}`}
-                          {reward.maxPerUserPerStream != null &&
-                            ` · ${reward.maxPerUserPerStream}/user`}
-                          {reward.cooldownSeconds != null &&
-                            (reward.cooldownSeconds < 60
-                              ? ` · ${reward.cooldownSeconds}s cooldown`
-                              : ` · ${Math.round(reward.cooldownSeconds / 60)} min cooldown`)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                    <div className="set-rewards">
+                      {rewardList.map((reward) => {
+                        const draft = rewardDrafts[reward.key] ?? draftFromReward(reward);
+                        const dirty = isRewardDirty(reward);
 
-                  {rewardList.some((reward) => reward.enabled) ? (
-                    <button
-                      className="set-btn"
-                      onClick={() => setRewardsEnabled(false)}
-                      disabled={rewardsBusy}
-                    >
-                      {rewardsBusy ? 'Working…' : 'Disable rewards'}
-                    </button>
-                  ) : (
-                    <button
-                      className="set-btn set-btn--primary"
-                      onClick={() => setRewardsEnabled(true)}
-                      disabled={rewardsBusy}
-                    >
-                      {rewardsBusy ? 'Working…' : 'Enable rewards'}
-                    </button>
-                  )}
+                        return (
+                          <div className="set-reward" key={reward.id}>
+                            <div className="set-reward-info">
+                              <span
+                                className={`set-badge ${
+                                  reward.enabled ? 'set-badge--ok' : 'set-badge--off'
+                                }`}
+                              >
+                                {reward.enabled ? 'Live' : 'Disabled'}
+                              </span>
+                              <span className="set-reward-title">{reward.title}</span>
+                              <button
+                                className="set-btn set-reward-toggle"
+                                onClick={() => toggleRewardEnabled(reward)}
+                                disabled={rewardToggling[reward.key]}
+                              >
+                                {rewardToggling[reward.key]
+                                  ? 'Working…'
+                                  : reward.enabled
+                                    ? 'Disable'
+                                    : 'Enable'}
+                              </button>
+                            </div>
+
+                            <div className="set-reward-config">
+                              <label className="set-reward-field">
+                                Cost
+                                <input
+                                  className="set-reward-input"
+                                  type="number"
+                                  min={1}
+                                  value={draft.cost}
+                                  onChange={(event) =>
+                                    updateRewardDraft(
+                                      reward.key,
+                                      'cost',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              <label className="set-reward-field">
+                                Max / user
+                                <input
+                                  className="set-reward-input"
+                                  type="number"
+                                  min={1}
+                                  placeholder="no limit"
+                                  value={draft.maxPerUserPerStream}
+                                  onChange={(event) =>
+                                    updateRewardDraft(
+                                      reward.key,
+                                      'maxPerUserPerStream',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              <label className="set-reward-field">
+                                Cooldown (s)
+                                <input
+                                  className="set-reward-input"
+                                  type="number"
+                                  min={0}
+                                  placeholder="none"
+                                  value={draft.cooldownSeconds}
+                                  onChange={(event) =>
+                                    updateRewardDraft(
+                                      reward.key,
+                                      'cooldownSeconds',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              {dirty && (
+                                <button
+                                  className="set-btn set-btn--primary set-reward-save"
+                                  onClick={() => saveRewardConfig(reward.key)}
+                                  disabled={rewardSaving[reward.key]}
+                                >
+                                  Save
+                                </button>
+                              )}
+                            </div>
+
+                            {rewardErrors[reward.key] && (
+                              <p className="set-reward-error">
+                                {rewardErrors[reward.key]}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {rewardList.some((reward) => reward.enabled) ? (
+                      <button
+                        className="set-btn"
+                        onClick={() => setRewardsEnabled(false)}
+                        disabled={rewardsBusy}
+                      >
+                        {rewardsBusy ? 'Working…' : 'Disable rewards'}
+                      </button>
+                    ) : (
+                      <button
+                        className="set-btn set-btn--primary"
+                        onClick={() => setRewardsEnabled(true)}
+                        disabled={rewardsBusy}
+                      >
+                        {rewardsBusy ? 'Working…' : 'Enable rewards'}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <p className="set-muted">
@@ -458,13 +776,85 @@ export default function Settings() {
                       ? 'Rewards will be created automatically once the connection has the channel-points permission — reconnect Twitch if you just updated.'
                       : 'Connect Twitch to create the reward.'}
                   </p>
-                )}
+                ))}
 
-                <p className="set-muted set-obs">
-                  Redemptions stay in your Twitch queue — fulfill or refund them
-                  manually in the Stream Manager.
-                </p>
+                {!rewardsCollapsed && (
+                  <p className="set-muted set-obs">
+                    Redemptions stay in your Twitch queue — fulfill or refund them
+                    manually in the Stream Manager.
+                  </p>
+                )}
               </section>
+
+              {/* ---- BITS REWARDS ---- */}
+
+              {bitsList.length > 0 && (
+                <section className="set-section">
+                  <button
+                    className="set-heading set-heading--toggle"
+                    onClick={() => setBitsCollapsed((prev) => !prev)}
+                  >
+                    <span className={`set-chevron ${bitsCollapsed ? '' : 'is-open'}`}>▸</span>
+                    Bits rewards
+                  </button>
+
+                  {!bitsCollapsed && (
+                    <>
+                      <p className="set-muted set-obs">
+                        Not a Twitch reward — just how a plain{' '}
+                        <code>cheer&lt;amount&gt;</code> in chat maps to a roll. One shared
+                        ladder for loot and spawn tiers — highest threshold met wins.
+                      </p>
+
+                      <div className="set-rewards set-rewards--bits">
+                        {bitsList.map((reward) => {
+                          const draft = bitsDrafts[reward.key] ?? draftFromBitsReward(reward);
+                          const dirty = isBitsDirty(reward);
+
+                          return (
+                            <div className="set-reward" key={reward.key}>
+                              <div className="set-reward-info">
+                                <span className="set-reward-title">
+                                  {bitsRewardLabel(reward)}
+                                </span>
+                              </div>
+
+                              <div className="set-reward-config">
+                                <label className="set-reward-field">
+                                  Bits ≥
+                                  <input
+                                    className="set-reward-input"
+                                    type="number"
+                                    min={1}
+                                    value={draft.bits}
+                                    onChange={(event) =>
+                                      updateBitsDraft(reward.key, 'bits', event.target.value)
+                                    }
+                                  />
+                                </label>
+
+                                {dirty && (
+                                  <button
+                                    className="set-btn set-btn--primary set-reward-save"
+                                    onClick={() => saveBitsConfig(reward)}
+                                    disabled={bitsSaving[reward.key]}
+                                  >
+                                    {bitsSaving[reward.key] ? 'Saving…' : 'Save'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {bitsErrors[reward.key] && (
+                                <p className="set-reward-error">{bitsErrors[reward.key]}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </section>
+              )}
 
               {/* ---- ROULETTE ---- */}
 
@@ -567,8 +957,8 @@ export default function Settings() {
                   <h2 className="set-heading">Enemy factions</h2>
 
                   <p className="set-muted">
-                    Turn off any faction you don't want spawned as a hostile squad — applies
-                    to every tier.
+                    Turn off any faction you don't want spawned as a hostile squad —
+                    applies to every tier.
                   </p>
 
                   <div className="set-factions">

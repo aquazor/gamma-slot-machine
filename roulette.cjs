@@ -3,7 +3,8 @@ const { EventEmitter } = require('events');
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
-const { PRESETS, DEFAULT_PRESET, DEFAULT_SPAWN_TIER } = require('./config.cjs');
+const bitsRewards = require('./bits-rewards.cjs');
+const { PRESETS, DEFAULT_PRESET, DEFAULT_SPAWN_TIER, BITS_REWARDS_ENABLED } = require('./config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -171,21 +172,24 @@ function planForEvent(event, rewardMap) {
     }
 
     case 'cheer': {
+      if (!BITS_REWARDS_ENABLED) {
+        return null;
+      }
+
       const bits = event.bits || 0;
+      const tier = bitsRewards.planForBits(bits);
 
-      if (bits >= 500) {
-        return { label: `${bits} BITS`, count: 3 };
+      if (!tier) {
+        return null;
       }
 
-      if (bits >= 300) {
-        return { label: `${bits} BITS`, count: 2 };
+      const label = `${bits} BITS`;
+
+      if (tier.kind === 'spawn') {
+        return { mode: 'spawn', label, category: tier.category, rolls: tier.rolls };
       }
 
-      if (bits >= 100) {
-        return { label: `${bits} BITS`, count: 1 };
-      }
-
-      return null;
+      return { mode: 'loot', label, count: tier.count };
     }
 
     default:

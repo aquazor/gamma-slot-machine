@@ -10,6 +10,8 @@ const { Roulette } = require('./roulette.cjs');
 const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
+const bitsRewards = require('./bits-rewards.cjs');
+const { BITS_REWARDS_ENABLED } = require('./config.cjs');
 
 const { getGammaPath, getCommandFile } = bridge;
 
@@ -507,6 +509,8 @@ app.post('/twitch/rewards/enabled', async (req, res) => {
 
   try {
     if (enabled) {
+      rewards.clearIndividualDisables();
+
       const map = await rewards.ensureRewards();
 
       roulette.setRewardMap(map);
@@ -521,6 +525,72 @@ app.post('/twitch/rewards/enabled', async (req, res) => {
     res.json({ rewards: await rewards.listRewards() });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+/*
+ * Streamer-tuned cost / per-user limit / cooldown / on-off for one
+ * reward. Saved to disk, then immediately pushed to the live Twitch
+ * reward.
+ *   { key, cost?, maxPerUserPerStream?, cooldownSeconds?, enabled? }
+ * Omit a field to leave it as-is; pass null to clear a limit. This
+ * per-reward `enabled` is independent of (and survives) the blanket
+ * /twitch/rewards/enabled switch below.
+ */
+app.post('/twitch/rewards/config', async (req, res) => {
+  const { key, cost, maxPerUserPerStream, cooldownSeconds, enabled } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  try {
+    rewards.setRewardOverride(key, { cost, maxPerUserPerStream, cooldownSeconds, enabled });
+
+    // Sync only THIS reward on Twitch — never touch any other reward's
+    // live state as a side effect of saving one (that was the bug).
+    await rewards.syncOneReward(key);
+
+    const map = await rewards.buildRewardMap();
+
+    roulette.setRewardMap(map);
+
+    console.log(`Twitch reward "${key}" reconfigured by streamer`);
+
+    res.json({ rewards: await rewards.listRewards() });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/*
+ * Bits (cheer) thresholds — not Twitch Custom Rewards, just how a plain
+ * `cheer<amount>` in chat maps to a loot roll. No Twitch API call needed
+ * to change these, unlike channel-point rewards.
+ */
+app.get('/roulette/bits-rewards', (req, res) => {
+  res.json({ rewards: BITS_REWARDS_ENABLED ? bitsRewards.listBitsRewards() : [] });
+});
+
+app.post('/roulette/bits-rewards/config', (req, res) => {
+  if (!BITS_REWARDS_ENABLED) {
+    return res.status(400).json({ error: 'Bits rewards are currently disabled' });
+  }
+
+  const { key, bits } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  try {
+    bitsRewards.setBitsRewardOverride(key, { bits });
+
+    console.log(`Bits reward "${key}" reconfigured by streamer`);
+
+    res.json({ rewards: bitsRewards.listBitsRewards() });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
