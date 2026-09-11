@@ -59,6 +59,13 @@ interface RollResult {
   itemId: string;
   name: string;
   ammo?: string;
+  icon?: string | null; // spawn results only
+  label?: string; // spawn results only — plain group name, no "x<count>"
+}
+
+interface SpawnOption {
+  label: string;
+  icon: string | null;
 }
 
 interface Job {
@@ -68,7 +75,7 @@ interface Job {
   kind: string;
   mode?: 'loot' | 'spawn';
   category?: string;
-  spawnPool?: string[];
+  spawnPool?: SpawnOption[];
   preset?: string;
   grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
@@ -328,19 +335,21 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
 
 interface SpawnReelProps {
   title: string;
-  pool: string[];
-  target: string;
+  pool: SpawnOption[];
+  label: string; // plain group name shown in the reel, e.g. "Boars"
+  resultText: string; // label + count for the line below, e.g. "BOARS x2"
+  targetIcon?: string | null;
   spin: boolean;
   landed: boolean;
 }
 
-function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
+function SpawnReel({ title, pool, label, resultText, targetIcon, spin, landed }: SpawnReelProps) {
   const fillPool = useMemo(() => {
-    const names = (pool && pool.length > 0 ? pool : [target]).map((n) =>
-      n.toUpperCase(),
+    const options = (pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]).map(
+      (o) => ({ label: o.label.toUpperCase(), icon: o.icon }),
     );
 
-    return names.length > 0 ? names : ['???'];
+    return options.length > 0 ? options : [{ label: '???', icon: null }];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -378,16 +387,16 @@ function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
     const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
 
     const need = target_ + VISIBLE_ROWS + 2;
-    const pickRandom = (): string =>
+    const pickRandom = (): SpawnOption =>
       fillPool[Math.floor(Math.random() * fillPool.length)];
 
-    const rows: string[] = [];
+    const rows: SpawnOption[] = [];
 
     for (let k = 0; k < need; k++) {
       let candidate = pickRandom();
 
       for (let guard = 0; guard < 40; guard++) {
-        if (rows[k - 1] !== candidate && rows[k - 2] !== candidate) {
+        if (rows[k - 1]?.label !== candidate.label && rows[k - 2]?.label !== candidate.label) {
           break;
         }
 
@@ -397,7 +406,25 @@ function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
       rows[k] = candidate;
     }
 
-    rows[target_] = target.toUpperCase();
+    // Drop the winner in, then keep its neighbours distinct from it —
+    // the fill loop above only guarded against clashes among the filler
+    // rows themselves, so the winner's own label could still land right
+    // next to a filler row that already happened to say the same thing.
+    const winner = { label: label.toUpperCase(), icon: targetIcon ?? null };
+
+    rows[target_] = winner;
+
+    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
+      if (rows[n] && rows[n].label === winner.label) {
+        for (let guard = 0; guard < 40; guard++) {
+          rows[n] = pickRandom();
+
+          if (rows[n].label !== winner.label) {
+            break;
+          }
+        }
+      }
+    }
 
     return { strip: rows, targetIndex: target_ };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -442,9 +469,12 @@ function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
                 : 'none',
             }}
           >
-            {strip.map((name, index) => (
+            {strip.map((option, index) => (
               <div className="reel-item ov-spawn-item" key={index}>
-                <span>{name}</span>
+                {option.icon && (
+                  <img src={option.icon} alt="" onError={hideBrokenImage} />
+                )}
+                <span>{option.label}</span>
               </div>
             ))}
           </div>
@@ -456,7 +486,8 @@ function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
       </div>
 
       <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <span>{target.toUpperCase()}</span>
+        {targetIcon && <img src={targetIcon} alt="" onError={hideBrokenImage} />}
+        <span>{resultText}</span>
       </div>
     </div>
   );
@@ -595,13 +626,18 @@ export default function Overlay() {
 
       <div className="ov-reels">
         {job.mode === 'spawn' ? (
-          <SpawnReel
-            title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
-            pool={job.spawnPool ?? []}
-            target={job.results[0]?.name ?? '???'}
-            spin={spinning[0] ?? false}
-            landed={landed[0] ?? false}
-          />
+          job.results.map((result, index) => (
+            <SpawnReel
+              key={`${job.id}-${index}`}
+              title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
+              pool={job.spawnPool ?? []}
+              label={result.label ?? result.name ?? '???'}
+              resultText={result.name ?? '???'}
+              targetIcon={result.icon}
+              spin={spinning[index] ?? false}
+              landed={landed[index] ?? false}
+            />
+          ))
         ) : (
           job.results.map((result, index) => (
             <Reel

@@ -20,6 +20,8 @@ interface RouletteStatus {
   overlayPresent: boolean;
   preset: string;
   presets: string[];
+  spawnTier: string;
+  spawnTiers: string[];
   queued: number;
 }
 
@@ -28,9 +30,19 @@ interface Reward {
   title: string;
   cost: number;
   enabled: boolean;
-  count: number;
+  kind: 'loot' | 'spawn';
+  category: 'mutants' | 'enemies' | null;
+  count: number | null;
+  rolls: number | null;
   maxPerUserPerStream: number | null;
   cooldownSeconds: number | null;
+}
+
+interface EnemyFaction {
+  key: string;
+  label: string;
+  icon: string | null;
+  enabled: boolean;
 }
 
 interface DeviceFlow {
@@ -43,6 +55,7 @@ export default function Settings() {
   const [eventSub, setEventSub] = useState<EventSubStatus | null>(null);
   const [roulette, setRoulette] = useState<RouletteStatus | null>(null);
   const [rewardList, setRewardList] = useState<Reward[]>([]);
+  const [factions, setFactions] = useState<EnemyFaction[]>([]);
 
   const [flow, setFlow] = useState<DeviceFlow | null>(null);
   const [authState, setAuthState] = useState<string>('idle');
@@ -54,17 +67,19 @@ export default function Settings() {
 
   const refresh = useCallback(async () => {
     try {
-      const [t, e, r, rw] = await Promise.all([
+      const [t, e, r, rw, f] = await Promise.all([
         fetch(`${API}/twitch/status`).then((res) => res.json()),
         fetch(`${API}/twitch/eventsub/status`).then((res) => res.json()),
         fetch(`${API}/roulette/status`).then((res) => res.json()),
         fetch(`${API}/twitch/rewards`).then((res) => res.json()),
+        fetch(`${API}/roulette/enemies`).then((res) => res.json()),
       ]);
 
       setTwitch(t);
       setEventSub(e);
       setRoulette(r);
       setRewardList(Array.isArray(rw.rewards) ? rw.rewards : []);
+      setFactions(Array.isArray(f.factions) ? f.factions : []);
       setReachable(true);
     } catch {
       setReachable(false);
@@ -149,7 +164,6 @@ export default function Settings() {
     refresh();
   };
 
-  const [triggerUser, setTriggerUser] = useState<string>('');
   const [triggerBusy, setTriggerBusy] = useState<boolean>(false);
 
   const manualRoll = async (count: number): Promise<void> => {
@@ -159,7 +173,27 @@ export default function Settings() {
       await fetch(`${API}/roulette/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: triggerUser.trim() || 'Streamer', count }),
+        body: JSON.stringify({ user: 'Streamer', count }),
+      });
+    } finally {
+      setTriggerBusy(false);
+      refresh();
+    }
+  };
+
+  const manualSpawn = async (category: 'mutants' | 'enemies', rolls: number): Promise<void> => {
+    setTriggerBusy(true);
+
+    try {
+      await fetch(`${API}/roulette/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'spawn',
+          category,
+          rolls,
+          user: 'Streamer',
+        }),
       });
     } finally {
       setTriggerBusy(false);
@@ -181,6 +215,36 @@ export default function Settings() {
     });
 
     refresh();
+  };
+
+  const selectSpawnTier = async (name: string): Promise<void> => {
+    if (!roulette || roulette.spawnTier === name) {
+      return;
+    }
+
+    setRoulette({ ...roulette, spawnTier: name });
+
+    await fetch(`${API}/roulette/spawn-tier`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier: name }),
+    });
+
+    refresh();
+  };
+
+  const toggleFaction = async (key: string, enabled: boolean): Promise<void> => {
+    setFactions((prev) => prev.map((f) => (f.key === key ? { ...f, enabled } : f)));
+
+    const res = await fetch(`${API}/roulette/enemies/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group: key, enabled }),
+    }).then((r) => r.json());
+
+    if (Array.isArray(res.factions)) {
+      setFactions(res.factions);
+    }
   };
 
   const [rewardsBusy, setRewardsBusy] = useState<boolean>(false);
@@ -353,8 +417,12 @@ export default function Settings() {
                         </span>
                         <span className="set-reward-title">{reward.title}</span>
                         <span className="set-muted">
-                          {reward.cost.toLocaleString()} pts → {reward.count} item
-                          {reward.count > 1 ? 's' : ''}
+                          {reward.cost.toLocaleString()} pts →{' '}
+                          {reward.kind === 'spawn'
+                            ? `${reward.category === 'enemies' ? 'enemies' : 'mutants'}${
+                                reward.rolls && reward.rolls > 1 ? ` × ${reward.rolls}` : ''
+                              }`
+                            : `${reward.count ?? 1} item${(reward.count ?? 1) > 1 ? 's' : ''}`}
                           {reward.maxPerUserPerStream != null &&
                             ` · ${reward.maxPerUserPerStream}/user`}
                           {reward.cooldownSeconds != null &&
@@ -422,14 +490,27 @@ export default function Settings() {
                   </div>
                 )}
 
+                {roulette && roulette.spawnTiers?.length > 0 && (
+                  <div className="set-presets">
+                    <span className="set-muted">Spawn tier</span>
+                    <div className="set-preset-group">
+                      {roulette.spawnTiers.map((name) => (
+                        <button
+                          key={name}
+                          className={`set-preset ${
+                            roulette.spawnTier === name ? 'is-active' : ''
+                          }`}
+                          onClick={() => selectSpawnTier(name)}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="set-trigger">
                   <span className="set-muted">Manual roll</span>
-                  <input
-                    className="set-input"
-                    placeholder="viewer name (optional)"
-                    value={triggerUser}
-                    onChange={(event) => setTriggerUser(event.target.value)}
-                  />
                   {[1, 2, 3].map((n) => (
                     <button
                       key={n}
@@ -442,10 +523,71 @@ export default function Settings() {
                   ))}
                 </div>
 
+                <div className="set-trigger">
+                  <span className="set-muted">Manual spawn</span>
+                  <button
+                    className="set-btn"
+                    onClick={() => manualSpawn('mutants', 1)}
+                    disabled={triggerBusy}
+                  >
+                    Mutants
+                  </button>
+                  <button
+                    className="set-btn"
+                    onClick={() => manualSpawn('mutants', 3)}
+                    disabled={triggerBusy}
+                  >
+                    Mutants ×3
+                  </button>
+                  <button
+                    className="set-btn"
+                    onClick={() => manualSpawn('enemies', 1)}
+                    disabled={triggerBusy}
+                  >
+                    Enemies
+                  </button>
+                  <button
+                    className="set-btn"
+                    onClick={() => manualSpawn('enemies', 3)}
+                    disabled={triggerBusy}
+                  >
+                    Enemies ×3
+                  </button>
+                </div>
+
                 {typeof roulette?.queued === 'number' && roulette.queued > 0 && (
                   <p className="set-muted">{roulette.queued} roll(s) queued</p>
                 )}
               </section>
+
+              {/* ---- ENEMY FACTIONS ---- */}
+
+              {factions.length > 0 && (
+                <section className="set-section">
+                  <h2 className="set-heading">Enemy factions</h2>
+
+                  <p className="set-muted">
+                    Turn off any faction you don't want spawned as a hostile squad — applies
+                    to every tier.
+                  </p>
+
+                  <div className="set-factions">
+                    {factions.map((faction) => (
+                      <label className="set-faction" key={faction.key}>
+                        <input
+                          type="checkbox"
+                          checked={faction.enabled}
+                          onChange={(event) =>
+                            toggleFaction(faction.key, event.target.checked)
+                          }
+                        />
+                        {faction.icon && <img src={faction.icon} alt="" />}
+                        <span>{faction.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>

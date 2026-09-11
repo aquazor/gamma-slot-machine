@@ -513,7 +513,20 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f2e2e2 50%, #e2c8c8 100%);
 }
 
+.ov-spawn-item img {
+  width: 56px;
+  height: 56px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+
+  pointer-events: none;
+  user-select: none;
+}
+
 .ov-spawn-item span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

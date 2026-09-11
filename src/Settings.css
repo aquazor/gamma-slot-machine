@@ -395,20 +395,40 @@ body {
   margin-bottom: 14px;
 }
 
-.set-input {
-  padding: 6px 10px;
 
-  background: rgba(255, 255, 255, 0.06);
-  color: #f0e6d2;
+/* ---- enemy faction toggles ---- */
 
-  font-size: 13px;
+.set-factions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px 14px;
 
-  border: 1px solid rgba(179, 128, 31, 0.5);
-  border-radius: 8px;
-
-  width: 190px;
+  margin-bottom: 4px;
 }
 
-.set-input::placeholder {
-  color: #8a7c66;
+.set-faction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 13px;
+  color: #cdb79a;
+
+  cursor: pointer;
+}
+
+.set-faction input {
+  width: 15px;
+  height: 15px;
+
+  accent-color: #e0a52e;
+}
+
+.set-faction img {
+  width: 20px;
+  height: 20px;
+
+  object-fit: contain;
+
+  flex-shrink: 0;
 }
