@@ -128,6 +128,7 @@ function planForEvent(event, rewardMap) {
           mode: 'spawn',
           label: name.toUpperCase(),
           category: def.category || 'mutants',
+          rolls: def.rolls || 1,
         };
       }
 
@@ -142,6 +143,7 @@ function planForEvent(event, rewardMap) {
         mode: 'spawn',
         label: 'MANUAL SPAWN',
         category: event.category === 'enemies' ? 'enemies' : 'mutants',
+        rolls: event.rolls || 1,
       };
 
     case 'subscribe':
@@ -351,10 +353,11 @@ class Roulette extends EventEmitter {
   _buildSpawnJob(event, plan) {
     const category = plan.category === 'enemies' ? 'enemies' : 'mutants';
     const tier = this.spawnTier;
+    const rolls = Math.min(3, Math.max(1, Number(plan.rolls) || 1));
 
-    const spawnResult = enemies.rollSpawn(category, tier);
+    const spawnResults = enemies.rollSpawn(category, tier, rolls);
 
-    if (!spawnResult) {
+    if (spawnResults.length === 0) {
       console.error(`Roulette: no spawn groups for ${category}/${tier}`);
 
       return null;
@@ -368,12 +371,16 @@ class Roulette extends EventEmitter {
       kind: event.kind,
       category,
       spawnTier: tier,
-      spawnResult,
-      // spinning filler for the overlay's text reel
-      spawnPool: enemies.groupLabels(category, tier),
-      results: [
-        { slot: 'spawn', name: spawnResult.text, group: spawnResult.group },
-      ],
+      spawnResults,
+      // spinning filler for the overlay's spawn reels — {label, icon} pairs
+      spawnPool: enemies.groupOptions(category, tier),
+      results: spawnResults.map((r) => ({
+        slot: 'spawn',
+        name: r.text, // "BOARS x2" — shown in the small result line under the reel
+        label: r.label, // "Boars" — shown in the reel itself (no count)
+        group: r.group,
+        icon: r.icon,
+      })),
       createdAt: Date.now(),
     };
   }
@@ -430,7 +437,7 @@ class Roulette extends EventEmitter {
     const give =
       job.mode === 'spawn'
         ? bridge.writeCommandLines(
-            enemies.spawnCommandLines(job.spawnResult, job.user),
+            enemies.spawnCommandLines(job.spawnResults, job.user),
           )
         : bridge.giveLoadout({
             ...resultsToLoadout(job.results),
@@ -451,7 +458,7 @@ class Roulette extends EventEmitter {
       label: job.label,
       mode: job.mode,
       results: job.results,
-      spawnResult: job.spawnResult || null,
+      spawnResults: job.spawnResults || [],
       given: give.ok,
       giveError: give.ok ? null : give.error,
       reason,

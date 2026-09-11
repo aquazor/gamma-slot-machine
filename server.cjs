@@ -9,6 +9,7 @@ const { TwitchEventSub } = require('./twitch-eventsub.cjs');
 const { Roulette } = require('./roulette.cjs');
 const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
+const enemies = require('./enemies.cjs');
 
 const { getGammaPath, getCommandFile } = bridge;
 
@@ -195,8 +196,8 @@ roulette.on('roll', (job) => {
 roulette.on('delivered', (record) => {
   const detail =
     record.mode === 'spawn'
-      ? record.spawnResult
-        ? `${record.spawnResult.label} x${record.spawnResult.count}`
+      ? record.spawnResults && record.spawnResults.length > 0
+        ? record.spawnResults.map((r) => `${r.label} x${r.count}`).join(', ')
         : 'spawn'
       : record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
 
@@ -289,6 +290,28 @@ app.post('/roulette/spawn-tier', (req, res) => {
 });
 
 /*
+ * Which armed factions ('enemies' category) can currently be rolled —
+ * a blanket on/off per faction, the same across every tier.
+ */
+app.get('/roulette/enemies', (req, res) => {
+  res.json({ factions: enemies.listFactions() });
+});
+
+app.post('/roulette/enemies/toggle', (req, res) => {
+  const { group, enabled } = req.body || {};
+
+  if (typeof group !== 'string' || !group) {
+    return res.status(400).json({ error: 'group is required' });
+  }
+
+  enemies.setFactionEnabled(group, Boolean(enabled));
+
+  console.log(`Roulette faction "${group}" -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ factions: enemies.listFactions() });
+});
+
+/*
  * Manual roll fired from the settings page (no Twitch event).
  *   { user, count }               -> loot roll
  *   { user, kind: "spawn", category: "mutants" | "enemies" }
@@ -304,6 +327,7 @@ app.post('/roulette/trigger', (req, res) => {
           kind: 'manual-spawn',
           user: who,
           category: category === 'enemies' ? 'enemies' : 'mutants',
+          rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
         }
       : {
           kind: 'manual',
@@ -354,6 +378,7 @@ app.post('/roulette/test', (req, res) => {
 
   if (kind === 'manual-spawn') {
     event.category = req.body.category === 'enemies' ? 'enemies' : 'mutants';
+    event.rolls = Math.min(3, Math.max(1, Number(req.body.rolls) || 1));
   }
 
   if (kind === 'reward') {
@@ -379,6 +404,7 @@ app.post('/roulette/test', (req, res) => {
             {
               kind: 'spawn',
               category: req.body.category === 'enemies' ? 'enemies' : 'mutants',
+              rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
             },
           ],
         ]),

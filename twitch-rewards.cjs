@@ -227,6 +227,7 @@ async function listRewards() {
         kind: def.kind || 'loot',
         category: def.category || null,
         count: def.count || null,
+        rolls: def.rolls || null,
         maxPerUserPerStream: perUser.is_enabled ? perUser.max_per_user_per_stream : null,
         cooldownSeconds: cooldown.is_enabled ? cooldown.global_cooldown_seconds : null,
       };
