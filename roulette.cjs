@@ -2,7 +2,8 @@ const { EventEmitter } = require('events');
 
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
-const { PRESETS, DEFAULT_PRESET } = require('./config.cjs');
+const enemies = require('./enemies.cjs');
+const { PRESETS, DEFAULT_PRESET, DEFAULT_SPAWN_TIER } = require('./config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -122,11 +123,26 @@ function planForEvent(event, rewardMap) {
 
       const name = event.rewardTitle || def.title || 'Channel points';
 
-      return { label: name.toUpperCase(), count: def.count || 1 };
+      if (def.kind === 'spawn') {
+        return {
+          mode: 'spawn',
+          label: name.toUpperCase(),
+          category: def.category || 'mutants',
+        };
+      }
+
+      return { mode: 'loot', label: name.toUpperCase(), count: def.count || 1 };
     }
 
     case 'manual':
-      return { label: 'MANUAL ROLL', count: event.manualCount || 1 };
+      return { mode: 'loot', label: 'MANUAL ROLL', count: event.manualCount || 1 };
+
+    case 'manual-spawn':
+      return {
+        mode: 'spawn',
+        label: 'MANUAL SPAWN',
+        category: event.category === 'enemies' ? 'enemies' : 'mutants',
+      };
 
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
@@ -196,6 +212,15 @@ function resultsToLoadout(results) {
 }
 
 /*
+ * Green in-game notification for a loot roll: "<user> - AK-74, Battle Helmet".
+ */
+function lootMessage(job) {
+  const names = job.results.map((r) => r.name).filter(Boolean).join(', ');
+
+  return names ? `${job.user} - ${names}` : `${job.user} - loadout`;
+}
+
+/*
  * ---------------------------------------------------------
  * QUEUE
  * ---------------------------------------------------------
@@ -217,6 +242,11 @@ class Roulette extends EventEmitter {
     this.rewardMap = null;
     this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
 
+    const spawnTiers = enemies.spawnTiers();
+    this.spawnTier = spawnTiers.includes(DEFAULT_SPAWN_TIER)
+      ? DEFAULT_SPAWN_TIER
+      : spawnTiers[0] || 'Basic';
+
     this.history = [];
     this._seq = 0;
     this._timer = null;
@@ -229,6 +259,16 @@ class Roulette extends EventEmitter {
   setPreset(name) {
     if (PRESETS[name]) {
       this.preset = name;
+
+      return true;
+    }
+
+    return false;
+  }
+
+  setSpawnTier(name) {
+    if (enemies.spawnTiers().includes(name)) {
+      this.spawnTier = name;
 
       return true;
     }
@@ -257,6 +297,8 @@ class Roulette extends EventEmitter {
       overlayPresent: this.overlayPresent,
       preset: this.preset,
       presets: Object.keys(PRESETS),
+      spawnTier: this.spawnTier,
+      spawnTiers: enemies.spawnTiers(),
       queued: this.queue.length,
       current: this.current,
       history: this.history.slice(0, 10),
@@ -274,24 +316,66 @@ class Roulette extends EventEmitter {
       return null;
     }
 
-    const grades = PRESETS[this.preset];
+    const job =
+      plan.mode === 'spawn'
+        ? this._buildSpawnJob(event, plan)
+        : this._buildLootJob(event, plan);
 
-    const job = {
-      id: `roll_${Date.now()}_${++this._seq}`,
-      user: event.user || 'Anonymous',
-      label: plan.label,
-      kind: event.kind,
-      preset: this.preset,
-      grades, // { weapon: [...], helmet: [...], armor: [...] } — for the overlay reel
-      results: rollItems(plan.count, grades),
-      createdAt: Date.now(),
-    };
+    if (!job) {
+      return null;
+    }
 
     this.queue.push(job);
     this.emit('queued', job);
     this._processNext();
 
     return job;
+  }
+
+  _buildLootJob(event, plan) {
+    const grades = PRESETS[this.preset];
+
+    return {
+      id: `roll_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      mode: 'loot',
+      kind: event.kind,
+      preset: this.preset,
+      grades, // { weapon: [...], helmet: [...], armor: [...] } — for the overlay reel
+      results: rollItems(plan.count, grades),
+      createdAt: Date.now(),
+    };
+  }
+
+  _buildSpawnJob(event, plan) {
+    const category = plan.category === 'enemies' ? 'enemies' : 'mutants';
+    const tier = this.spawnTier;
+
+    const spawnResult = enemies.rollSpawn(category, tier);
+
+    if (!spawnResult) {
+      console.error(`Roulette: no spawn groups for ${category}/${tier}`);
+
+      return null;
+    }
+
+    return {
+      id: `spawn_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      mode: 'spawn',
+      kind: event.kind,
+      category,
+      spawnTier: tier,
+      spawnResult,
+      // spinning filler for the overlay's text reel
+      spawnPool: enemies.groupLabels(category, tier),
+      results: [
+        { slot: 'spawn', name: spawnResult.text, group: spawnResult.group },
+      ],
+      createdAt: Date.now(),
+    };
   }
 
   /*
@@ -343,10 +427,18 @@ class Roulette extends EventEmitter {
       return;
     }
 
-    const give = bridge.giveLoadout(resultsToLoadout(job.results));
+    const give =
+      job.mode === 'spawn'
+        ? bridge.writeCommandLines(
+            enemies.spawnCommandLines(job.spawnResult, job.user),
+          )
+        : bridge.giveLoadout({
+            ...resultsToLoadout(job.results),
+            message: lootMessage(job),
+          });
 
     if (!give.ok) {
-      console.error(`Roulette: failed to give ${job.id}: ${give.error}`);
+      console.error(`Roulette: failed to deliver ${job.id}: ${give.error}`);
     }
 
     job.delivered = true;
@@ -357,7 +449,9 @@ class Roulette extends EventEmitter {
       id: job.id,
       user: job.user,
       label: job.label,
+      mode: job.mode,
       results: job.results,
+      spawnResult: job.spawnResult || null,
       given: give.ok,
       giveError: give.ok ? null : give.error,
       reason,

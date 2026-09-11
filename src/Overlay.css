@@ -493,3 +493,44 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ========================================
+   SPAWN REEL  (text only, red accent)
+======================================== */
+
+.ov-spawn .reel-title {
+  color: #f0a3a3;
+  text-shadow: 0 0 8px rgba(220, 70, 70, 0.4);
+}
+
+.ov-spawn-item {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  color: #2a0f0f;
+
+  background: linear-gradient(180deg, #ffffff 0%, #f2e2e2 50%, #e2c8c8 100%);
+}
+
+.ov-spawn-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ov-spawn--landed {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #d24b4b;
+
+  box-shadow:
+    0 0 18px rgba(210, 75, 75, 0.8),
+    inset 0 0 12px rgba(210, 75, 75, 0.18),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-spawn .ov-result span {
+  max-width: 280px;
+  color: #ffc9c9;
+}

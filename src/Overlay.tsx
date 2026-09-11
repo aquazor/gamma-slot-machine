@@ -66,6 +66,9 @@ interface Job {
   user: string;
   label: string;
   kind: string;
+  mode?: 'loot' | 'spawn';
+  category?: string;
+  spawnPool?: string[];
   preset?: string;
   grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
@@ -320,6 +323,146 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
 }
 
 /* ========================================
+   SPAWN REEL  (text only — mutant / enemy group)
+======================================== */
+
+interface SpawnReelProps {
+  title: string;
+  pool: string[];
+  target: string;
+  spin: boolean;
+  landed: boolean;
+}
+
+function SpawnReel({ title, pool, target, spin, landed }: SpawnReelProps) {
+  const fillPool = useMemo(() => {
+    const names = (pool && pool.length > 0 ? pool : [target]).map((n) =>
+      n.toUpperCase(),
+    );
+
+    return names.length > 0 ? names : ['???'];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [effects, setEffects] = useState<WinningEffect[]>([]);
+  const [showEffects, setShowEffects] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!landed) {
+      return;
+    }
+
+    const burst = shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
+      .slice(0, WINNING_EFFECTS_COUNT)
+      .map((id, index) => ({
+        id,
+        left: 10 + Math.random() * 80,
+        top: 10 + Math.random() * 80,
+        rotation: -25 + Math.random() * 50,
+        delay: index * 0.12,
+      }));
+
+    setEffects(burst);
+    setShowEffects(true);
+
+    const timer = window.setTimeout(() => {
+      setShowEffects(false);
+      setEffects([]);
+    }, EFFECTS_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [landed]);
+
+  const { strip, targetIndex } = useMemo(() => {
+    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
+    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
+
+    const need = target_ + VISIBLE_ROWS + 2;
+    const pickRandom = (): string =>
+      fillPool[Math.floor(Math.random() * fillPool.length)];
+
+    const rows: string[] = [];
+
+    for (let k = 0; k < need; k++) {
+      let candidate = pickRandom();
+
+      for (let guard = 0; guard < 40; guard++) {
+        if (rows[k - 1] !== candidate && rows[k - 2] !== candidate) {
+          break;
+        }
+
+        candidate = pickRandom();
+      }
+
+      rows[k] = candidate;
+    }
+
+    rows[target_] = target.toUpperCase();
+
+    return { strip: rows, targetIndex: target_ };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+
+  return (
+    <div className={`reel-container ov-reel ov-spawn ${landed ? 'ov-reel--landed ov-spawn--landed' : ''}`}>
+      <h2 className="reel-title">{title}</h2>
+
+      <div className="reel-wrapper">
+        {showEffects && (
+          <>
+            <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
+            <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
+
+            {effects.map((effect) => (
+              <img
+                key={effect.id}
+                className="winning-effect"
+                src={`/gifs/effects/effect-${effect.id}.gif`}
+                alt=""
+                style={{
+                  left: `${effect.left}%`,
+                  top: `${effect.top}%`,
+                  transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
+                  animationDelay: `${effect.delay}s`,
+                }}
+              />
+            ))}
+          </>
+        )}
+
+        <div className="reel-window">
+          <div
+            className="reel"
+            style={{
+              transform: `translateY(-${offset}px)`,
+              transition: spin
+                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
+                : 'none',
+            }}
+          >
+            {strip.map((name, index) => (
+              <div className="reel-item ov-spawn-item" key={index}>
+                <span>{name}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="top-gradient" />
+          <div className="bottom-gradient" />
+          <div className="reel-indicator" />
+        </div>
+      </div>
+
+      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
+        <span>{target.toUpperCase()}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ========================================
    OVERLAY
 ======================================== */
 
@@ -451,15 +594,25 @@ export default function Overlay() {
       </div>
 
       <div className="ov-reels">
-        {job.results.map((result, index) => (
-          <Reel
-            key={`${job.id}-${index}`}
-            result={result}
-            grades={job.grades?.[result.slot]}
-            spin={spinning[index] ?? false}
-            landed={landed[index] ?? false}
+        {job.mode === 'spawn' ? (
+          <SpawnReel
+            title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
+            pool={job.spawnPool ?? []}
+            target={job.results[0]?.name ?? '???'}
+            spin={spinning[0] ?? false}
+            landed={landed[0] ?? false}
           />
-        ))}
+        ) : (
+          job.results.map((result, index) => (
+            <Reel
+              key={`${job.id}-${index}`}
+              result={result}
+              grades={job.grades?.[result.slot]}
+              spin={spinning[index] ?? false}
+              landed={landed[index] ?? false}
+            />
+          ))
+        )}
       </div>
     </div>
   );

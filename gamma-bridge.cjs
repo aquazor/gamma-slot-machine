@@ -73,11 +73,17 @@ function getGammaPath() {
  */
 
 /*
- * Turn a { weapons, outfits, helmets } payload into command
- * lines. Each entry needs an `itemId`; weapons may carry `ammo`.
+ * Turn a { weapons, outfits, helmets, message } payload into
+ * command lines. Each item entry needs an `itemId`; weapons may
+ * carry `ammo`. `message`, if given, becomes a green `MSG|loot|`
+ * line shown in the PDA corner in-game.
  */
-function buildCommandLines({ weapons, outfits, helmets } = {}) {
+function buildCommandLines({ weapons, outfits, helmets, message } = {}) {
   const lines = [];
+
+  if (typeof message === 'string' && message.trim()) {
+    lines.push(`MSG|loot|${message.trim()}`);
+  }
 
   if (Array.isArray(weapons)) {
     for (const weapon of weapons) {

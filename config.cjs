@@ -26,12 +26,17 @@ const TWITCH_SCOPES = [
 // Redemptions are NOT auto-fulfilled: they stay in the streamer's queue
 // (should_redemptions_skip_request_queue: false) so points can be
 // refunded manually from the Twitch Stream Manager.
+//   kind     — 'loot' spins the item roulette, 'spawn' the mutant/enemy one
+//   count    — (loot) how many items the roll produces
+//   category — (spawn) 'mutants' | 'enemies'; the spawn count comes from the
+//              rolled group in enemies.data.json, not from here
 const CHANNEL_POINT_REWARDS = [
   {
     key: 'loot-roll-1',
     title: 'Loot Roll 1 item',
     cost: 100,
     prompt: 'Spin the GAMMA loot roulette for one random item.',
+    kind: 'loot',
     count: 1,
   },
   {
@@ -39,7 +44,24 @@ const CHANNEL_POINT_REWARDS = [
     title: 'Loot Roll 3 items',
     cost: 300,
     prompt: 'Spin the GAMMA loot roulette for three random items.',
+    kind: 'loot',
     count: 3,
+  },
+  {
+    key: 'spawn-mutants',
+    title: 'Spawn Mutants',
+    cost: 100,
+    prompt: 'Drop a pack of mutants near the streamer.',
+    kind: 'spawn',
+    category: 'mutants',
+  },
+  {
+    key: 'spawn-enemies',
+    title: 'Spawn Enemies',
+    cost: 300,
+    prompt: 'Drop a hostile squad near the streamer.',
+    kind: 'spawn',
+    category: 'enemies',
   },
 ];
 
@@ -56,6 +78,11 @@ const PRESETS = {
 
 const DEFAULT_PRESET = 'Basic';
 
+// Spawn roulette difficulty. The actual tier lists live in
+// enemies.data.json (keyed Basic / Advanced / Expert); this is
+// only the default selection. Switched live in /settings, not persisted.
+const DEFAULT_SPAWN_TIER = 'Basic';
+
 module.exports = {
   TWITCH_CLIENT_ID,
   TWITCH_REDIRECT_URI,
@@ -63,4 +90,5 @@ module.exports = {
   CHANNEL_POINT_REWARDS,
   PRESETS,
   DEFAULT_PRESET,
+  DEFAULT_SPAWN_TIER,
 };

@@ -217,12 +217,16 @@ async function listRewards() {
       const perUser = reward.max_per_user_per_stream_setting || {};
       const cooldown = reward.global_cooldown_setting || {};
 
+      const def = ours.get(reward.title);
+
       return {
         id: reward.id,
         title: reward.title,
         cost: reward.cost,
         enabled: reward.is_enabled,
-        count: ours.get(reward.title).count,
+        kind: def.kind || 'loot',
+        category: def.category || null,
+        count: def.count || null,
         maxPerUserPerStream: perUser.is_enabled ? perUser.max_per_user_per_stream : null,
         cooldownSeconds: cooldown.is_enabled ? cooldown.global_cooldown_seconds : null,
       };

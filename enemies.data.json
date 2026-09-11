@@ -1,0 +1,180 @@
+{
+  "_comment": "Spawn pools for the roulette. Tier-first: category -> tier -> group -> { sections, count }. A spawn roll picks ONE random group from the selected tier and spawns `count` creatures, each a random pick from `sections`. `label` overrides the group key shown on the overlay / in the in-game message. Seeded from Chaos Tricks (bft_enemies_list tier1/2/3 -> Basic/Advanced/Expert, counts from bft_settings). Edit freely - unknown sections are skipped by the Lua side.",
+
+  "mutants": {
+    "Basic": {
+      "dogs": {
+        "label": "Dogs",
+        "sections": ["dog_weak", "dog_weak_bulterier", "dog_normal", "dog_normal_brown"],
+        "count": 2
+      },
+      "boars": {
+        "label": "Boars",
+        "sections": ["boar_01a_weak", "boar_02a_weak"],
+        "count": 2
+      },
+      "cats": {
+        "label": "Cats",
+        "sections": [
+          "cat_weak_a",
+          "cat_weak_b",
+          "cat_weak_c",
+          "cat_weak_d",
+          "cat_weak_e"
+        ],
+        "count": 2
+      },
+      "tushkano": { "label": "Tushkano", "sections": ["tushkano_normal"], "count": 5 },
+      "fractures": {
+        "label": "Fractures",
+        "sections": ["fracture_weak", "fracture_normal"],
+        "count": 3
+      },
+      "zombies": {
+        "label": "Zombies",
+        "sections": ["zombie_normal", "zombie_strong", "zombie_teta", "zombie_wich"],
+        "count": 3
+      }
+    },
+    "Advanced": {
+      "dogs": {
+        "label": "Dogs",
+        "sections": [
+          "dog_normal",
+          "dog_normal_bulterier",
+          "dog_strong",
+          "dog_strong_brown"
+        ],
+        "count": 3
+      },
+      "boars": {
+        "label": "Boars",
+        "sections": ["boar_01a_weak", "boar_02a_weak", "boar_normal"],
+        "count": 3
+      },
+      "pseudodogs": {
+        "label": "Pseudodogs",
+        "sections": ["pseudodog_weak", "pseudodog_normal"],
+        "count": 2
+      },
+      "snorks": {
+        "label": "Snorks",
+        "sections": ["snork_strong", "snork_strong2", "snork_strong3", "snork_strong4"],
+        "count": 2
+      },
+      "bloodsuckers": {
+        "label": "Bloodsuckers",
+        "sections": ["bloodsucker_weak", "bloodsucker_normal"],
+        "count": 2
+      },
+      "fractures": { "label": "Fractures", "sections": ["fracture_normal"], "count": 3 },
+      "burers": {
+        "label": "Burers",
+        "sections": ["burer_weak", "burer_fire", "burer_electra"],
+        "count": 1
+      }
+    },
+    "Expert": {
+      "pseudodogs": {
+        "label": "Pseudodogs",
+        "sections": ["pseudodog_normal", "psy_dog"],
+        "count": 3
+      },
+      "snorks": {
+        "label": "Snorks",
+        "sections": ["snork_strong", "snork_strong2", "snork_strong3", "snork_strong4"],
+        "count": 4
+      },
+      "bloodsuckers": {
+        "label": "Bloodsuckers",
+        "sections": ["bloodsucker_normal", "bloodsucker_strong"],
+        "count": 3
+      },
+      "chimeras": {
+        "label": "Chimeras",
+        "sections": ["chimera_strong", "chimera_strong2", "chimera_strong3"],
+        "count": 1
+      },
+      "gigant": { "label": "Gigant", "sections": ["gigant_strong"], "count": 1 },
+      "controllers": {
+        "label": "Controllers",
+        "sections": ["m_controller_normal2"],
+        "count": 1
+      },
+      "burers": {
+        "label": "Burers",
+        "sections": ["burer_normal", "burer_fire", "burer_electra"],
+        "count": 2
+      }
+    }
+  },
+
+  "enemies": {
+    "Basic": {
+      "bandits": {
+        "label": "Bandits",
+        "sections": ["sim_default_bandit_0", "sim_default_bandit_1"],
+        "count": 4
+      },
+      "loners": {
+        "label": "Loners",
+        "sections": ["sim_default_stalker_0", "sim_default_stalker_1"],
+        "count": 4
+      }
+    },
+    "Advanced": {
+      "bandits": {
+        "label": "Bandits",
+        "sections": ["sim_default_bandit_1", "sim_default_bandit_2"],
+        "count": 4
+      },
+      "mercs": {
+        "label": "Mercs",
+        "sections": ["sim_default_killer_1", "sim_default_killer_2"],
+        "count": 4
+      },
+      "military": {
+        "label": "Military",
+        "sections": ["sim_default_military_2", "sim_default_military_3"],
+        "count": 4
+      },
+      "duty": {
+        "label": "Duty",
+        "sections": ["sim_default_duty_1", "sim_default_duty_2"],
+        "count": 4
+      },
+      "freedom": {
+        "label": "Freedom",
+        "sections": ["sim_default_freedom_1", "sim_default_freedom_2"],
+        "count": 4
+      },
+      "zombied": {
+        "label": "Zombied",
+        "sections": ["sim_default_zombied_2", "sim_default_zombied_3"],
+        "count": 4
+      }
+    },
+    "Expert": {
+      "monolith": {
+        "label": "Monolith",
+        "sections": ["sim_default_monolith_3", "sim_default_monolith_4"],
+        "count": 4
+      },
+      "military": {
+        "label": "Military",
+        "sections": ["sim_default_military_3", "sim_default_military_4"],
+        "count": 4
+      },
+      "mercs": {
+        "label": "Mercs",
+        "sections": ["sim_default_killer_2", "sim_default_killer_3"],
+        "count": 4
+      },
+      "ecolog": {
+        "label": "Ecolog",
+        "sections": ["sim_default_ecolog_2", "sim_default_ecolog_3"],
+        "count": 4
+      }
+    }
+  }
+}

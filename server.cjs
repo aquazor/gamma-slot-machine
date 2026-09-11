@@ -193,10 +193,15 @@ roulette.on('roll', (job) => {
 });
 
 roulette.on('delivered', (record) => {
-  const items = record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
+  const detail =
+    record.mode === 'spawn'
+      ? record.spawnResult
+        ? `${record.spawnResult.label} x${record.spawnResult.count}`
+        : 'spawn'
+      : record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
 
   console.log(
-    `Roulette: ${record.id} ${record.given ? `gave [${items}]` : `not given${record.giveError ? ` (${record.giveError})` : ''}`} (${record.reason})`,
+    `Roulette: ${record.id} ${record.given ? `delivered [${detail}]` : `not delivered${record.giveError ? ` (${record.giveError})` : ''}`} (${record.reason})`,
   );
 
   broadcastOverlay('delivered', record);
@@ -271,23 +276,48 @@ app.post('/roulette/preset', (req, res) => {
   res.json(roulette.getState());
 });
 
+app.post('/roulette/spawn-tier', (req, res) => {
+  const name = (req.body || {}).tier;
+
+  if (!roulette.setSpawnTier(name)) {
+    return res.status(400).json({ error: `Unknown spawn tier: ${name}` });
+  }
+
+  console.log(`Roulette spawn tier -> ${name}`);
+
+  res.json(roulette.getState());
+});
+
 /*
  * Manual roll fired from the settings page (no Twitch event).
+ *   { user, count }               -> loot roll
+ *   { user, kind: "spawn", category: "mutants" | "enemies" }
  */
 app.post('/roulette/trigger', (req, res) => {
-  const { user, count } = req.body || {};
+  const { user, count, kind, category } = req.body || {};
 
-  const job = roulette.handleEvent({
-    kind: 'manual',
-    user: (typeof user === 'string' && user.trim()) || 'Streamer',
-    manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
-  });
+  const who = (typeof user === 'string' && user.trim()) || 'Streamer';
+
+  const event =
+    kind === 'spawn'
+      ? {
+          kind: 'manual-spawn',
+          user: who,
+          category: category === 'enemies' ? 'enemies' : 'mutants',
+        }
+      : {
+          kind: 'manual',
+          user: who,
+          manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
+        };
+
+  const job = roulette.handleEvent(event);
 
   if (!job) {
     return res.status(400).json({ error: 'Could not roll' });
   }
 
-  console.log(`Roulette: manual roll for ${job.user} -> ${job.label}`);
+  console.log(`Roulette: manual ${job.mode} for ${job.user} -> ${job.label}`);
 
   res.json({ job });
 });
@@ -322,13 +352,39 @@ app.post('/roulette/test', (req, res) => {
     isGift: Boolean(isGift),
   };
 
+  if (kind === 'manual-spawn') {
+    event.category = req.body.category === 'enemies' ? 'enemies' : 'mutants';
+  }
+
   if (kind === 'reward') {
+    const wantSpawn = req.body.spawn === true || Boolean(req.body.category);
+
     const hasRealRewards =
       roulette.rewardMap &&
-      [...roulette.rewardMap.values()].some((def) => def.rewardId);
+      [...roulette.rewardMap.values()].some(
+        (def) => def.rewardId && (wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn'),
+      );
 
     if (hasRealRewards) {
-      event.rewardId = req.body.rewardId || [...roulette.rewardMap.keys()][0];
+      const match = [...roulette.rewardMap.entries()].find(
+        ([, def]) => (wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn'),
+      );
+
+      event.rewardId = req.body.rewardId || match[0];
+    } else if (wantSpawn) {
+      roulette.setRewardMap(
+        new Map([
+          [
+            'test-spawn',
+            {
+              kind: 'spawn',
+              category: req.body.category === 'enemies' ? 'enemies' : 'mutants',
+            },
+          ],
+        ]),
+      );
+
+      event.rewardId = 'test-spawn';
     } else {
       // no real rewards synced (not authed) — use a throwaway stub
       roulette.setRewardMap(
@@ -338,7 +394,7 @@ app.post('/roulette/test', (req, res) => {
       event.rewardId = 'test-reward';
     }
 
-    event.rewardTitle = 'Test Reward';
+    event.rewardTitle = wantSpawn ? 'Test Spawn' : 'Test Reward';
   }
 
   const job = roulette.handleEvent(event);
