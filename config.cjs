@@ -28,8 +28,12 @@ const TWITCH_SCOPES = [
 // refunded manually from the Twitch Stream Manager.
 //   kind     — 'loot' spins the item roulette, 'spawn' the mutant/enemy one
 //   count    — (loot) how many items the roll produces
-//   category — (spawn) 'mutants' | 'enemies'; the spawn count comes from the
-//              rolled group in enemies.data.json, not from here
+//   category — (spawn) 'mutants' | 'enemies'
+//   rolls    — (spawn) how many groups to roll at once (default 1). Picks
+//              are independent, so the same group can come up more than once.
+//              Each group's creature count is auto-reduced when rolls > 1
+//              (enemies.cjs countForRoll) so a "x3" reward spawns roughly
+//              as many total creatures as three separate "x1" rolls, not 3x.
 const CHANNEL_POINT_REWARDS = [
   {
     key: 'loot-roll-1',
@@ -54,6 +58,16 @@ const CHANNEL_POINT_REWARDS = [
     prompt: 'Drop a pack of mutants near the streamer.',
     kind: 'spawn',
     category: 'mutants',
+    rolls: 1,
+  },
+  {
+    key: 'spawn-mutants-3',
+    title: 'Spawn Mutants x3',
+    cost: 300,
+    prompt: 'Drop three packs of mutants near the streamer.',
+    kind: 'spawn',
+    category: 'mutants',
+    rolls: 3,
   },
   {
     key: 'spawn-enemies',
@@ -62,6 +76,16 @@ const CHANNEL_POINT_REWARDS = [
     prompt: 'Drop a hostile squad near the streamer.',
     kind: 'spawn',
     category: 'enemies',
+    rolls: 1,
+  },
+  {
+    key: 'spawn-enemies-3',
+    title: 'Spawn Enemies x3',
+    cost: 600,
+    prompt: 'Drop three hostile squads near the streamer.',
+    kind: 'spawn',
+    category: 'enemies',
+    rolls: 3,
   },
 ];
 
