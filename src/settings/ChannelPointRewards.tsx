@@ -44,27 +44,56 @@ function ChannelPointRewards({ twitchConnected }: Props) {
 
   useEffect(() => {
     const seq = bumpSeq();
+    let timer: number | null = null;
+    let cancelled = false;
 
-    fetch(`${API}/twitch/rewards`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isStaleSeq(seq)) {
-          return;
-        }
+    // The server's boot-time ensureRewards() (create/sync on Twitch, e.g.
+    // re-enabling everything after a restart) runs asynchronously and
+    // doesn't block the server starting up. If this page loads while
+    // that's still in flight, the reward list can reflect Twitch's
+    // pre-sync state (wrong enabled/cost/etc, not just missing) — the
+    // server flags this via `syncing: true`. Retry while it's syncing
+    // instead of settling on a stale snapshot; a hard cap keeps this from
+    // spinning forever if sync genuinely fails.
+    const MAX_ATTEMPTS = 8;
+    const RETRY_DELAY_MS = 1500;
 
-        const list: Reward[] = Array.isArray(data.rewards) ? data.rewards : [];
+    const load = (attempt: number) => {
+      fetch(`${API}/twitch/rewards`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (isStaleSeq(seq) || cancelled) {
+            return;
+          }
 
-        setRewardList(list);
-        seedDrafts(list);
-      })
-      .catch(() => {
-        // leave the list empty — the empty-state message below covers it
-      })
-      .finally(() => {
-        if (!isStaleSeq(seq)) {
+          const list: Reward[] = Array.isArray(data.rewards) ? data.rewards : [];
+
+          if (data.syncing && twitchConnected && attempt < MAX_ATTEMPTS) {
+            timer = window.setTimeout(() => load(attempt + 1), RETRY_DELAY_MS);
+
+            return;
+          }
+
+          setRewardList(list);
+          seedDrafts(list);
           setLoaded(true);
-        }
-      });
+        })
+        .catch(() => {
+          if (!isStaleSeq(seq) && !cancelled) {
+            setLoaded(true);
+          }
+        });
+    };
+
+    load(0);
+
+    return () => {
+      cancelled = true;
+
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
     // Re-fetch whenever the Twitch connection flips (connect creates the
     // rewards on Twitch's side; disconnect can change what's live).
   }, [bumpSeq, isStaleSeq, seedDrafts, twitchConnected]);
@@ -190,6 +219,11 @@ function ChannelPointRewards({ twitchConnected }: Props) {
       <button className="set-heading set-heading--toggle" onClick={() => setCollapsed((prev) => !prev)}>
         <span className={`set-chevron ${collapsed ? '' : 'is-open'}`}>▸</span>
         Channel point rewards
+        {rewardList.length > 0 && (
+          <span className="set-heading-count">
+            {rewardList.filter((reward) => reward.enabled).length}/{rewardList.length} active
+          </span>
+        )}
       </button>
 
       {!collapsed &&

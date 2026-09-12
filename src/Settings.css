@@ -128,29 +128,68 @@ body {
 .set-heading--toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 
   width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 14px;
 
-  padding: 0;
-
-  background: none;
-  border: 0;
+  background: rgba(224, 165, 46, 0.06);
+  border: 1px solid rgba(179, 128, 31, 0.35);
+  border-radius: 10px;
 
   font-family: inherit;
   text-align: left;
 
   cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.set-heading--toggle:hover {
+  background: rgba(224, 165, 46, 0.12);
+  border-color: rgba(224, 165, 46, 0.55);
+}
+
+.set-heading--toggle:active {
+  background: rgba(224, 165, 46, 0.16);
 }
 
 .set-chevron {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+
+  font-size: 13px;
+  color: #e0a52e;
 
   transition: transform 0.15s ease;
 }
 
 .set-chevron.is-open {
   transform: rotate(90deg);
+}
+
+.set-heading-count {
+  margin-left: auto;
+
+  padding: 2px 9px;
+
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: none;
+
+  color: #cdb79a;
 }
 
 /* ---- integration sub-blocks ---- */
@@ -504,7 +543,6 @@ body {
 
   margin-bottom: 14px;
 }
-
 
 /* ---- enemy faction toggles ---- */
 
