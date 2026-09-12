@@ -6,6 +6,12 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-13',
+    items: [
+      'New subs, resubs and gift subs now always roll loot: 2 items for a single sub, 3 items for a multi-sub gift (any size)',
+    ],
+  },
+  {
     date: '2026-09-12',
     items: [
       'Channel-point reward titles on Twitch now start with "[SPIN]" so they stand out in your rewards list',
@@ -38,7 +44,9 @@ const CHANGELOG: { date: string; items: string[] }[] = [
   },
   {
     date: '2026-08-26 — 2026-09-02',
-    items: ['Core loot system: weapons, outfits and helmets with icons, ammo fixes, visual polish'],
+    items: [
+      'Core loot system: weapons, outfits and helmets with icons, ammo fixes, visual polish',
+    ],
   },
 ];
 
@@ -47,7 +55,10 @@ function Changelog() {
 
   return (
     <section className="set-section">
-      <button className="set-heading set-heading--toggle" onClick={() => setCollapsed((prev) => !prev)}>
+      <button
+        className="set-heading set-heading--toggle"
+        onClick={() => setCollapsed((prev) => !prev)}
+      >
         <span className={`set-chevron ${collapsed ? '' : 'is-open'}`}>▸</span>
         Changelog
       </button>
