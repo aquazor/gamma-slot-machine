@@ -145,7 +145,7 @@
       "tushkano": {
         "label": "Tushkano",
         "sections": ["tushkano_normal"],
-        "count": 3,
+        "count": 4,
         "icon": "/mutant-icons/mutant_part_tushkano_head.png"
       },
       "fractures": {
@@ -208,6 +208,20 @@
         "count": 1,
         "icon": "/mutant-icons/hide_burer.png"
       },
+      "chimeras": {
+        "label": "Chimeras",
+        "sections": [
+          "chimera_normal",
+          "chimera_normal2",
+          "chimera_normal3",
+          "chimera_strong",
+          "chimera_strong2",
+          "chimera_strong3",
+          "chimera_weak"
+        ],
+        "count": 1,
+        "icon": "/mutant-icons/hide_chimera.png"
+      },
       "flesh": {
         "label": "Flesh",
         "sections": [
@@ -236,7 +250,7 @@
       "psy_dog": {
         "label": "Psy Dog",
         "sections": ["psy_dog_normal"],
-        "count": 2,
+        "count": 1,
         "icon": "/mutant-icons/hide_psy_dog.png"
       },
       "psysuckers": {
@@ -407,7 +421,7 @@
       "psy_dog": {
         "label": "Psy Dog",
         "sections": ["psy_dog"],
-        "count": 1,
+        "count": 2,
         "icon": "/mutant-icons/hide_psy_dog.png"
       },
       "psysuckers": {
@@ -521,7 +535,7 @@
       "renegades": {
         "label": "Renegades",
         "sections": ["sim_default_renegade_1", "sim_default_renegade_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/renegade_patch.png"
@@ -529,7 +543,7 @@
       "bandits": {
         "label": "Bandits",
         "sections": ["sim_default_bandit_1", "sim_default_bandit_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/bandit_patch.png"
@@ -537,7 +551,7 @@
       "loners": {
         "label": "Loners",
         "sections": ["sim_default_stalker_1", "sim_default_stalker_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/stalker_patch.png"
@@ -545,7 +559,7 @@
       "mercs": {
         "label": "Mercs",
         "sections": ["sim_default_killer_1", "sim_default_killer_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/killer_patch.png"
@@ -553,7 +567,7 @@
       "military": {
         "label": "Military",
         "sections": ["sim_default_military_2", "sim_default_military_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/army_patch.png"
@@ -561,7 +575,7 @@
       "duty": {
         "label": "Duty",
         "sections": ["sim_default_duty_1", "sim_default_duty_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/dolg_patch.png"
@@ -569,7 +583,7 @@
       "freedom": {
         "label": "Freedom",
         "sections": ["sim_default_freedom_1", "sim_default_freedom_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/freedom_patch.png"
@@ -577,7 +591,7 @@
       "csky": {
         "label": "Clear Sky",
         "sections": ["sim_default_csky_1", "sim_default_csky_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/csky_patch.png"
@@ -585,7 +599,7 @@
       "ecolog": {
         "label": "Ecolog",
         "sections": ["sim_default_ecolog_1", "sim_default_ecolog_2"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/ecolog_patch.png"
@@ -593,7 +607,7 @@
       "zombied": {
         "label": "Zombied",
         "sections": ["sim_default_zombied_2", "sim_default_zombied_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/zombied_patch.png"
@@ -601,7 +615,7 @@
       "monolith": {
         "label": "Monolith",
         "sections": ["sim_default_monolith_2", "sim_default_monolith_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/monolith_patch.png"
@@ -611,7 +625,7 @@
       "renegades": {
         "label": "Renegades",
         "sections": ["sim_default_renegade_2", "sim_default_renegade_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/renegade_patch.png"
@@ -619,7 +633,7 @@
       "bandits": {
         "label": "Bandits",
         "sections": ["sim_default_bandit_2", "sim_default_bandit_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/bandit_patch.png"
@@ -627,7 +641,7 @@
       "loners": {
         "label": "Loners",
         "sections": ["sim_default_stalker_2", "sim_default_stalker_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/stalker_patch.png"
@@ -635,7 +649,7 @@
       "mercs": {
         "label": "Mercs",
         "sections": ["sim_default_killer_2", "sim_default_killer_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/killer_patch.png"
@@ -643,7 +657,7 @@
       "military": {
         "label": "Military",
         "sections": ["sim_default_military_3", "sim_default_military_4"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/army_patch.png"
@@ -651,7 +665,7 @@
       "duty": {
         "label": "Duty",
         "sections": ["sim_default_duty_2", "sim_default_duty_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/dolg_patch.png"
@@ -659,7 +673,7 @@
       "freedom": {
         "label": "Freedom",
         "sections": ["sim_default_freedom_2", "sim_default_freedom_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/freedom_patch.png"
@@ -667,7 +681,7 @@
       "csky": {
         "label": "Clear Sky",
         "sections": ["sim_default_csky_2", "sim_default_csky_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/csky_patch.png"
@@ -675,7 +689,7 @@
       "ecolog": {
         "label": "Ecolog",
         "sections": ["sim_default_ecolog_2", "sim_default_ecolog_3"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/ecolog_patch.png"
@@ -683,7 +697,7 @@
       "zombied": {
         "label": "Zombied",
         "sections": ["sim_default_zombied_3", "sim_default_zombied_4"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/zombied_patch.png"
@@ -691,7 +705,7 @@
       "monolith": {
         "label": "Monolith",
         "sections": ["sim_default_monolith_3", "sim_default_monolith_4"],
-        "count": 2,
+        "count": 3,
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/monolith_patch.png"
