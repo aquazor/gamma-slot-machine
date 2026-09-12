@@ -3,6 +3,7 @@ import './Settings.css';
 
 import Navbar from './Navbar';
 import BitsRewards from './settings/BitsRewards';
+import Changelog from './settings/Changelog';
 import ChannelPointRewards from './settings/ChannelPointRewards';
 import EnemyFactions from './settings/EnemyFactions';
 import IntegrationsSection from './settings/IntegrationsSection';
@@ -355,6 +356,8 @@ export default function Settings() {
               />
 
               <EnemyFactions />
+
+              <Changelog />
             </>
           )}
         </div>
