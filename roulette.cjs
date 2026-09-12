@@ -154,12 +154,12 @@ function planForEvent(event, rewardMap) {
         return null;
       }
 
-      return { label: 'NEW SUB', count: 1 };
+      return { label: 'NEW SUB', count: 2 };
 
     case 'resub':
       return {
         label: event.months ? `RESUB x${event.months}` : 'RESUB',
-        count: 1,
+        count: 2,
       };
 
     case 'gift': {
@@ -167,7 +167,7 @@ function planForEvent(event, rewardMap) {
 
       return {
         label: `${total} GIFT SUB${total > 1 ? 'S' : ''}`,
-        count: total >= 5 ? 3 : 1,
+        count: total > 1 ? 3 : 2,
       };
     }
 
