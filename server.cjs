@@ -13,7 +13,7 @@ const enemies = require('./enemies.cjs');
 const bitsRewards = require('./bits-rewards.cjs');
 const { BITS_REWARDS_ENABLED } = require('./config.cjs');
 
-const { getGammaPath, getCommandFile } = bridge;
+const { getGammaPath, MOD_NAME } = bridge;
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -389,12 +389,13 @@ app.post('/roulette/test', (req, res) => {
     const hasRealRewards =
       roulette.rewardMap &&
       [...roulette.rewardMap.values()].some(
-        (def) => def.rewardId && (wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn'),
+        (def) =>
+          def.rewardId && (wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn'),
       );
 
     if (hasRealRewards) {
-      const match = [...roulette.rewardMap.entries()].find(
-        ([, def]) => (wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn'),
+      const match = [...roulette.rewardMap.entries()].find(([, def]) =>
+        wantSpawn ? def.kind === 'spawn' : def.kind !== 'spawn',
       );
 
       event.rewardId = req.body.rewardId || match[0];
@@ -545,7 +546,12 @@ app.post('/twitch/rewards/config', async (req, res) => {
   }
 
   try {
-    rewards.setRewardOverride(key, { cost, maxPerUserPerStream, cooldownSeconds, enabled });
+    rewards.setRewardOverride(key, {
+      cost,
+      maxPerUserPerStream,
+      cooldownSeconds,
+      enabled,
+    });
 
     // Sync only THIS reward on Twitch — never touch any other reward's
     // live state as a side effect of saving one (that was the bug).
@@ -667,7 +673,7 @@ if (isSea()) {
 app.listen(PORT, () => {
   const url = `http://localhost:${PORT}`;
 
-  console.log(`GAMMA Weapon and Armor Slot Machine by rip_perri running on ${url}`);
+  console.log(`${MOD_NAME} running on ${url}`);
 
   const gammaPath = getGammaPath();
 

@@ -14,13 +14,13 @@ const path = require('path');
  *   HELMET|<item_id>
  */
 
-const MOD_FOLDER = 'GAMMA Weapon and Armor Slot Machine by rip_perri';
+const MOD_NAME = 'GAMMA Randomizer Slot Machine by rip_perri';
 
 function getCommandFile(gammaPath) {
   return path.join(
     gammaPath,
     'mods',
-    MOD_FOLDER,
+    MOD_NAME,
     'gamedata',
     'scripts',
     'bridge',
@@ -153,7 +153,7 @@ function giveLoadout(payload) {
 }
 
 module.exports = {
-  MOD_FOLDER,
+  MOD_NAME,
   getCommandFile,
   isValidGammaPath,
   findGamma,
