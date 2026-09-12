@@ -175,7 +175,20 @@ async function refreshAccessToken(refreshToken) {
  * Call before any Twitch API/EventSub use. Refreshes if expired
  * or close to expiring. Returns null if the user was never
  * authorized (caller should trigger the device code flow).
+ *
+ * On boot, server.cjs / TwitchEventSub.start() / twitch-rewards.cjs
+ * each call this independently within the same tick. DCF refresh
+ * tokens are single-use — without the single-flight guard below,
+ * whichever of those calls found the token stale would ALL fire
+ * their own /oauth2/token refresh concurrently with the same
+ * refresh_token, racing each other. One "wins", but the others end
+ * up using an access_token that's already stale by the time it's
+ * used, which surfaces as attachUserInfo's Helix call getting a 401
+ * even though the refresh itself appeared to succeed. Sharing one
+ * in-flight refresh promise across all concurrent callers fixes it.
  */
+
+let refreshInFlight = null;
 
 async function ensureValidToken() {
   const tokens = loadTokens();
@@ -190,7 +203,13 @@ async function ensureValidToken() {
     return tokens;
   }
 
-  return refreshAccessToken(tokens.refresh_token);
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken(tokens.refresh_token).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+
+  return refreshInFlight;
 }
 
 /*
