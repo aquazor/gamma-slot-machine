@@ -19,6 +19,13 @@ const TWITCH_SCOPES = [
 
 // Channel-point rewards the app creates & manages on the broadcaster's
 // channel. Matched to existing rewards by `title` on startup.
+//   previousTitle        — a reward's title before its last rename. Lets
+//                          ensureOneReward (twitch-rewards.cjs) find and
+//                          rename the SAME live reward in place instead of
+//                          creating a duplicate under the new title and
+//                          orphaning the old one. Safe to leave in place
+//                          permanently — once the live reward is renamed,
+//                          `title` matches directly and this is never used.
 //   count                — how many items the roll produces
 //   maxPerUserPerStream  — Twitch caps redemptions per viewer per broadcast
 //   cooldownSeconds      — Twitch enforces a global cooldown between redemptions
@@ -37,7 +44,8 @@ const TWITCH_SCOPES = [
 const CHANNEL_POINT_REWARDS = [
   {
     key: 'spawn-enemies',
-    title: 'Spawn Enemies',
+    title: '[SPIN] Spawn Enemies',
+    previousTitle: 'Spawn Enemies',
     cost: 2000,
     prompt: 'Drop a hostile squad near the streamer.',
     kind: 'spawn',
@@ -48,7 +56,8 @@ const CHANNEL_POINT_REWARDS = [
   },
   {
     key: 'spawn-enemies-3',
-    title: 'Spawn Enemies x3',
+    title: '[SPIN] Spawn Enemies x3',
+    previousTitle: 'Spawn Enemies x3',
     cost: 6000,
     prompt: 'Drop three hostile squads near the streamer.',
     kind: 'spawn',
@@ -59,7 +68,8 @@ const CHANNEL_POINT_REWARDS = [
   },
   {
     key: 'spawn-mutants',
-    title: 'Spawn Mutants',
+    title: '[SPIN] Spawn Mutants',
+    previousTitle: 'Spawn Mutants',
     cost: 2000,
     prompt: 'Drop a pack of mutants near the streamer.',
     kind: 'spawn',
@@ -70,7 +80,8 @@ const CHANNEL_POINT_REWARDS = [
   },
   {
     key: 'spawn-mutants-3',
-    title: 'Spawn Mutants x3',
+    title: '[SPIN] Spawn Mutants x3',
+    previousTitle: 'Spawn Mutants x3',
     cost: 6000,
     prompt: 'Drop three packs of mutants near the streamer.',
     kind: 'spawn',
@@ -81,7 +92,8 @@ const CHANNEL_POINT_REWARDS = [
   },
   {
     key: 'loot-roll-1',
-    title: 'Loot Roll 1 item',
+    title: '[SPIN] Loot Roll 1 item',
+    previousTitle: 'Loot Roll 1 item',
     cost: 2000,
     prompt: 'Spin the GAMMA loot roulette for one random item.',
     kind: 'loot',
@@ -91,7 +103,8 @@ const CHANNEL_POINT_REWARDS = [
   },
   {
     key: 'loot-roll-3',
-    title: 'Loot Roll 3 items',
+    title: '[SPIN] Loot Roll 3 items',
+    previousTitle: 'Loot Roll 3 items',
     cost: 6000,
     prompt: 'Spin the GAMMA loot roulette for three random items.',
     kind: 'loot',

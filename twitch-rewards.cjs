@@ -267,9 +267,19 @@ function needsSync(reward, def) {
  * Create the reward if Twitch doesn't have it yet, or PATCH it if its
  * live cost/limits/enabled state has drifted from `def`. Touches ONLY
  * this one reward — callers control how many defs they run it over.
+ *
+ * If `def.title` isn't found but `def.previousTitle` is, the reward was
+ * just renamed in config — rename the SAME live reward in place (PATCH
+ * title alongside the usual fields) instead of creating a duplicate
+ * under the new title and leaving the old one orphaned on Twitch.
  */
 async function ensureOneReward(broadcasterId, byTitle, def) {
   let reward = byTitle.get(def.title);
+  const renaming = !reward && Boolean(def.previousTitle) && byTitle.has(def.previousTitle);
+
+  if (renaming) {
+    reward = byTitle.get(def.previousTitle);
+  }
 
   if (!reward) {
     const created = await helix(
@@ -287,16 +297,20 @@ async function ensureOneReward(broadcasterId, byTitle, def) {
     reward = created.data[0];
 
     console.log(`Twitch reward created: "${reward.title}" (${reward.cost} pts)`);
-  } else if (needsSync(reward, def)) {
+  } else if (renaming || needsSync(reward, def)) {
     const updated = await helix(
       'PATCH',
       `${REWARDS_URL}?broadcaster_id=${broadcasterId}&id=${reward.id}`,
-      desiredFields(def),
+      renaming ? { title: def.title, ...desiredFields(def) } : desiredFields(def),
     );
 
     reward = updated.data[0];
 
-    console.log(`Twitch reward synced: "${reward.title}" (${reward.cost} pts)`);
+    console.log(
+      renaming
+        ? `Twitch reward renamed: "${def.previousTitle}" -> "${reward.title}"`
+        : `Twitch reward synced: "${reward.title}" (${reward.cost} pts)`,
+    );
   }
 
   return reward;

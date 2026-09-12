@@ -145,10 +145,22 @@ async function startEventSub() {
 }
 
 /*
+ * True from boot (or from the moment Twitch connects) until the reward
+ * sync it triggers has settled. The reward list on Twitch can lag a
+ * moment behind what CHANNEL_POINT_REWARDS + overrides say it should be
+ * (e.g. re-enabling everything on restart) — exposed via GET
+ * /twitch/rewards so the Settings page can wait/retry instead of
+ * rendering a stale snapshot right after the server starts.
+ */
+let rewardsSyncing = true;
+
+/*
  * Create / sync the channel-point rewards and hand the id -> definition
  * map to the roulette so redemptions can trigger rolls.
  */
 async function syncRewards() {
+  rewardsSyncing = true;
+
   try {
     const map = await rewards.ensureRewards();
 
@@ -157,6 +169,8 @@ async function syncRewards() {
     console.log(`Channel-point rewards ready: ${map.size}`);
   } catch (error) {
     console.error('Failed to sync channel-point rewards:', error.message);
+  } finally {
+    rewardsSyncing = false;
   }
 }
 
@@ -495,9 +509,9 @@ app.get('/twitch/eventsub/status', (req, res) => {
 
 app.get('/twitch/rewards', async (req, res) => {
   try {
-    res.json({ rewards: await rewards.listRewards() });
+    res.json({ rewards: await rewards.listRewards(), syncing: rewardsSyncing });
   } catch (error) {
-    res.json({ rewards: [], error: error.message });
+    res.json({ rewards: [], syncing: rewardsSyncing, error: error.message });
   }
 });
 
@@ -687,6 +701,8 @@ app.listen(PORT, () => {
         startEventSub();
         syncRewards();
       } else {
+        rewardsSyncing = false;
+
         console.log('----------------------------------------');
         console.log('Twitch is NOT connected — the roulette will not react to');
         console.log('subs, gift subs, bits or channel points until you link');
@@ -696,6 +712,8 @@ app.listen(PORT, () => {
       }
     })
     .catch((error) => {
+      rewardsSyncing = false;
+
       console.error('Twitch token check failed:', error.message);
 
       console.log(`Open ${url}/settings to (re)connect your Twitch account.`);
