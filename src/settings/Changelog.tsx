@@ -6,14 +6,9 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
-    date: '2026-09-13',
-    items: [
-      'New subs, resubs and gift subs now always roll loot: 2 items for a single sub, 3 items for a multi-sub gift (any size)',
-    ],
-  },
-  {
     date: '2026-09-12',
     items: [
+      'New subs, resubs and gift subs now always roll loot: 2 items for a single sub, 3 items for a multi-sub gift (any size)',
       'Channel-point reward titles on Twitch now start with "[SPIN]" so they stand out in your rewards list',
       'Fixed a bug where restarting the server could briefly show the wrong enabled/disabled state in Settings',
       'Added Sin and UNISG as spawnable enemy factions',
