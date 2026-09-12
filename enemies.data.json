@@ -529,6 +529,18 @@
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/monolith_patch.png"
+      },
+      "greh": {
+        "label": "Sin",
+        "sections": ["sim_default_greh_0", "sim_default_greh_1"],
+        "count": 1,
+        "icon": "/patch-icons/greh_patch.png"
+      },
+      "isg": {
+        "label": "UNISG",
+        "sections": ["sim_default_isg_0", "sim_default_isg_1"],
+        "count": 1,
+        "icon": "/patch-icons/isg_patch.png"
       }
     },
     "Advanced": {
@@ -619,6 +631,22 @@
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/monolith_patch.png"
+      },
+      "greh": {
+        "label": "Sin",
+        "sections": ["sim_default_greh_1", "sim_default_greh_2"],
+        "count": 3,
+        "min": 1,
+        "max": 2,
+        "icon": "/patch-icons/greh_patch.png"
+      },
+      "isg": {
+        "label": "UNISG",
+        "sections": ["sim_default_isg_1", "sim_default_isg_2"],
+        "count": 2,
+        "min": 1,
+        "max": 1,
+        "icon": "/patch-icons/isg_patch.png"
       }
     },
     "Expert": {
@@ -709,6 +737,22 @@
         "min": 1,
         "max": 4,
         "icon": "/patch-icons/monolith_patch.png"
+      },
+      "greh": {
+        "label": "Sin",
+        "sections": ["sim_default_greh_2", "sim_default_greh_3"],
+        "count": 3,
+        "min": 1,
+        "max": 3,
+        "icon": "/patch-icons/greh_patch.png"
+      },
+      "isg": {
+        "label": "UNISG",
+        "sections": ["sim_default_isg_2", "sim_default_isg_3"],
+        "count": 3,
+        "min": 1,
+        "max": 2,
+        "icon": "/patch-icons/isg_patch.png"
       }
     }
   }
