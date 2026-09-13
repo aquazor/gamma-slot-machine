@@ -34,84 +34,60 @@ const TWITCH_SCOPES = [
 // (should_redemptions_skip_request_queue: false) so points can be
 // refunded manually from the Twitch Stream Manager.
 //   kind     — 'loot' spins the item roulette, 'spawn' the mutant/enemy one
-//   count    — (loot) how many items the roll produces
+//   count    — (loot) how many items the roll produces. null = randomized
+//              1-3 at redemption time (roulette.cjs).
 //   category — (spawn) 'mutants' | 'enemies'
-//   rolls    — (spawn) how many groups to roll at once (default 1). Picks
-//              are independent, so the same group can come up more than once.
-//              Each group's creature count is auto-reduced when rolls > 1
-//              (enemies.cjs countForRoll) so a "x3" reward spawns roughly
-//              as many total creatures as three separate "x1" rolls, not 3x.
+//   rolls    — (spawn) how many groups to roll at once. null = randomized
+//              1-3 at redemption time, same as `count` above. Picks are
+//              independent, so the same group can come up more than once;
+//              each group's creature count is auto-reduced when rolls > 1
+//              (enemies.cjs countForRoll) so rolling 3 spawns roughly as
+//              many total creatures as three separate single rolls, not 3x.
 const CHANNEL_POINT_REWARDS = [
   {
-    key: 'spawn-enemies',
-    title: '[SPIN] Spawn Enemies',
-    previousTitle: 'Spawn Enemies',
-    cost: 2000,
-    prompt: 'Drop a hostile squad near the streamer.',
+    key: 'spawn-squads',
+    title: '[SPIN] Spawn Squads',
+    previousTitle: '[SPIN] Spawn Enemies',
+    cost: 3000,
+    prompt: 'Drop 1-3 hostile squads near the streamer (random).',
     kind: 'spawn',
     category: 'enemies',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
-    rolls: 1,
-  },
-  {
-    key: 'spawn-enemies-3',
-    title: '[SPIN] Spawn Enemies x3',
-    previousTitle: 'Spawn Enemies x3',
-    cost: 6000,
-    prompt: 'Drop three hostile squads near the streamer.',
-    kind: 'spawn',
-    category: 'enemies',
-    maxPerUserPerStream: 2,
-    cooldownSeconds: 60,
-    rolls: 3,
+    rolls: null,
   },
   {
     key: 'spawn-mutants',
     title: '[SPIN] Spawn Mutants',
-    previousTitle: 'Spawn Mutants',
-    cost: 2000,
-    prompt: 'Drop a pack of mutants near the streamer.',
+    cost: 3000,
+    prompt: 'Drop 1-3 mutant packs near the streamer (random).',
     kind: 'spawn',
     category: 'mutants',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
-    rolls: 1,
+    rolls: null,
   },
   {
-    key: 'spawn-mutants-3',
-    title: '[SPIN] Spawn Mutants x3',
-    previousTitle: 'Spawn Mutants x3',
-    cost: 6000,
-    prompt: 'Drop three packs of mutants near the streamer.',
-    kind: 'spawn',
-    category: 'mutants',
-    maxPerUserPerStream: 2,
-    cooldownSeconds: 60,
-    rolls: 3,
-  },
-  {
-    key: 'loot-roll-1',
-    title: '[SPIN] Loot Roll 1 item',
-    previousTitle: 'Loot Roll 1 item',
-    cost: 2000,
-    prompt: 'Spin the GAMMA loot roulette for one random item.',
+    key: 'loot-roll',
+    title: '[SPIN] Loot Roll',
+    previousTitle: '[SPIN] Loot Roll 1 item',
+    cost: 3000,
+    prompt: 'Spin the GAMMA loot roulette for 1-3 random items.',
     kind: 'loot',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
-    count: 1,
+    count: null,
   },
-  {
-    key: 'loot-roll-3',
-    title: '[SPIN] Loot Roll 3 items',
-    previousTitle: 'Loot Roll 3 items',
-    cost: 6000,
-    prompt: 'Spin the GAMMA loot roulette for three random items.',
-    kind: 'loot',
-    maxPerUserPerStream: 2,
-    cooldownSeconds: 60,
-    count: 3,
-  },
+];
+
+// Titles this app used to manage but has since consolidated away. Deleted
+// outright (not just disabled) on the next full sync so the streamer's
+// Twitch reward list doesn't accumulate abandoned entries when rewards
+// get merged/renamed — see twitch-rewards.cjs's pruneObsoleteRewards().
+const OBSOLETE_REWARD_TITLES = [
+  '[SPIN] Spawn Enemies x3',
+  '[SPIN] Spawn Mutants x3',
+  '[SPIN] Loot Roll 3 items',
 ];
 
 // Master switch for the whole bits-triggers-a-roll feature. false =
@@ -160,6 +136,23 @@ const BITS_REWARDS = [
   { key: 'bits-roll-3', bits: 150, kind: 'loot', count: 3 },
 ];
 
+// Custom Power-ups (Twitch's bits-funded custom rewards) — added May 2026,
+// with EventSub support (channel.custom_power_up_redemption.add) but NO
+// create/update/delete API yet, only a read-only list. So unlike
+// CHANNEL_POINT_REWARDS above, these are NOT auto-created: the streamer
+// creates them by hand in the Twitch dashboard (Viewer Rewards > Custom
+// Power-ups) and this app just matches them by `title` — same pattern as
+// CHANNEL_POINT_REWARDS, and the titles below match the equivalent
+// channel-point reward names 1:1. Each one always rolls a random 1-3,
+// same as its channel-point counterpart; there's no cost here to keep in
+// sync since there's no update API — set the Bits price on Twitch itself.
+const CUSTOM_POWER_UPS_ENABLED = true;
+const CUSTOM_POWER_UPS = [
+  { title: '[SPIN] Spawn Squads', kind: 'spawn', category: 'enemies' },
+  { title: '[SPIN] Spawn Mutants', kind: 'spawn', category: 'mutants' },
+  { title: '[SPIN] Loot Roll', kind: 'loot' },
+];
+
 // Difficulty presets for the Twitch roulette — the streamer switches
 // these live in /settings (no restart). Each preset lists the allowed
 // `repair` grades per slot; the roll only picks items in those grades.
@@ -183,8 +176,11 @@ module.exports = {
   TWITCH_REDIRECT_URI,
   TWITCH_SCOPES,
   CHANNEL_POINT_REWARDS,
+  OBSOLETE_REWARD_TITLES,
   BITS_REWARDS,
   BITS_REWARDS_ENABLED,
+  CUSTOM_POWER_UPS,
+  CUSTOM_POWER_UPS_ENABLED,
   PRESETS,
   DEFAULT_PRESET,
   DEFAULT_SPAWN_TIER,
