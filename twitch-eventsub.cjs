@@ -38,6 +38,7 @@ const TOPICS = [
   { type: 'channel.subscription.gift', version: '1' },
   { type: 'channel.subscription.message', version: '1' }, // resubs
   { type: 'channel.channel_points_custom_reward_redemption.add', version: '1' },
+  { type: 'channel.custom_power_up_redemption.add', version: '1' },
 ];
 
 const SEEN_MESSAGE_TTL_MS = 10 * 60 * 1000; // Twitch may redeliver within 10 min
@@ -415,6 +416,22 @@ class TwitchEventSub extends EventEmitter {
         rewardCost: event.reward && event.reward.cost,
         userInput: event.user_input || '',
         redemptionId: event.id,
+      };
+    } else if (type === 'channel.custom_power_up_redemption.add') {
+      // Confirmed against live traffic: the Power-up is nested under
+      // `custom_power_up` (id/title/bits/prompt), not `reward` like a
+      // channel-points redemption.
+      const powerUp = event.custom_power_up || {};
+
+      normalized = {
+        kind: 'power_up',
+        user: event.user_name || event.user_login || null,
+        userLogin: event.user_login || null,
+        powerUpId: powerUp.id || null,
+        powerUpTitle: powerUp.title || null,
+        bits: Number(powerUp.bits) || 0,
+        userInput: event.user_input || '',
+        redemptionId: event.id || null,
       };
     }
 

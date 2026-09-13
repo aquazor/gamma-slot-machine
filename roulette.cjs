@@ -4,7 +4,14 @@ const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
 const bitsRewards = require('./bits-rewards.cjs');
-const { PRESETS, DEFAULT_PRESET, DEFAULT_SPAWN_TIER, BITS_REWARDS_ENABLED } = require('./config.cjs');
+const {
+  PRESETS,
+  DEFAULT_PRESET,
+  DEFAULT_SPAWN_TIER,
+  BITS_REWARDS_ENABLED,
+  CUSTOM_POWER_UPS_ENABLED,
+  CUSTOM_POWER_UPS,
+} = require('./config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -112,6 +119,43 @@ function rollItems(count, grades) {
  * Returns { label, count } or null to skip.
  */
 
+/*
+ * How many slots/groups a "random" reward or sub event rolls — 1 to 3
+ * inclusive, picked fresh each time. A def/event can still pin an exact
+ * number (see 'manual'/'manual-spawn' below); only an unset rolls/count
+ * falls back to this.
+ */
+function randomSlotCount() {
+  return 1 + randInt(3);
+}
+
+/*
+ * Every subscription-family event (new sub, resub, single gift) rolls
+ * one of loot / enemy squads / mutants with equal 1/3 odds, then a
+ * random 1-3 count — unless `forceTriple` (a multi-sub gift bomb),
+ * which always rolls exactly 3. Which outcome landed is only visible
+ * once the reels stop, same as any other roll.
+ */
+function subEventOutcome(label, forceTriple) {
+  const category = pick(['loot', 'enemies', 'mutants']);
+  const rolls = forceTriple ? 3 : randomSlotCount();
+
+  if (category === 'loot') {
+    return { label, count: rolls };
+  }
+
+  return { mode: 'spawn', label, category, rolls };
+}
+
+/*
+ * Custom Power-ups have no create/manage API (Twitch only exposes a
+ * read-only list as of this writing), so there's no reward id to sync —
+ * matched by `title` instead, same as CHANNEL_POINT_REWARDS.
+ */
+function planForPowerUp(title) {
+  return CUSTOM_POWER_UPS.find((def) => def.title === title) || null;
+}
+
 function planForEvent(event, rewardMap) {
   switch (event.kind) {
     case 'reward': {
@@ -129,11 +173,15 @@ function planForEvent(event, rewardMap) {
           mode: 'spawn',
           label: name.toUpperCase(),
           category: def.category || 'mutants',
-          rolls: def.rolls || 1,
+          rolls: Number.isFinite(def.rolls) && def.rolls > 0 ? def.rolls : randomSlotCount(),
         };
       }
 
-      return { mode: 'loot', label: name.toUpperCase(), count: def.count || 1 };
+      return {
+        mode: 'loot',
+        label: name.toUpperCase(),
+        count: Number.isFinite(def.count) && def.count > 0 ? def.count : randomSlotCount(),
+      };
     }
 
     case 'manual':
@@ -154,21 +202,15 @@ function planForEvent(event, rewardMap) {
         return null;
       }
 
-      return { label: 'NEW SUB', count: 2 };
+      return subEventOutcome('NEW SUB', false);
 
     case 'resub':
-      return {
-        label: event.months ? `RESUB x${event.months}` : 'RESUB',
-        count: 2,
-      };
+      return subEventOutcome(event.months ? `RESUB x${event.months}` : 'RESUB', false);
 
     case 'gift': {
       const total = event.total || 1;
 
-      return {
-        label: `${total} GIFT SUB${total > 1 ? 'S' : ''}`,
-        count: total > 1 ? 3 : 2,
-      };
+      return subEventOutcome(`${total} GIFT SUB${total > 1 ? 'S' : ''}`, total > 1);
     }
 
     case 'cheer': {
@@ -190,6 +232,26 @@ function planForEvent(event, rewardMap) {
       }
 
       return { mode: 'loot', label, count: tier.count };
+    }
+
+    case 'power_up': {
+      if (!CUSTOM_POWER_UPS_ENABLED) {
+        return null;
+      }
+
+      const def = planForPowerUp(event.powerUpTitle);
+
+      if (!def) {
+        return null;
+      }
+
+      const label = (event.powerUpTitle || 'BITS POWER-UP').toUpperCase();
+
+      if (def.kind === 'spawn') {
+        return { mode: 'spawn', label, category: def.category, rolls: randomSlotCount() };
+      }
+
+      return { mode: 'loot', label, count: randomSlotCount() };
     }
 
     default:

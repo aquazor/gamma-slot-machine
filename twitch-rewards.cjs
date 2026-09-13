@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 
 const twitchAuth = require('./twitch-auth.cjs');
-const { TWITCH_CLIENT_ID, CHANNEL_POINT_REWARDS } = require('./config.cjs');
+const { TWITCH_CLIENT_ID, CHANNEL_POINT_REWARDS, OBSOLETE_REWARD_TITLES } = require('./config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -316,6 +316,31 @@ async function ensureOneReward(broadcasterId, byTitle, def) {
   return reward;
 }
 
+/*
+ * Delete (not just disable) any live reward left over from a title this
+ * app used to manage but has since consolidated/renamed away from — so
+ * merging rewards doesn't leave abandoned entries in the streamer's
+ * Twitch reward list. Only ever touches OBSOLETE_REWARD_TITLES, never
+ * anything the streamer created themselves.
+ */
+async function pruneObsoleteRewards(broadcasterId, byTitle) {
+  for (const title of OBSOLETE_REWARD_TITLES) {
+    const reward = byTitle.get(title);
+
+    if (!reward) {
+      continue;
+    }
+
+    try {
+      await helix('DELETE', `${REWARDS_URL}?broadcaster_id=${broadcasterId}&id=${reward.id}`);
+
+      console.log(`Twitch reward removed (obsolete): "${title}"`);
+    } catch (error) {
+      console.error(`Failed to remove obsolete reward "${title}":`, error.message);
+    }
+  }
+}
+
 async function ensureRewards() {
   const broadcasterId = await getBroadcasterId();
 
@@ -325,6 +350,8 @@ async function ensureRewards() {
   );
 
   const byTitle = new Map((listed.data || []).map((reward) => [reward.title, reward]));
+
+  await pruneObsoleteRewards(broadcasterId, byTitle);
 
   const managed = new Map();
 
