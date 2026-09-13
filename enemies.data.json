@@ -37,7 +37,7 @@
           "cat_weak_d",
           "cat_weak_e"
         ],
-        "count": 1,
+        "count": 2,
         "icon": "/mutant-icons/mutant_part_cat_claw.png"
       },
       "tushkano": {
@@ -103,6 +103,12 @@
         "sections": ["m_poltergeist_normal_tele", "m_poltergeist_normal_flame"],
         "count": 1,
         "icon": "/mutant-icons/decor_grave2.png"
+      },
+      "karlik": {
+        "label": "Karlik",
+        "sections": ["m_karlik_e"],
+        "count": 1,
+        "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       }
     },
     "Advanced": {
@@ -264,6 +270,12 @@
         ],
         "count": 1,
         "icon": "/mutant-icons/hide_psysucker.png"
+      },
+      "karlik": {
+        "label": "Karlik",
+        "sections": ["m_karlik_e"],
+        "count": 2,
+        "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       }
     },
     "Expert": {
@@ -308,7 +320,7 @@
       "tushkano": {
         "label": "Tushkano",
         "sections": ["tushkano_strong"],
-        "count": 3,
+        "count": 4,
         "icon": "/mutant-icons/mutant_part_tushkano_head.png"
       },
       "fractures": {
@@ -391,7 +403,7 @@
       },
       "gigant": {
         "label": "Gigant",
-        "sections": ["gigant_strong"],
+        "sections": ["gigant_strong", "gigant_jumper"],
         "count": 1,
         "icon": "/mutant-icons/hide_pseudogiant.png"
       },
@@ -450,6 +462,12 @@
         ],
         "count": 1,
         "icon": "/mutant-icons/hide_psysucker.png"
+      },
+      "karlik": {
+        "label": "Karlik",
+        "sections": ["m_karlik_e"],
+        "count": 3,
+        "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       }
     }
   },
