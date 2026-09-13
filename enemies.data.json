@@ -395,6 +395,20 @@
         "count": 1,
         "icon": "/mutant-icons/hide_pseudogiant.png"
       },
+      "controller": {
+        "label": "Controller",
+        "sections": [
+          "m_controller_normal",
+          "m_controller_normal1111",
+          "m_controller_normal2",
+          "m_controller_normal666",
+          "m_controller_normal777",
+          "m_controller_normal888",
+          "m_controller_psy"
+        ],
+        "count": 1,
+        "icon": "/mutant-icons/hide_controller.png"
+      },
       "flesh": {
         "label": "Flesh",
         "sections": [
@@ -694,14 +708,6 @@
         "max": 4,
         "icon": "/patch-icons/monolith_patch.png"
       },
-      "greh": {
-        "label": "Sin",
-        "sections": ["sim_default_greh_2", "sim_default_greh_3"],
-        "count": 3,
-        "min": 1,
-        "max": 3,
-        "icon": "/patch-icons/greh_patch.png"
-      },
       "isg": {
         "label": "UNISG",
         "sections": ["sim_default_isg_2", "sim_default_isg_3"],
@@ -709,6 +715,14 @@
         "min": 1,
         "max": 2,
         "icon": "/patch-icons/isg_patch.png"
+      },
+      "greh": {
+        "label": "Sin",
+        "sections": ["sim_default_greh_2", "sim_default_greh_3"],
+        "count": 3,
+        "min": 1,
+        "max": 3,
+        "icon": "/patch-icons/greh_patch.png"
       }
     }
   }
