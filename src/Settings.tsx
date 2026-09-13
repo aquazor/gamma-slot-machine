@@ -6,7 +6,9 @@ import BitsRewards from './settings/BitsRewards';
 import Changelog from './settings/Changelog';
 import ChannelPointRewards from './settings/ChannelPointRewards';
 import EnemyFactions from './settings/EnemyFactions';
+import { copyToClipboard } from './settings/clipboard';
 import IntegrationsSection from './settings/IntegrationsSection';
+import PowerUpsInfo from './settings/PowerUpsInfo';
 import RouletteControls from './settings/RouletteControls';
 import {
   API,
@@ -284,27 +286,7 @@ export default function Settings() {
   const [copied, setCopied] = useState<boolean>(false);
 
   const copyOverlayUrl = useCallback(async (): Promise<void> => {
-    const url = `${API}/overlay`;
-
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      const area = document.createElement('textarea');
-      area.value = url;
-      area.style.position = 'fixed';
-      area.style.opacity = '0';
-
-      document.body.appendChild(area);
-      area.select();
-
-      try {
-        document.execCommand('copy');
-      } catch {
-        // clipboard unavailable
-      }
-
-      area.remove();
-    }
+    await copyToClipboard(`${API}/overlay`);
 
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
@@ -345,6 +327,8 @@ export default function Settings() {
               <ChannelPointRewards twitchConnected={twitch.connected} />
 
               <BitsRewards />
+
+              <PowerUpsInfo />
 
               <RouletteControls
                 roulette={roulette}

@@ -72,35 +72,31 @@ function RouletteControls({
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual spawn</span>
-        <button
-          className="set-btn"
-          onClick={() => manualSpawn('mutants', 1)}
-          disabled={triggerBusy}
-        >
-          Mutants
-        </button>
-        <button
-          className="set-btn"
-          onClick={() => manualSpawn('mutants', 3)}
-          disabled={triggerBusy}
-        >
-          Mutants ×3
-        </button>
-        <button
-          className="set-btn"
-          onClick={() => manualSpawn('enemies', 1)}
-          disabled={triggerBusy}
-        >
-          Enemies
-        </button>
-        <button
-          className="set-btn"
-          onClick={() => manualSpawn('enemies', 3)}
-          disabled={triggerBusy}
-        >
-          Enemies ×3
-        </button>
+        <span className="set-muted">Manual spawn Mutants</span>
+        {[1, 2, 3].map((n) => (
+          <button
+            key={n}
+            className="set-btn"
+            onClick={() => manualSpawn('mutants', n)}
+            disabled={triggerBusy}
+          >
+            {n === 1 ? 'Mutants' : `Mutants ×${n}`}
+          </button>
+        ))}
+      </div>
+
+      <div className="set-trigger">
+        <span className="set-muted">Manual spawn Squads</span>
+        {[1, 2, 3].map((n) => (
+          <button
+            key={n}
+            className="set-btn"
+            onClick={() => manualSpawn('enemies', n)}
+            disabled={triggerBusy}
+          >
+            {n === 1 ? 'Squads' : `Squads ×${n}`}
+          </button>
+        ))}
       </div>
 
       {typeof roulette?.queued === 'number' && roulette.queued > 0 && (

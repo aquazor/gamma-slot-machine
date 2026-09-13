@@ -389,10 +389,46 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.set-rewards--powerups {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 @media (max-width: 720px) {
   .set-rewards {
     grid-template-columns: 1fr;
   }
+}
+
+.set-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  margin: 4px 0 16px;
+  padding: 7px 14px;
+
+  background: rgba(224, 165, 46, 0.08);
+
+  border: 1px solid rgba(224, 165, 46, 0.35);
+  border-radius: 8px;
+
+  color: #e0a52e;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.set-link:hover {
+  background: rgba(224, 165, 46, 0.14);
+  border-color: rgba(224, 165, 46, 0.55);
+}
+
+.set-link-icon {
+  font-size: 16px;
 }
 
 .set-reward {
