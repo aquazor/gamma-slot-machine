@@ -93,6 +93,38 @@ body {
     inset 0 1px 0 rgba(255, 220, 130, 0.15);
 }
 
+.ov-banner-kind {
+  padding: 3px 10px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ov-kind--points {
+  background: #9147ff;
+  color: #fff;
+}
+
+.ov-kind--bits {
+  background: #1fd6d6;
+  color: #04302f;
+}
+
+.ov-kind--sub {
+  background: #e94496;
+  color: #2b0416;
+}
+
+.ov-kind--manual {
+  background: #9c8d74;
+  color: #201200;
+}
+
 .ov-banner-user {
   color: #ffd873;
 

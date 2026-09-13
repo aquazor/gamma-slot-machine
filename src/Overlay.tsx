@@ -111,6 +111,25 @@ const SLOT_LABEL: Record<Slot, string> = {
   armor: 'Armor',
 };
 
+// What actually triggered the roll — separate from job.label (which is
+// often just the reward/power-up title, e.g. "[SPIN] Spawn Squads" for
+// BOTH a channel-point redemption and a Custom Power-up redemption, so
+// the label alone can't tell them apart).
+const KIND_INFO: Record<string, { text: string; className: string }> = {
+  reward: { text: 'Channel Points', className: 'ov-kind--points' },
+  power_up: { text: 'Bits Power-up', className: 'ov-kind--bits' },
+  cheer: { text: 'Bits', className: 'ov-kind--bits' },
+  subscribe: { text: 'New Sub', className: 'ov-kind--sub' },
+  resub: { text: 'Resub', className: 'ov-kind--sub' },
+  gift: { text: 'Gift Sub', className: 'ov-kind--sub' },
+  manual: { text: 'Manual', className: 'ov-kind--manual' },
+  'manual-spawn': { text: 'Manual', className: 'ov-kind--manual' },
+};
+
+function kindInfo(kind: string): { text: string; className: string } {
+  return KIND_INFO[kind] ?? { text: kind, className: 'ov-kind--manual' };
+}
+
 /* ========================================
    HELPERS
 ======================================== */
@@ -620,6 +639,9 @@ export default function Overlay() {
   return (
     <div className={`ov-root ${phase === 'out' ? 'ov-root--out' : 'ov-root--in'}`}>
       <div className="ov-banner">
+        <span className={`ov-banner-kind ${kindInfo(job.kind).className}`}>
+          {kindInfo(job.kind).text}
+        </span>
         <span className="ov-banner-user">{job.user}</span>
         <span className="ov-banner-label">{job.label}</span>
       </div>
