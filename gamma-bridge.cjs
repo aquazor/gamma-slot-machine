@@ -7,7 +7,7 @@ const path = require('path');
  * ---------------------------------------------------------
  * The bridge writes newline-separated commands into
  * command.txt inside the mod folder. The in-game Lua side
- * (add_weapon.script) polls that file every ~2s.
+ * (slot_machine_bridge.script) polls that file every ~2s.
  *
  *   WEAPON|<item_id>|<ammo_ids>
  *   OUTFIT|<item_id>

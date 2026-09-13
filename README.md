@@ -30,7 +30,7 @@ Twitch (EventSub)  →  server.cjs / roulette.cjs  →  command.txt  →  Lua br
 3. The result is pushed to the `/overlay` page over Server-Sent Events, so
    the slot-machine animation plays live in OBS, and written as plain-text
    commands to `command.txt` inside the GAMMA mod folder.
-4. A Lua script polling that file in-game (`add_weapon.script`, not part of
+4. A Lua script polling that file in-game (`slot_machine_bridge.script`, not part of
    this repo — copied into the mod's `gamedata/scripts/` once) reads the
    commands and gives the item / spawns the squad.
 
@@ -86,7 +86,7 @@ token file so they survive reinstalls of the app itself.
 ## Installing the in-game Lua bridge
 
 This repo only produces `command.txt` — reading it in-game needs a Lua
-script (`add_weapon.script`) copied into the mod's own folder structure:
+script (`slot_machine_bridge.script`) copied into the mod's own folder structure:
 
 ```
 <GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/gamedata/scripts/bridge/command.txt
