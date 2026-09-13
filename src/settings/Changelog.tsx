@@ -11,10 +11,10 @@ const CHANGELOG: { date: string; items: string[] }[] = [
       'Channel-point rewards consolidated to 3: Spawn Squads, Spawn Mutants, Loot Roll — each now rolls a random 1-3 instead of needing separate x1/x3 rewards',
       'Subs, resubs and gift subs now roll loot OR a squad OR a mutant pack (equal odds), with a random 1-3 count — a multi-sub gift still always rolls exactly 3',
       'Sin, UNISG and Monolith are now Expert-tier only, and shown under their own "Expert tier only" heading in Settings',
-      'Added Karlik and Controller as spawnable mutants',
       'Manual spawn buttons in Settings split into separate Mutants / Squads rows, each with ×1/×2/×3',
       'Added support for Twitch Custom Power-ups (bits) — create one manually on Twitch named "[SPIN] Spawn Squads" / "[SPIN] Spawn Mutants" / "[SPIN] Loot Roll" and it rolls that category, random 1-3, same as its channel-point counterpart',
       'Added a step-by-step Bits Power-ups Setup Guide page (linked from Settings and the navbar), with screenshots and one-click copy buttons for each reward name',
+      'The overlay now shows a colored badge for what triggered the roll — Channel Points, Bits, New Sub, Resub, Gift Sub, or Manual — so look-alike rewards from different sources are easy to tell apart',
     ],
   },
   {
