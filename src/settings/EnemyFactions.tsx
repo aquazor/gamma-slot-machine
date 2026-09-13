@@ -48,6 +48,21 @@ function EnemyFactions() {
     return null;
   }
 
+  const regularFactions = factions.filter((faction) => !faction.expertOnly);
+  const expertOnlyFactions = factions.filter((faction) => faction.expertOnly);
+
+  const renderFaction = (faction: EnemyFaction) => (
+    <label className="set-faction" key={faction.key}>
+      <input
+        type="checkbox"
+        checked={faction.enabled}
+        onChange={(event) => toggleFaction(faction.key, event.target.checked)}
+      />
+      {faction.icon && <img src={faction.icon} alt="" />}
+      <span>{faction.label}</span>
+    </label>
+  );
+
   return (
     <section className="set-section">
       <h2 className="set-heading">Enemy factions</h2>
@@ -57,19 +72,14 @@ function EnemyFactions() {
         tier.
       </p>
 
-      <div className="set-factions">
-        {factions.map((faction) => (
-          <label className="set-faction" key={faction.key}>
-            <input
-              type="checkbox"
-              checked={faction.enabled}
-              onChange={(event) => toggleFaction(faction.key, event.target.checked)}
-            />
-            {faction.icon && <img src={faction.icon} alt="" />}
-            <span>{faction.label}</span>
-          </label>
-        ))}
-      </div>
+      <div className="set-factions">{regularFactions.map(renderFaction)}</div>
+
+      {expertOnlyFactions.length > 0 && (
+        <>
+          <p className="set-muted set-factions-subheading">Expert tier only</p>
+          <div className="set-factions">{expertOnlyFactions.map(renderFaction)}</div>
+        </>
+      )}
     </section>
   );
 }

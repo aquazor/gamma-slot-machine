@@ -115,18 +115,31 @@ function setFactionEnabled(key, enabled) {
 }
 
 /*
+ * Which tiers actually define this faction key (e.g. a faction only
+ * added to Expert has no Basic/Advanced entries).
+ */
+function tiersForFaction(key) {
+  return tiersFor('enemies').filter((tier) => Boolean(groupsFor('enemies', tier)[key]));
+}
+
+/*
  * Snapshot for the settings UI: every faction key with its label/icon
- * (pulled from whichever tier defines it first) and current enabled state.
+ * (pulled from whichever tier defines it first), current enabled state,
+ * and whether it's Expert-only (so the UI can flag it) rather than
+ * hardcoding which factions that is — stays correct if the tier
+ * composition changes later.
  */
 function listFactions() {
   return factionKeys().map((key) => {
     const def = factionDef(key);
+    const tiers = tiersForFaction(key);
 
     return {
       key,
       label: (def && def.label) || key,
       icon: (def && def.icon) || null,
       enabled: isFactionEnabled(key),
+      expertOnly: tiers.length === 1 && tiers[0] === 'Expert',
     };
   });
 }

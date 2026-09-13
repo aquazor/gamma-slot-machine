@@ -79,6 +79,7 @@ export interface EnemyFaction {
   label: string;
   icon: string | null;
   enabled: boolean;
+  expertOnly: boolean;
 }
 
 export interface DeviceFlow {
