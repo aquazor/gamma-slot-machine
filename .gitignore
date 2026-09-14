@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 build
+# packaged exe — exceeds GitHub's 100MB per-file limit; distribute via
+# GitHub Releases instead of committing it (see README)
+APP EXE
 temp
 *.local
 sea-config.json

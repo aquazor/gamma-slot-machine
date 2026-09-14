@@ -43,7 +43,7 @@ Twitch (EventSub)  →  server.cjs / roulette.cjs  →  command.txt  →  Lua br
 3. The result is pushed to the `/overlay` page over Server-Sent Events, so
    the slot-machine animation plays live in OBS, and written as plain-text
    commands to `command.txt` inside the GAMMA mod folder.
-4. A Lua script polling that file in-game (`mod/gamedata/scripts/slot_machine_bridge.script`
+4. A Lua script polling that file in-game (`GAMMA MOD/gamedata/scripts/slot_machine_bridge.script`
    — tracked in this repo, copied into the GAMMA install's own `gamedata/`
    once, see below) reads the commands and gives the item, spawns the
    squad, or applies the effect (temporary god mode, money, ammo, or a
@@ -126,15 +126,15 @@ one can land.
 ## Installing the in-game Lua bridge
 
 The app only produces `command.txt` — reading it in-game needs a Lua script,
-tracked in this repo under `mod/`:
+tracked in this repo under `GAMMA MOD/`:
 
 ```
-mod/gamedata/scripts/slot_machine_bridge.script
-mod/gamedata/scripts/bridge/command.txt   (empty placeholder, overwritten at runtime)
-mod/gamedata/sounds/spawn.ogg
+GAMMA MOD/gamedata/scripts/slot_machine_bridge.script
+GAMMA MOD/gamedata/scripts/bridge/command.txt   (empty placeholder, overwritten at runtime)
+GAMMA MOD/gamedata/sounds/spawn.ogg
 ```
 
-Copy the contents of `mod/gamedata/` into the mod's own folder structure
+Copy the contents of `GAMMA MOD/gamedata/` into the mod's own folder structure
 inside your (large, MO2-managed) GAMMA install:
 
 ```
@@ -154,10 +154,15 @@ npm run package
 
 This bundles the server with esbuild, generates a Node.js Single
 Executable Application, injects the frontend build, and applies the app
-icon via Resource Hacker. Intermediate artifacts land in `build/`
-(gitignored, regenerable); the final exe is copied to `APP EXE/GAMMA Slot
-Machine.exe`, which — unlike `build/` — is tracked in git so the built app
-can be distributed straight from the repo.
+icon via Resource Hacker. Output goes to `APP EXE/GAMMA Slot Machine.exe`.
+
+Both `build/` (intermediate artifacts) and `APP EXE/` (the final exe) are
+gitignored — the packaged exe is over 100MB, which GitHub's normal git
+storage flatly rejects per file. Distribute a new build as a
+[GitHub Release](https://github.com/aquazor/gamma-slot-machine/releases)
+asset instead of committing it (Releases have no such size limit and don't
+bloat the repo's clone size on every rebuild).
+
 Requires Node.js, Resource Hacker, and `esbuild`/`postject`/`rcedit`
 (already in `devDependencies`).
 
@@ -188,5 +193,5 @@ twitch-rewards.cjs     channel-point reward creation/sync + streamer overrides
 gamma-bridge.cjs       finds the GAMMA install, writes command.txt
 config.cjs             Twitch client id/scopes, channel-point + bits power-up reward definitions
 
-mod/                   the in-game Lua bridge — copy into <GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/ (see below)
+GAMMA MOD/             the in-game Lua bridge — copy into <GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/ (see below)
 ```
