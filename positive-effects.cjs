@@ -6,7 +6,7 @@
  * shape as Count Roll's count+species mechanic:
  *
  *   slot 1: WHICH perk (equal odds among enabled ones)
- *   slot 2: that perk's own VALUE — a duration/magazine-count rolled from
+ *   slot 2: that perk's own VALUE — a duration/pack-count rolled from
  *           a min/max range, a fixed money amount picked from a list, or
  *           a random medical item. See rollPerkValue() / perkValuePool().
  *
@@ -162,7 +162,7 @@ function resetPerks() {
 
 const PERK_DESCRIPTIONS = {
   immortality: 'Temporary invulnerability',
-  'give-ammo': 'A few magazines for whatever\'s in hand',
+  'give-ammo': 'A few ammo packs for whatever\'s in hand',
   'give-money': 'A cash drop',
   medicine: 'A medical item plus a secondary supply item',
 };
@@ -332,28 +332,28 @@ function rollPerkValue(key, tier) {
     }
 
     case 'give-ammo': {
-      const mags = randInt(def.min, def.max);
+      const packs = randInt(def.min, def.max);
       const bonus = rollWeightedBonus(def.bonuses);
 
-      let finalMags = mags;
+      let finalPacks = packs;
 
       if (bonus && bonus.type === 'add') {
-        finalMags = mags + bonus.value;
+        finalPacks = packs + bonus.value;
       } else if (bonus && bonus.type === 'multiply') {
-        finalMags = mags * bonus.value;
+        finalPacks = packs * bonus.value;
       }
 
-      const magsWord = (n) => `${n} mag${n > 1 ? 's' : ''}`;
+      const packsWord = (n) => `${n} pack${n > 1 ? 's' : ''}`;
 
       return {
-        value: finalMags,
+        value: finalPacks,
         // plain ASCII "x", not the Unicode "×" — the latter is a
         // multi-byte UTF-8 char that the game reads as raw CP1251 bytes
         // and renders as garbage ("Г—")
-        label: bonus ? `x${magsWord(mags)} (${bonus.label} bonus)` : `x${magsWord(mags)}`,
+        label: bonus ? `x${packsWord(packs)} (${bonus.label} bonus)` : `x${packsWord(packs)}`,
         icon: null,
         bonus: bonus ? { key: bonus.key, label: bonus.label, type: bonus.type } : null,
-        fullLabel: `x${magsWord(finalMags)}`,
+        fullLabel: `x${packsWord(finalPacks)}`,
       };
     }
 
@@ -454,7 +454,7 @@ function perkValuePool(key, tier) {
       const filler = Array.isArray(def.fillerNumbers) ? def.fillerNumbers : [];
       const numbers = [...new Set([def.min, def.max, ...filler])];
 
-      return numbers.map((n) => ({ label: `x${n} mag${n > 1 ? 's' : ''}`, icon: null }));
+      return numbers.map((n) => ({ label: `x${n} pack${n > 1 ? 's' : ''}`, icon: null }));
     }
 
     case 'give-money': {
