@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './Settings.css';
 
 import Navbar from './Navbar';
-import BitsRewards from './settings/BitsRewards';
 import Changelog from './settings/Changelog';
 import ChannelPointRewards from './settings/ChannelPointRewards';
 import EnemyFactions from './settings/EnemyFactions';
@@ -10,7 +9,6 @@ import { copyToClipboard } from './settings/clipboard';
 import IntegrationsSection from './settings/IntegrationsSection';
 import PowerUpsInfo from './settings/PowerUpsInfo';
 import RouletteControls from './settings/RouletteControls';
-import SpawnBonuses from './settings/SpawnBonuses';
 import {
   API,
   type DeviceFlow,
@@ -234,6 +232,21 @@ export default function Settings() {
     [refreshRouletteStatus],
   );
 
+  const manualPerk = useCallback(async (): Promise<void> => {
+    setTriggerBusy(true);
+
+    try {
+      await fetch(`${API}/roulette/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'perk', user: 'Streamer' }),
+      });
+    } finally {
+      setTriggerBusy(false);
+      refreshRouletteStatus();
+    }
+  }, [refreshRouletteStatus]);
+
   const selectPreset = useCallback(
     async (name: string): Promise<void> => {
       setRoulette((prev) => {
@@ -352,8 +365,6 @@ export default function Settings() {
 
               <ChannelPointRewards twitchConnected={twitch.connected} />
 
-              <BitsRewards />
-
               <PowerUpsInfo />
 
               <RouletteControls
@@ -364,11 +375,20 @@ export default function Settings() {
                 selectRollMode={selectRollMode}
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
+                manualPerk={manualPerk}
               />
 
               <EnemyFactions />
 
-              <SpawnBonuses />
+              <section className="set-section">
+                <h2 className="set-heading">Tweaking</h2>
+                <p className="set-muted">
+                  Spawn bonus chances and positive effect odds moved to their own page.
+                </p>
+                <a className="set-btn" href="/tweaking">
+                  Open Tweaking →
+                </a>
+              </section>
 
               <Changelog />
             </>

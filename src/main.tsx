@@ -11,6 +11,7 @@ const root = createRoot(document.getElementById('root')!);
  *   /            -> manual slot machine (unchanged)
  *   /overlay     -> OBS Browser Source, event-driven roll
  *   /settings    -> Twitch connection + roulette settings
+ *   /tweaking    -> spawn bonus / positive effect chance tuning
  *   /bits-guide  -> Custom Power-ups setup walkthrough
  */
 if (path === '/overlay') {
@@ -20,6 +21,10 @@ if (path === '/overlay') {
 } else if (path === '/settings') {
   import('./Settings.tsx').then(({ default: Settings }) => {
     root.render(<Settings />);
+  });
+} else if (path === '/tweaking') {
+  import('./Tweaking.tsx').then(({ default: Tweaking }) => {
+    root.render(<Tweaking />);
   });
 } else if (path === '/bits-guide') {
   import('./BitsGuide.tsx').then(({ default: BitsGuide }) => {

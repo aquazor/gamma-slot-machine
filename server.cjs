@@ -11,8 +11,7 @@ const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
-const bitsRewards = require('./bits-rewards.cjs');
-const { BITS_REWARDS_ENABLED } = require('./config.cjs');
+const perks = require('./positive-effects.cjs');
 
 const { getGammaPath, MOD_NAME } = bridge;
 
@@ -216,7 +215,7 @@ roulette.on('delivered', (record) => {
       ? record.spawnResults && record.spawnResults.length > 0
         ? record.spawnResults.map((r) => `${r.label} x${r.count}`).join(', ')
         : 'spawn'
-      : record.results.map((r) => `${r.slot}:${r.itemId}`).join(', ');
+      : record.results.map((r) => `${r.slot}:${r.name}`).join(', ');
 
   console.log(
     `Roulette: ${record.id} ${record.given ? `delivered [${detail}]` : `not delivered${record.giveError ? ` (${record.giveError})` : ''}`} (${record.reason})`,
@@ -392,29 +391,87 @@ app.post('/roulette/bonuses/chance', (req, res) => {
   res.json({ bonuses: enemiesMode2.listBonuses() });
 });
 
+app.post('/roulette/bonuses/reset', (req, res) => {
+  enemiesMode2.resetBonuses();
+
+  console.log('Roulette spawn bonuses -> restored to defaults');
+
+  res.json({ bonuses: enemiesMode2.listBonuses() });
+});
+
+app.get('/roulette/perks', (req, res) => {
+  res.json({ perks: perks.listPerks() });
+});
+
+app.post('/roulette/perks/toggle', (req, res) => {
+  const { key, enabled } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  perks.setPerkEnabled(key, Boolean(enabled));
+
+  console.log(`Roulette perk "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ perks: perks.listPerks() });
+});
+
+app.post('/roulette/perks/chance', (req, res) => {
+  const { key, chance } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
+    return res.status(400).json({ error: 'chance must be a number' });
+  }
+
+  perks.setPerkChance(key, chance);
+
+  console.log(`Roulette perk "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
+
+  res.json({ perks: perks.listPerks() });
+});
+
+app.post('/roulette/perks/reset', (req, res) => {
+  perks.resetPerks();
+
+  console.log('Roulette positive effects -> restored to defaults');
+
+  res.json({ perks: perks.listPerks() });
+});
+
 /*
  * Manual roll fired from the settings page (no Twitch event).
  *   { user, count }               -> loot roll
  *   { user, kind: "spawn", category: "mutants" | "enemies" }
+ *   { user, kind: "perk" }
  */
 app.post('/roulette/trigger', (req, res) => {
   const { user, count, kind, category } = req.body || {};
 
   const who = (typeof user === 'string' && user.trim()) || 'Streamer';
 
-  const event =
-    kind === 'spawn'
-      ? {
-          kind: 'manual-spawn',
-          user: who,
-          category: category === 'enemies' ? 'enemies' : 'mutants',
-          rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
-        }
-      : {
-          kind: 'manual',
-          user: who,
-          manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
-        };
+  let event;
+
+  if (kind === 'spawn') {
+    event = {
+      kind: 'manual-spawn',
+      user: who,
+      category: category === 'enemies' ? 'enemies' : 'mutants',
+      rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
+    };
+  } else if (kind === 'perk') {
+    event = { kind: 'manual-perk', user: who };
+  } else {
+    event = {
+      kind: 'manual',
+      user: who,
+      manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
+    };
+  }
 
   const job = roulette.handleEvent(event);
 
@@ -429,7 +486,6 @@ app.post('/roulette/trigger', (req, res) => {
 
 /*
  * Simulate a Twitch event — for testing without live subs/bits.
- *   { kind: "cheer",  bits: 300 }
  *   { kind: "subscribe" }
  *   { kind: "resub", months: 6 }
  *   { kind: "gift",  total: 5 }
@@ -643,37 +699,6 @@ app.post('/twitch/rewards/config', async (req, res) => {
     console.log(`Twitch reward "${key}" reconfigured by streamer`);
 
     res.json({ rewards: await rewards.listRewards() });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-/*
- * Bits (cheer) thresholds — not Twitch Custom Rewards, just how a plain
- * `cheer<amount>` in chat maps to a loot roll. No Twitch API call needed
- * to change these, unlike channel-point rewards.
- */
-app.get('/roulette/bits-rewards', (req, res) => {
-  res.json({ rewards: BITS_REWARDS_ENABLED ? bitsRewards.listBitsRewards() : [] });
-});
-
-app.post('/roulette/bits-rewards/config', (req, res) => {
-  if (!BITS_REWARDS_ENABLED) {
-    return res.status(400).json({ error: 'Bits rewards are currently disabled' });
-  }
-
-  const { key, bits } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  try {
-    bitsRewards.setBitsRewardOverride(key, { bits });
-
-    console.log(`Bits reward "${key}" reconfigured by streamer`);
-
-    res.json({ rewards: bitsRewards.listBitsRewards() });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

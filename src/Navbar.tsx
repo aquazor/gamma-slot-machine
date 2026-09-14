@@ -6,6 +6,7 @@ const API = 'http://localhost:7770';
 const LINKS = [
   { href: '/', label: 'Slot Machine' },
   { href: '/settings', label: 'Settings' },
+  { href: '/tweaking', label: 'Tweaking' },
   { href: '/bits-guide', label: 'Bits Guide' },
 ];
 

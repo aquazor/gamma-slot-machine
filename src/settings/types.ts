@@ -35,7 +35,7 @@ export interface Reward {
   title: string;
   cost: number;
   enabled: boolean;
-  kind: 'loot' | 'spawn';
+  kind: 'loot' | 'spawn' | 'perk';
   category: 'mutants' | 'enemies' | null;
   count: number | null;
   rolls: number | null;
@@ -58,29 +58,13 @@ export function draftFromReward(reward: Reward): RewardDraft {
   };
 }
 
-export interface BitsReward {
+export interface Perk {
   key: string;
-  bits: number;
-  kind: 'loot' | 'spawn';
-  count: number | null;
-  category: 'mutants' | 'enemies' | null;
-  rolls: number | null;
-}
-
-export interface BitsDraft {
-  bits: string;
-}
-
-export function draftFromBitsReward(reward: BitsReward): BitsDraft {
-  return { bits: String(reward.bits) };
-}
-
-export function bitsRewardLabel(reward: BitsReward): string {
-  return reward.kind === 'spawn'
-    ? `Spawn ${reward.category === 'enemies' ? 'Enemies' : 'Mutants'}${
-        reward.rolls && reward.rolls > 1 ? ` ×${reward.rolls}` : ''
-      }`
-    : `Loot Roll ×${reward.count ?? 1}`;
+  label: string;
+  description: string;
+  icon: string | null;
+  chance: number; // relative roll weight, e.g. 0.3 = 30%
+  enabled: boolean;
 }
 
 export interface EnemyFaction {

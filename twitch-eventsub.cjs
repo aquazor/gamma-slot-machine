@@ -23,7 +23,7 @@ const HELIX_URL = process.env.TWITCH_HELIX_URL || 'https://api.twitch.tv/helix';
 const SUBSCRIPTIONS_URL = `${HELIX_URL}/eventsub/subscriptions`;
 
 /*
- * Topics we listen to. All three use a plain
+ * Topics we listen to. Each uses a plain
  * { broadcaster_user_id } condition and version "1".
  *
  * NOTE on gift sub bombs: Twitch fires ONE
@@ -33,7 +33,6 @@ const SUBSCRIPTIONS_URL = `${HELIX_URL}/eventsub/subscriptions`;
  * avoid rewarding the same gift bomb many times.
  */
 const TOPICS = [
-  { type: 'channel.cheer', version: '1' },
   { type: 'channel.subscribe', version: '1' },
   { type: 'channel.subscription.gift', version: '1' },
   { type: 'channel.subscription.message', version: '1' }, // resubs
@@ -56,7 +55,7 @@ const MAX_RECONNECT_DELAY_MS = 60 * 1000;
  *   'revocation'   subscription
  *   'error'        Error
  *   'event'        normalized  (every notification)
- *   'cheer' | 'subscribe' | 'gift'  normalized  (per kind)
+ *   'subscribe' | 'gift' | 'reward' | 'power_up' | ...  normalized  (per kind)
  */
 
 class TwitchEventSub extends EventEmitter {
@@ -368,16 +367,7 @@ class TwitchEventSub extends EventEmitter {
 
     let normalized = null;
 
-    if (type === 'channel.cheer') {
-      normalized = {
-        kind: 'cheer',
-        user: event.is_anonymous ? null : event.user_name || event.user_login || null,
-        userLogin: event.user_login || null,
-        bits: event.bits,
-        message: event.message || '',
-        isAnonymous: Boolean(event.is_anonymous),
-      };
-    } else if (type === 'channel.subscribe') {
+    if (type === 'channel.subscribe') {
       normalized = {
         kind: 'subscribe',
         user: event.user_name || event.user_login || null,

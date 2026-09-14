@@ -125,6 +125,24 @@ body {
   color: #b98f4a;
 }
 
+.set-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.set-section-header .set-heading {
+  margin-bottom: 0;
+}
+
+.set-section-reset {
+  flex-shrink: 0;
+
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 .set-heading--toggle {
   display: flex;
   align-items: center;
@@ -270,6 +288,8 @@ body {
 }
 
 .set-btn {
+  display: inline-block;
+
   padding: 7px 16px;
 
   background: rgba(255, 255, 255, 0.08);
@@ -277,6 +297,7 @@ body {
 
   font-size: 15px;
   font-weight: 600;
+  text-decoration: none;
 
   border: 1px solid rgba(179, 128, 31, 0.5);
   border-radius: 8px;
@@ -385,10 +406,6 @@ body {
   margin-bottom: 10px;
 }
 
-.set-rewards--bits {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-}
-
 .set-rewards--powerups {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -455,6 +472,15 @@ body {
   font-size: 16px;
   font-weight: 600;
   color: #f0e6d2;
+}
+
+.set-reward-icon {
+  width: 20px;
+  height: 20px;
+
+  object-fit: contain;
+
+  flex-shrink: 0;
 }
 
 .set-reward-toggle {

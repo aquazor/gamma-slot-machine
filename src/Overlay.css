@@ -358,6 +358,21 @@ body {
     inset 0 2px 0 rgba(255, 255, 255, 0.8);
 }
 
+/*
+ * Covers a reel's own filler pool until its turn starts — sits on top of
+ * the (already-mounted, already-spinning-when-ready) reel underneath
+ * rather than replacing it, so the reel's own CSS transition still has a
+ * resting frame to animate from once it's revealed. See PendingMask.
+ */
+.ov-reel-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 6; /* above .top-gradient/.bottom-gradient (5) so it isn't dimmed at the edges */
+
+  display: flex;
+  flex-direction: column;
+}
+
 .reel {
   display: flex;
   flex-direction: column;
@@ -596,8 +611,9 @@ body {
   justify-content: center;
   gap: 8px;
 
-  height: 34px;
+  min-height: 34px;
   margin-top: 10px;
+  padding: 0 6px;
 
   opacity: 0;
 }
@@ -628,15 +644,14 @@ body {
 .ov-result span {
   max-width: 240px;
 
-  overflow: hidden;
-
   color: #ffe6a8;
 
   font-size: 15px;
   font-weight: 700;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ========================================
@@ -727,4 +742,29 @@ body {
 
 .ov-count .ov-result span {
   color: #ffe9a8;
+}
+
+/* ========================================
+   PENDING MASK ITEM  (must stay below — same specificity as .reel-item,
+   last one in source order wins the cascade)
+======================================== */
+
+.ov-pending-item {
+  width: 100%;
+  height: 80px;
+  min-height: 80px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  color: #6b5f4c;
+
+  background: linear-gradient(180deg, #3a352c 0%, #2c2820 50%, #201d18 100%);
+
+  border-bottom: 1px solid #9a681e;
 }

@@ -8,7 +8,10 @@ const TWITCH_CLIENT_ID = 'ugo3wieunix6rep473tgwomp5cb5wv';
 const TWITCH_REDIRECT_URI = 'http://localhost:7770/auth/callback';
 
 // Scopes needed for the events we listen to.
-//   bits:read                  -> channel.cheer
+//   bits:read                  -> kept for channel.custom_power_up_redemption.add
+//                                  (plain channel.cheer is no longer subscribed to
+//                                  — the cheer/bits-threshold roll trigger was
+//                                  removed; only Bits Power-ups remain)
 //   channel:read:subscriptions -> channel.subscribe / .gift / .message
 //   channel:manage:redemptions -> create channel-point rewards + read redemptions
 const TWITCH_SCOPES = [
@@ -78,6 +81,16 @@ const CHANNEL_POINT_REWARDS = [
     cooldownSeconds: 60,
     count: null,
   },
+  {
+    key: 'perks',
+    title: '[SPIN] Positive Effects',
+    previousTitle: '[SPIN] Perks',
+    cost: 3000,
+    prompt: 'Roll a random positive effect: Immortality, Give Ammo, Give Money, or Medicine.',
+    kind: 'perk',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+  },
 ];
 
 // Titles this app used to manage but has since consolidated away. Deleted
@@ -88,52 +101,6 @@ const OBSOLETE_REWARD_TITLES = [
   '[SPIN] Spawn Enemies x3',
   '[SPIN] Spawn Mutants x3',
   '[SPIN] Loot Roll 3 items',
-];
-
-// Master switch for the whole bits-triggers-a-roll feature. false =
-// cheering never rolls anything (roulette.cjs's cheer case short-
-// circuits), and the "Bits rewards" section in /settings hides itself
-// (GET /roulette/bits-rewards returns an empty list). Nothing below is
-// deleted — flip back to true to bring it all back as-is.
-const BITS_REWARDS_ENABLED = false;
-
-// Bits (cheer) thresholds — not a Twitch Custom Reward (no reward id to
-// enable/disable there), just how a plain `cheer<amount>` in chat maps to
-// a roll. All tiers (loot AND spawn) share ONE ladder: whichever tier has
-// the highest `bits` at or below what was cheered wins; below the lowest
-// threshold, nothing rolls. Ordered enemies -> mutants -> loot, same as
-// CHANNEL_POINT_REWARDS above.
-//   bits     — minimum bits cheered to trigger this tier — the ONLY
-//              streamer-tunable field here, same as `cost` on a channel-
-//              point reward. `kind`/`count`/`category`/`rolls` define
-//              what a tier DOES and are fixed, not editable from /settings.
-//   kind     — 'loot' spins the item roulette, 'spawn' the mutant/enemy one
-//   count    — (loot) how many items the roll produces
-//   category — (spawn) 'mutants' | 'enemies'
-//   rolls    — (spawn) how many groups to roll at once — see the matching
-//              comment on CHANNEL_POINT_REWARDS above
-// Test values — retune thresholds from /settings once real usage shows
-// what feels right.
-const BITS_REWARDS = [
-  { key: 'bits-spawn-enemies', bits: 50, kind: 'spawn', category: 'enemies', rolls: 1 },
-  {
-    key: 'bits-spawn-enemies-3',
-    bits: 200,
-    kind: 'spawn',
-    category: 'enemies',
-    rolls: 3,
-  },
-  { key: 'bits-spawn-mutants', bits: 75, kind: 'spawn', category: 'mutants', rolls: 1 },
-  {
-    key: 'bits-spawn-mutants-3',
-    bits: 300,
-    kind: 'spawn',
-    category: 'mutants',
-    rolls: 3,
-  },
-  { key: 'bits-roll-1', bits: 50, kind: 'loot', count: 1 },
-  { key: 'bits-roll-2', bits: 100, kind: 'loot', count: 2 },
-  { key: 'bits-roll-3', bits: 150, kind: 'loot', count: 3 },
 ];
 
 // Custom Power-ups (Twitch's bits-funded custom rewards) — added May 2026,
@@ -151,6 +118,7 @@ const CUSTOM_POWER_UPS = [
   { title: '[SPIN] Spawn Squads', kind: 'spawn', category: 'enemies' },
   { title: '[SPIN] Spawn Mutants', kind: 'spawn', category: 'mutants' },
   { title: '[SPIN] Loot Roll', kind: 'loot' },
+  { title: '[SPIN] Positive Effects', kind: 'perk' },
 ];
 
 // Difficulty presets for the Twitch roulette — the streamer switches
@@ -177,8 +145,6 @@ module.exports = {
   TWITCH_SCOPES,
   CHANNEL_POINT_REWARDS,
   OBSOLETE_REWARD_TITLES,
-  BITS_REWARDS,
-  BITS_REWARDS_ENABLED,
   CUSTOM_POWER_UPS,
   CUSTOM_POWER_UPS_ENABLED,
   PRESETS,

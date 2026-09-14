@@ -19,6 +19,9 @@ const CHANGELOG: { date: string; items: string[] }[] = [
       'If enabled bonus chances add up to 100% or more, a bonus always lands and each one gets its fair share proportional to its own chance — instead of the first bonus in the list quietly hogging all the odds',
       'The Tier Upgrade bonus result now reads "(Tier upgrade)" on the overlay instead of "(RARE bonus)"',
       'Fixed a bug in Settings where editing one bonus\'s chance and then toggling a different bonus\'s checkbox could silently discard the unsaved edit',
+      'Added a new roll outcome, "Positive Effects" — Immortality, Give Ammunition, Give Money, or Medicine, picked at random (weighted odds among whichever ones are enabled in Settings). Triggered by its own channel-point reward and bits power-up ("[SPIN] Positive Effects"), and now also part of the random pool subs/resubs/gift subs can land on',
+      'Positive Effects now roll a second reel for the specific amount — how many seconds of Immortality, how many magazines of ammo, how much money, or which medical item — instead of a single fixed value every time',
+      'Positive Effects now have their own chance of a bonus on top: extra seconds or doubled duration for Immortality, +1/+2 magazines for Give Ammunition, doubled or extra cash for Give Money, and an extra medical item for Medicine — shown right on the overlay',
     ],
   },
   {

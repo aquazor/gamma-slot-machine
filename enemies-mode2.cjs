@@ -60,10 +60,10 @@ function setBonusEnabled(key, enabled) {
  * Chance overrides, by key — same "global by key" model as the enable
  * toggle above: editing a bonus's chance in Settings changes it across
  * every tier that defines that key, not just one. Persisted to disk
- * (same override-file pattern as bits-rewards.cjs's thresholds) so a
- * streamer's tuning survives a server restart — unlike the enable/
- * disable toggle above, which is a live on/off switch and deliberately
- * stays runtime-only.
+ * (same override-file pattern positive-effects.cjs uses for its own
+ * chance overrides) so a streamer's tuning survives a server restart —
+ * unlike the enable/disable toggle above, which is a live on/off switch
+ * and deliberately stays runtime-only.
  */
 const CHANCE_OVERRIDES_PATH = path.join(
   os.homedir(),
@@ -103,6 +103,16 @@ function setBonusChance(key, chance) {
 
   overrides[key] = clamped;
   saveChanceOverrides(overrides);
+}
+
+/*
+ * "Restore defaults" for the whole section: re-enables every bonus and
+ * wipes every persisted chance override, so listBonuses() falls straight
+ * back to whatever's baked into enemies.mode2.data.json.
+ */
+function resetBonuses() {
+  disabledBonusKeys.clear();
+  saveChanceOverrides({});
 }
 
 /*
@@ -372,4 +382,5 @@ module.exports = {
   isBonusEnabled,
   setBonusEnabled,
   setBonusChance,
+  resetBonuses,
 };

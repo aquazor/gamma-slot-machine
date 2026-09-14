@@ -10,6 +10,7 @@ interface Props {
   selectRollMode: (mode: 'random' | 'count-roll') => void;
   manualRoll: (count: number) => void;
   manualSpawn: (category: 'mutants' | 'enemies', rolls: number) => void;
+  manualPerk: () => void;
 }
 
 function RouletteControls({
@@ -20,6 +21,7 @@ function RouletteControls({
   selectRollMode,
   manualRoll,
   manualSpawn,
+  manualPerk,
 }: Props) {
   return (
     <section className="set-section">
@@ -119,6 +121,13 @@ function RouletteControls({
             {n === 1 ? 'Squads' : `Squads ×${n}`}
           </button>
         ))}
+      </div>
+
+      <div className="set-trigger">
+        <span className="set-muted">Manual positive effect</span>
+        <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
+          Positive Effects
+        </button>
       </div>
 
       {typeof roulette?.queued === 'number' && roulette.queued > 0 && (

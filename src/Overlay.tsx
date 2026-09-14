@@ -82,13 +82,15 @@ interface Job {
   user: string;
   label: string;
   kind: string;
-  mode?: 'loot' | 'spawn';
+  mode?: 'loot' | 'spawn' | 'perk';
   category?: string;
   spawnPool?: SpawnOption[];
+  perkPool?: SpawnOption[]; // perk roll's slot 1 (which perk) filler
+  perkValuePool?: SpawnOption[]; // perk roll's slot 2 (its value) filler
   preset?: string;
   grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
-  bonus?: JobBonus | null; // mode 2 only — set when a spawn bonus applied
+  bonus?: JobBonus | null; // count-roll spawns AND perks — set whenever a bonus applied
 }
 
 interface WinningEffect {
@@ -128,12 +130,12 @@ const SLOT_LABEL: Record<Slot, string> = {
 const KIND_INFO: Record<string, { text: string; className: string }> = {
   reward: { text: 'Channel Points', className: 'ov-kind--points' },
   power_up: { text: 'Bits Power-up', className: 'ov-kind--bits' },
-  cheer: { text: 'Bits', className: 'ov-kind--bits' },
   subscribe: { text: 'New Sub', className: 'ov-kind--sub' },
   resub: { text: 'Resub', className: 'ov-kind--sub' },
   gift: { text: 'Gift Sub', className: 'ov-kind--sub' },
   manual: { text: 'Manual', className: 'ov-kind--manual' },
   'manual-spawn': { text: 'Manual', className: 'ov-kind--manual' },
+  'manual-perk': { text: 'Manual', className: 'ov-kind--manual' },
 };
 
 function kindInfo(kind: string): { text: string; className: string } {
@@ -370,9 +372,19 @@ interface SpawnReelProps {
   targetIcon?: string | null;
   spin: boolean;
   landed: boolean;
+  hidden?: boolean; // mask the pool until this reel's own turn starts — see PendingMask
 }
 
-function SpawnReel({ title, pool, label, resultText, targetIcon, spin, landed }: SpawnReelProps) {
+function SpawnReel({
+  title,
+  pool,
+  label,
+  resultText,
+  targetIcon,
+  spin,
+  landed,
+  hidden,
+}: SpawnReelProps) {
   const fillPool = useMemo(() => {
     const options = (pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]).map(
       (o) => ({ label: o.label.toUpperCase(), icon: o.icon }),
@@ -511,6 +523,8 @@ function SpawnReel({ title, pool, label, resultText, targetIcon, spin, landed }:
           <div className="top-gradient" />
           <div className="bottom-gradient" />
           <div className="reel-indicator" />
+
+          {hidden && <PendingMask />}
         </div>
       </div>
 
@@ -533,6 +547,7 @@ interface CountReelProps {
   bonusLabel?: string | null; // e.g. "x2" — only set for a count-affecting bonus
   spin: boolean;
   landed: boolean;
+  hidden?: boolean; // mask the pool until this reel's own turn starts — see PendingMask
 }
 
 // Pure filler for the spin — the reel only ever actually lands on the
@@ -555,7 +570,15 @@ const COUNT_FILLER = [
   'Лям двести',
 ];
 
-function CountReel({ title, target, baseTarget, bonusLabel, spin, landed }: CountReelProps) {
+function CountReel({
+  title,
+  target,
+  baseTarget,
+  bonusLabel,
+  spin,
+  landed,
+  hidden,
+}: CountReelProps) {
   // The reel visually lands on the roll BEFORE the bonus, with the
   // bonus called out — the actually-final number only shows in the
   // result line below (matches how the species reel already shows the
@@ -631,12 +654,39 @@ function CountReel({ title, target, baseTarget, bonusLabel, spin, landed }: Coun
           <div className="top-gradient" />
           <div className="bottom-gradient" />
           <div className="reel-indicator" />
+
+          {hidden && <PendingMask />}
         </div>
       </div>
 
       <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
         <span>x{target}</span>
       </div>
+    </div>
+  );
+}
+
+/* ========================================
+   PENDING MASK  (covers a reel's pool until its own turn starts)
+======================================== */
+// A later reel in a multi-slot roll (e.g. perks' "Amount") mounts before
+// its own turn starts — its filler pool would otherwise sit fully visible
+// at rest and give away what category just landed on the reel before it
+// (dollar amounts vs seconds vs item names). This overlays "???" rows on
+// top of the ALREADY-MOUNTED reel instead of swapping in a different
+// component for it — swapping components would mean the real reel first
+// mounts at the very moment it starts spinning, with no "at rest" frame
+// beforehand for the CSS transition to animate from, so it'd just snap to
+// its landed position instead of visibly spinning.
+
+function PendingMask() {
+  return (
+    <div className="ov-reel-mask">
+      {[0, 1, 2].map((i) => (
+        <div className="reel-item ov-pending-item" key={i}>
+          <span>?</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -778,14 +828,16 @@ export default function Overlay() {
         <span className="ov-banner-user">{job.user}</span>
         <span className="ov-banner-label">{job.label}</span>
         {job.bonus && (
-          <span className="ov-banner-bonus">BONUS {job.bonus.label}</span>
+          <span className="ov-banner-bonus">BONUS{job.bonus.label ? ` ${job.bonus.label}` : ''}</span>
         )}
       </div>
 
       <div className="ov-reels">
         {job.mode === 'spawn' ? (
-          job.results.map((result, index) =>
-            typeof result.value === 'number' ? (
+          job.results.map((result, index) => {
+            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+
+            return typeof result.value === 'number' ? (
               <CountReel
                 key={`${job.id}-${index}`}
                 title="Count"
@@ -794,6 +846,7 @@ export default function Overlay() {
                 bonusLabel={result.bonus?.label ?? null}
                 spin={spinning[index] ?? false}
                 landed={landed[index] ?? false}
+                hidden={!started}
               />
             ) : (
               <SpawnReel
@@ -805,9 +858,34 @@ export default function Overlay() {
                 targetIcon={result.icon}
                 spin={spinning[index] ?? false}
                 landed={landed[index] ?? false}
+                hidden={!started}
               />
-            ),
-          )
+            );
+          })
+        ) : job.mode === 'perk' ? (
+          // slot 0 = which perk, slot 1 = that perk's rolled value —
+          // fixed two-entry shape built by _buildPerkJob in roulette.cjs.
+          // Slot 1 stays masked until it's actually spinning/landed — its
+          // pool's format (dollars vs seconds vs item names) would
+          // otherwise give away slot 0's result before it even lands.
+          job.results.map((result, index) => {
+            const title = index === 1 ? 'Amount' : 'Positive Effect';
+            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+
+            return (
+              <SpawnReel
+                key={`${job.id}-${index}`}
+                title={title}
+                pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
+                label={result.label ?? result.name ?? '???'}
+                resultText={result.name ?? '???'}
+                targetIcon={result.icon}
+                spin={spinning[index] ?? false}
+                landed={landed[index] ?? false}
+                hidden={!started}
+              />
+            );
+          })
         ) : (
           job.results.map((result, index) => (
             <Reel

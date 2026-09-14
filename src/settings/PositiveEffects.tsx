@@ -1,15 +1,13 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { API, type SpawnBonus } from './types';
+import { API, type Perk } from './types';
 
 function percentFromChance(chance: number): string {
   return String(Math.round(chance * 1000) / 10); // one decimal, e.g. 3.3
 }
 
-// "Count Roll" mode only — these toggles/chances have no effect while
-// "Random" is active, since Random has no concept of bonuses at all.
-function SpawnBonuses() {
-  const [bonuses, setBonuses] = useState<SpawnBonus[]>([]);
+function PositiveEffects() {
+  const [perks, setPerks] = useState<Perk[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -19,17 +17,15 @@ function SpawnBonuses() {
   const bumpSeq = useCallback(() => ++seqRef.current, []);
   const isStaleSeq = useCallback((seq: number) => seq !== seqRef.current, []);
 
-  // Seeds a draft for any bonus that doesn't have one yet — never
-  // overwrites an existing draft. Toggling one bonus's checkbox (or
-  // saving another one's chance) must not clobber an unsaved edit
-  // sitting in a different bonus's % field.
-  const seedDrafts = useCallback((list: SpawnBonus[]) => {
+  // Seeds a draft for any perk that doesn't have one yet — never
+  // overwrites an existing draft, same reasoning as SpawnBonuses.
+  const seedDrafts = useCallback((list: Perk[]) => {
     setDrafts((prev) => {
       const next = { ...prev };
 
-      for (const bonus of list) {
-        if (!(bonus.key in next)) {
-          next[bonus.key] = percentFromChance(bonus.chance);
+      for (const perk of list) {
+        if (!(perk.key in next)) {
+          next[perk.key] = percentFromChance(perk.chance);
         }
       }
 
@@ -40,16 +36,16 @@ function SpawnBonuses() {
   useEffect(() => {
     const seq = bumpSeq();
 
-    fetch(`${API}/roulette/bonuses`)
+    fetch(`${API}/roulette/perks`)
       .then((res) => res.json())
       .then((data) => {
         if (isStaleSeq(seq)) {
           return;
         }
 
-        const list: SpawnBonus[] = Array.isArray(data.bonuses) ? data.bonuses : [];
+        const list: Perk[] = Array.isArray(data.perks) ? data.perks : [];
 
-        setBonuses(list);
+        setPerks(list);
         seedDrafts(list);
       })
       .catch(() => {
@@ -57,29 +53,29 @@ function SpawnBonuses() {
       });
   }, [bumpSeq, isStaleSeq, seedDrafts]);
 
-  const toggleBonus = async (key: string, enabled: boolean): Promise<void> => {
+  const togglePerk = async (key: string, enabled: boolean): Promise<void> => {
     const seq = bumpSeq();
 
-    setBonuses((prev) => prev.map((b) => (b.key === key ? { ...b, enabled } : b)));
+    setPerks((prev) => prev.map((p) => (p.key === key ? { ...p, enabled } : p)));
 
-    const res = await fetch(`${API}/roulette/bonuses/toggle`, {
+    const res = await fetch(`${API}/roulette/perks/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, enabled }),
     }).then((r) => r.json());
 
     // Only `enabled` can change from a toggle — sync that, but leave
-    // every bonus's chance draft untouched (see seedDrafts).
-    if (Array.isArray(res.bonuses) && !isStaleSeq(seq)) {
-      setBonuses(res.bonuses);
+    // every perk's chance draft untouched (see seedDrafts).
+    if (Array.isArray(res.perks) && !isStaleSeq(seq)) {
+      setPerks(res.perks);
     }
   };
 
-  const isDirty = (bonus: SpawnBonus): boolean =>
-    drafts[bonus.key] !== undefined && drafts[bonus.key] !== percentFromChance(bonus.chance);
+  const isDirty = (perk: Perk): boolean =>
+    drafts[perk.key] !== undefined && drafts[perk.key] !== percentFromChance(perk.chance);
 
-  const saveChance = async (bonus: SpawnBonus): Promise<void> => {
-    const key = bonus.key;
+  const saveChance = async (perk: Perk): Promise<void> => {
+    const key = perk.key;
     const draft = drafts[key];
     const percent = Number(draft);
 
@@ -93,7 +89,7 @@ function SpawnBonuses() {
     setErrors((prev) => ({ ...prev, [key]: '' }));
 
     try {
-      const res = await fetch(`${API}/roulette/bonuses/chance`, {
+      const res = await fetch(`${API}/roulette/perks/chance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, chance: percent / 100 }),
@@ -105,13 +101,13 @@ function SpawnBonuses() {
         return;
       }
 
-      if (Array.isArray(res.bonuses) && !isStaleSeq(seq)) {
-        setBonuses(res.bonuses);
+      if (Array.isArray(res.perks) && !isStaleSeq(seq)) {
+        setPerks(res.perks);
 
-        // Re-sync only THIS bonus's draft (the server clamps to 0-100,
-        // so what got saved may differ slightly from what was typed) —
-        // every other bonus's draft is left exactly as the user has it.
-        const updated = (res.bonuses as SpawnBonus[]).find((b) => b.key === key);
+        // Re-sync only THIS perk's draft (the server clamps to 0-100, so
+        // what got saved may differ slightly from what was typed) — every
+        // other perk's draft is left exactly as the user has it.
+        const updated = (res.perks as Perk[]).find((p) => p.key === key);
 
         if (updated) {
           setDrafts((prev) => ({ ...prev, [key]: percentFromChance(updated.chance) }));
@@ -127,7 +123,7 @@ function SpawnBonuses() {
   const restoreDefaults = async (): Promise<void> => {
     if (
       !window.confirm(
-        'Restore all spawn bonuses to their default chances and re-enable them all?',
+        'Restore all positive effects to their default chances and re-enable them all?',
       )
     ) {
       return;
@@ -138,14 +134,14 @@ function SpawnBonuses() {
     setResetting(true);
 
     try {
-      const res = await fetch(`${API}/roulette/bonuses/reset`, { method: 'POST' }).then((r) =>
+      const res = await fetch(`${API}/roulette/perks/reset`, { method: 'POST' }).then((r) =>
         r.json(),
       );
 
-      if (Array.isArray(res.bonuses) && !isStaleSeq(seq)) {
-        setBonuses(res.bonuses);
+      if (Array.isArray(res.perks) && !isStaleSeq(seq)) {
+        setPerks(res.perks);
         setDrafts({});
-        seedDrafts(res.bonuses);
+        seedDrafts(res.perks);
         setErrors({});
       }
     } finally {
@@ -153,18 +149,14 @@ function SpawnBonuses() {
     }
   };
 
-  if (bonuses.length === 0) {
+  if (perks.length === 0) {
     return null;
   }
-
-  const totalPercent =
-    Math.round(bonuses.filter((b) => b.enabled).reduce((sum, b) => sum + b.chance, 0) * 1000) /
-    10;
 
   return (
     <section className="set-section">
       <div className="set-section-header">
-        <h2 className="set-heading">Spawn bonuses (Count Roll)</h2>
+        <h2 className="set-heading">Positive Effects</h2>
 
         <button
           className="set-btn set-section-reset"
@@ -176,25 +168,27 @@ function SpawnBonuses() {
       </div>
 
       <p className="set-muted">
-        Chance of a bonus on a Count Roll spawn — has no effect while Random is active.
+        A positive effect roll picks one of these at random (weighted odds among the ones
+        enabled below).
       </p>
 
       <div className="set-rewards">
-        {bonuses.map((bonus) => {
-          const draft = drafts[bonus.key] ?? percentFromChance(bonus.chance);
-          const dirty = isDirty(bonus);
+        {perks.map((perk) => {
+          const draft = drafts[perk.key] ?? percentFromChance(perk.chance);
+          const dirty = isDirty(perk);
 
           return (
-            <div className="set-reward" key={bonus.key}>
+            <div className="set-reward" key={perk.key}>
               <div className="set-reward-info">
                 <input
                   className="set-checkbox"
                   type="checkbox"
-                  checked={bonus.enabled}
-                  onChange={(event) => toggleBonus(bonus.key, event.target.checked)}
+                  checked={perk.enabled}
+                  onChange={(event) => togglePerk(perk.key, event.target.checked)}
                 />
-                <span className="set-reward-title">{bonus.label}</span>
-                {bonus.description && <span className="set-muted">{bonus.description}</span>}
+                {perk.icon && <img className="set-reward-icon" src={perk.icon} alt="" />}
+                <span className="set-reward-title">{perk.label}</span>
+                {perk.description && <span className="set-muted">{perk.description}</span>}
               </div>
 
               <div className="set-reward-config">
@@ -208,7 +202,7 @@ function SpawnBonuses() {
                     step={0.1}
                     value={draft}
                     onChange={(event) =>
-                      setDrafts((prev) => ({ ...prev, [bonus.key]: event.target.value }))
+                      setDrafts((prev) => ({ ...prev, [perk.key]: event.target.value }))
                     }
                   />
                 </label>
@@ -216,27 +210,21 @@ function SpawnBonuses() {
                 {dirty && (
                   <button
                     className="set-btn set-btn--primary set-reward-save"
-                    onClick={() => saveChance(bonus)}
-                    disabled={saving[bonus.key]}
+                    onClick={() => saveChance(perk)}
+                    disabled={saving[perk.key]}
                   >
-                    {saving[bonus.key] ? 'Saving…' : 'Save'}
+                    {saving[perk.key] ? 'Saving…' : 'Save'}
                   </button>
                 )}
               </div>
 
-              {errors[bonus.key] && <p className="set-reward-error">{errors[bonus.key]}</p>}
+              {errors[perk.key] && <p className="set-reward-error">{errors[perk.key]}</p>}
             </div>
           );
         })}
       </div>
-
-      <p className={`set-muted ${totalPercent > 100 ? 'set-bonus-total--over' : ''}`}>
-        Total enabled chance: {totalPercent}%
-        {totalPercent > 100 &&
-          ' — over 100%, so a bonus always lands and each one splits the pie by its own share instead of by no-bonus odds'}
-      </p>
     </section>
   );
 }
 
-export default memo(SpawnBonuses);
+export default memo(PositiveEffects);

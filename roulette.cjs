@@ -4,12 +4,11 @@ const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
-const bitsRewards = require('./bits-rewards.cjs');
+const perks = require('./positive-effects.cjs');
 const {
   PRESETS,
   DEFAULT_PRESET,
   DEFAULT_SPAWN_TIER,
-  BITS_REWARDS_ENABLED,
   CUSTOM_POWER_UPS_ENABLED,
   CUSTOM_POWER_UPS,
 } = require('./config.cjs');
@@ -132,17 +131,24 @@ function randomSlotCount() {
 
 /*
  * Every subscription-family event (new sub, resub, single gift) rolls
- * one of loot / enemy squads / mutants with equal 1/3 odds, then a
- * random 1-3 count — unless `forceTriple` (a multi-sub gift bomb),
- * which always rolls exactly 3. Which outcome landed is only visible
- * once the reels stop, same as any other roll.
+ * one of loot / enemy squads / mutants / a perk with equal 1/4 odds, then
+ * a random 1-3 count for loot/spawn — unless `forceTriple` (a multi-sub
+ * gift bomb), which always rolls exactly 3. Perks have no count to scale
+ * (one perk is one perk), so `forceTriple` only affects loot/spawn odds
+ * of landing on this outcome in the first place, not what happens once it
+ * does. Which outcome landed is only visible once the reels stop, same as
+ * any other roll.
  */
 function subEventOutcome(label, forceTriple) {
-  const category = pick(['loot', 'enemies', 'mutants']);
+  const category = pick(['loot', 'enemies', 'mutants', 'perk']);
   const rolls = forceTriple ? 3 : randomSlotCount();
 
   if (category === 'loot') {
     return { label, count: rolls };
+  }
+
+  if (category === 'perk') {
+    return { mode: 'perk', label };
   }
 
   // forceTriple (a multi-sub gift bomb) also guarantees a spawn bonus
@@ -181,6 +187,10 @@ function planForEvent(event, rewardMap) {
         };
       }
 
+      if (def.kind === 'perk') {
+        return { mode: 'perk', label: name.toUpperCase() };
+      }
+
       return {
         mode: 'loot',
         label: name.toUpperCase(),
@@ -198,6 +208,9 @@ function planForEvent(event, rewardMap) {
         category: event.category === 'enemies' ? 'enemies' : 'mutants',
         rolls: event.rolls || 1,
       };
+
+    case 'manual-perk':
+      return { mode: 'perk', label: 'MANUAL POSITIVE EFFECT' };
 
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
@@ -217,27 +230,6 @@ function planForEvent(event, rewardMap) {
       return subEventOutcome(`${total} GIFT SUB${total > 1 ? 'S' : ''}`, total > 1);
     }
 
-    case 'cheer': {
-      if (!BITS_REWARDS_ENABLED) {
-        return null;
-      }
-
-      const bits = event.bits || 0;
-      const tier = bitsRewards.planForBits(bits);
-
-      if (!tier) {
-        return null;
-      }
-
-      const label = `${bits} BITS`;
-
-      if (tier.kind === 'spawn') {
-        return { mode: 'spawn', label, category: tier.category, rolls: tier.rolls };
-      }
-
-      return { mode: 'loot', label, count: tier.count };
-    }
-
     case 'power_up': {
       if (!CUSTOM_POWER_UPS_ENABLED) {
         return null;
@@ -253,6 +245,10 @@ function planForEvent(event, rewardMap) {
 
       if (def.kind === 'spawn') {
         return { mode: 'spawn', label, category: def.category, rolls: randomSlotCount() };
+      }
+
+      if (def.kind === 'perk') {
+        return { mode: 'perk', label };
       }
 
       return { mode: 'loot', label, count: randomSlotCount() };
@@ -400,10 +396,15 @@ class Roulette extends EventEmitter {
       return null;
     }
 
-    const job =
-      plan.mode === 'spawn'
-        ? this._buildSpawnJob(event, plan)
-        : this._buildLootJob(event, plan);
+    let job;
+
+    if (plan.mode === 'spawn') {
+      job = this._buildSpawnJob(event, plan);
+    } else if (plan.mode === 'perk') {
+      job = this._buildPerkJob(event, plan);
+    } else {
+      job = this._buildLootJob(event, plan);
+    }
 
     if (!job) {
       return null;
@@ -428,6 +429,78 @@ class Roulette extends EventEmitter {
       preset: this.preset,
       grades, // { weapon: [...], helmet: [...], armor: [...] } — for the overlay reel
       results: rollItems(plan.count, grades),
+      createdAt: Date.now(),
+    };
+  }
+
+  /*
+   * A perk roll (Immortality / Give Ammo / Give Money / Medicine) —
+   * dual-slot, same shape as Count Roll's count+species mechanic: slot 1
+   * picks WHICH perk (weighted by each perk's own chance among enabled
+   * ones), slot 2 rolls that perk's own value (see
+   * positive-effects.cjs's rollPerkValue). `results` reuses the same
+   * single-text-reel shape mode 1's spawn results use for BOTH slots, so
+   * the overlay can render them with its existing reel component
+   * unchanged.
+   */
+  _buildPerkJob(event, plan) {
+    const perk = perks.rollPerk();
+
+    if (!perk) {
+      console.error('Roulette: no perks enabled');
+
+      return null;
+    }
+
+    // Medicine's own item list is keyed by this same spawn tier — every
+    // other perk ignores it.
+    const perkValue = perks.rollPerkValue(perk.key, this.spawnTier);
+
+    if (!perkValue) {
+      console.error(`Roulette: perk "${perk.key}" has no rollable value`);
+
+      return null;
+    }
+
+    return {
+      id: `perk_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      mode: 'perk',
+      kind: event.kind,
+      perk,
+      perkValue,
+      // Drives the same gold glow + pulsing "BONUS" badge the count-roll
+      // spawn bonuses already use — see Overlay.tsx's `ov-root--bonus`.
+      // Always a plain "BONUS" (empty label) — the specific effect (x2,
+      // +30s, which medical item, ...) is already spelled out in the
+      // result line(s) below, this top badge is just the "something
+      // special happened" flag.
+      bonus: perkValue.bonus
+        ? { key: perkValue.bonus.key, label: '', type: perkValue.bonus.type }
+        : null,
+      perkPool: perks.listPerks().map((p) => ({ label: p.label, icon: p.icon })),
+      perkValuePool: perks.perkValuePool(perk.key, this.spawnTier),
+      results: [
+        {
+          slot: 'perk',
+          // Medicine's bonus is a genuinely separate extra item, so slot 1
+          // calls out that something's riding along (the specific item
+          // shows in slot 2's own result line). The other perks' bonuses
+          // are just a modifier on slot 2's own number — already fully
+          // expressed there ("45s" lands, result line reads "75s (+30s
+          // bonus)"), so slot 1 stays on the plain perk name for those.
+          name: perk.key === 'medicine' && perkValue.bonus ? `${perk.label} + bonus` : perk.label,
+          label: perk.label,
+          icon: perk.icon,
+        },
+        {
+          slot: 'perk-value',
+          name: perkValue.fullLabel || perkValue.label,
+          label: perkValue.label,
+          icon: perkValue.icon,
+        },
+      ],
       createdAt: Date.now(),
     };
   }
@@ -496,7 +569,11 @@ class Roulette extends EventEmitter {
       category,
       spawnTier: tier,
       spawnResults: [result],
-      bonus: result.bonus,
+      // A fresh object, not `result.bonus` itself — this only drives the
+      // top banner's badge/glow, which stays generic ("BONUS", no
+      // specifics). The count reel's own inline "(x2 bonus)" text reads
+      // straight from `results[0].bonus` below, untouched.
+      bonus: result.bonus ? { key: result.bonus.key, label: '', type: result.bonus.type } : null,
       spawnPool: enemiesMode2.groupOptions(category, tier),
       // Count reel rolls first, species reel second — the dual-slot
       // mechanic this mode was built for ("1 слот роллит каунт, второй
@@ -574,15 +651,20 @@ class Roulette extends EventEmitter {
       return;
     }
 
-    const give =
-      job.mode === 'spawn'
-        ? bridge.writeCommandLines(
-            enemies.spawnCommandLines(job.spawnResults, job.user),
-          )
-        : bridge.giveLoadout({
-            ...resultsToLoadout(job.results),
-            message: lootMessage(job),
-          });
+    let give;
+
+    if (job.mode === 'spawn') {
+      give = bridge.writeCommandLines(enemies.spawnCommandLines(job.spawnResults, job.user));
+    } else if (job.mode === 'perk') {
+      give = bridge.writeCommandLines(
+        perks.perkCommandLines(job.perk, job.perkValue, job.user),
+      );
+    } else {
+      give = bridge.giveLoadout({
+        ...resultsToLoadout(job.results),
+        message: lootMessage(job),
+      });
+    }
 
     if (!give.ok) {
       console.error(`Roulette: failed to deliver ${job.id}: ${give.error}`);
