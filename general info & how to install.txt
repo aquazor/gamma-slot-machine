@@ -10,7 +10,10 @@ SETUP
 Two separate pieces, both needed:
 
 1. GAMMA Randomizer Slot Machine by rip_perri — this is the in-game mod.
-   Install it with MO2 like any other regular mod. DO NOT CHANGE THE NAME OF THE MOD.
+   Install it with MO2 like any other regular mod.
+   -- IMPORTANT -- 
+   * DO NOT CHANGE THE NAME OF THE MOD.
+   * CHOSE Anomaly Launcher WHEN RUNNING GAMMA. Debug mode is not required. 
 
 2. GAMMA Slot Machine App — this is the app that runs the roulette itself.
    Launch it and the Settings page opens automatically in your browser.
