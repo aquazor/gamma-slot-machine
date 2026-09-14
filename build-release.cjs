@@ -4,7 +4,10 @@ const path = require('path');
 
 const NODE_EXE = 'C:\\Program Files\\nodejs\\node.exe';
 
-const EXE = path.resolve('build/GAMMA Slot Machine.exe');
+// Final packaged exe is tracked in git (unlike build/, which only holds
+// regenerable intermediate artifacts), so it lives in its own top-level
+// folder instead.
+const EXE = path.resolve('APP EXE/GAMMA Slot Machine.exe');
 const ICON_EXE = path.resolve('build/GAMMA Slot Machine-icon.exe');
 const BLOB = path.resolve('build/sea-prep.blob');
 
@@ -47,6 +50,8 @@ try {
   // ========================================
   // 4. Copy Node executable
   // ========================================
+
+  fs.mkdirSync(path.dirname(EXE), { recursive: true });
 
   if (fs.existsSync(EXE)) {
     fs.unlinkSync(EXE);

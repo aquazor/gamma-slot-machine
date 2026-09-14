@@ -154,7 +154,10 @@ npm run package
 
 This bundles the server with esbuild, generates a Node.js Single
 Executable Application, injects the frontend build, and applies the app
-icon via Resource Hacker. Output goes to `build/GAMMA Slot Machine.exe`.
+icon via Resource Hacker. Intermediate artifacts land in `build/`
+(gitignored, regenerable); the final exe is copied to `APP EXE/GAMMA Slot
+Machine.exe`, which — unlike `build/` — is tracked in git so the built app
+can be distributed straight from the repo.
 Requires Node.js, Resource Hacker, and `esbuild`/`postject`/`rcedit`
 (already in `devDependencies`).
 
