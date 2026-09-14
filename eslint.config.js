@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'build']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -18,6 +18,18 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+  },
+  {
+    // Backend: server.cjs, roulette.cjs, twitch-*.cjs, etc. — previously
+    // unmatched by any config block, so `npm run lint` silently skipped
+    // all of it (only .ts/.tsx were ever actually linted).
+    files: ['**/*.cjs'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: globals.node,
     },
   },
 ])

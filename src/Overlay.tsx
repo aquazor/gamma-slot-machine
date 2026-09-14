@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './Overlay.css';
 
+import { API } from './api';
 import {
   pistols,
   shotguns,
@@ -21,8 +22,6 @@ import {
 /* ========================================
    CONFIG
 ======================================== */
-
-const API = 'http://localhost:7770';
 
 const ITEM_HEIGHT = 80; // must match .reel-item height in Overlay.css
 const VISIBLE_ROWS = 3; // .reel-window is 3 * ITEM_HEIGHT tall

@@ -317,10 +317,13 @@ app.post('/roulette/roll-mode', (req, res) => {
   res.json(roulette.getState());
 });
 
-// "Random" and "Count Roll" keep entirely separate faction-toggle state
-// (and separate bonus state, Count Roll only) so switching modes never
-// carries one mode's settings into the other — always act on whichever
-// pool is currently active.
+// Faction on/off toggles are deliberately SHARED between "Random" and
+// "Count Roll" — disabling a squad means that real-world faction is off
+// everywhere, not just in whichever mode you disabled it from (see
+// enemy-pool.cjs's module-level `disabledFactions`). Only the spawn-BONUS
+// state is mode-specific, since mode 1 ("Random") has no concept of
+// bonuses at all — always act on whichever pool is currently active so a
+// bonus toggle/chance change only ever touches Count Roll's own state.
 function activeSpawnPool() {
   return roulette.rollMode === 'count-roll' ? enemiesMode2 : enemies;
 }
@@ -579,6 +582,8 @@ app.get('/twitch/status', async (req, res) => {
       login: tokens ? tokens.login : null,
     });
   } catch (error) {
+    console.error('Failed to check Twitch status:', error.message);
+
     res.json({ connected: false, login: null });
   }
 });

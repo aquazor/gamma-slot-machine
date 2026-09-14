@@ -5,7 +5,12 @@ import './BitsGuide.css';
 import Navbar from './Navbar';
 import { copyToClipboard } from './settings/clipboard';
 
-const POWER_UP_TITLES = ['[SPIN] Spawn Squads', '[SPIN] Spawn Mutants', '[SPIN] Loot Roll'];
+const POWER_UP_TITLES = [
+  '[SPIN] Spawn Squads',
+  '[SPIN] Spawn Mutants',
+  '[SPIN] Loot Roll',
+  '[SPIN] Positive Effects',
+];
 
 const STEPS = [
   {
@@ -22,16 +27,16 @@ const STEPS = [
   },
   {
     image: '/bits-guide/bits-guide-step4.jpg',
-    text: 'Copy one of the three names below, paste it as the Power-up Name, and set any Bits cost you like (10-10,000 — it isn’t checked).',
+    text: 'Copy one of the four names below, paste it as the Power-up Name, and set any Bits cost you like (10-10,000 — it isn’t checked).',
     showNames: true,
   },
   {
     image: '/bits-guide/bits-guide-step5.jpg',
-    text: 'Cooldowns & limits are optional. Click Create — then repeat for the other two names.',
+    text: 'Cooldowns & limits are optional. Click Create — then repeat for the other three names.',
   },
   {
     image: '/bits-guide/bits-guide-step6.jpg',
-    text: 'Once all three are created, they should show up enabled in your Custom Power-ups list — you’re done.',
+    text: 'Once all four are created, they should show up enabled in your Custom Power-ups list — you’re done.',
   },
 ];
 
@@ -78,7 +83,7 @@ export default function BitsGuide() {
           <h1 className="set-title">Bits Power-ups Setup Guide</h1>
 
           <p className="set-muted bits-guide-intro">
-            Twitch doesn&apos;t let apps create Custom Power-ups yet, so these three have to
+            Twitch doesn&apos;t let apps create Custom Power-ups yet, so these four have to
             be made by hand, once, from your Creator Dashboard — about a minute each.
           </p>
 

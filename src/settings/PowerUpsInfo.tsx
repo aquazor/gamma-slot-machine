@@ -11,6 +11,7 @@ const POWER_UPS = [
   { title: '[SPIN] Spawn Squads', does: 'Spawns 1-3 hostile squads' },
   { title: '[SPIN] Spawn Mutants', does: 'Spawns 1-3 mutant packs' },
   { title: '[SPIN] Loot Roll', does: 'Rolls 1-3 loot items' },
+  { title: '[SPIN] Positive Effects', does: 'Rolls one of the four positive effects' },
 ];
 
 function PowerUpsInfo() {

@@ -1,4 +1,4 @@
-export const API = 'http://localhost:7770';
+export { API } from '../api';
 
 export interface TwitchStatus {
   connected: boolean;

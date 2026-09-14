@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import './App.css';
 
+import { API } from './api';
 import Navbar from './Navbar';
 
 import {
@@ -681,7 +682,7 @@ export default function App() {
     console.log('Giving loadout:', loadout);
 
     try {
-      const response = await fetch('http://localhost:7770/give-loadout', {
+      const response = await fetch(`${API}/give-loadout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

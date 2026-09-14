@@ -24,7 +24,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { createEnemyPool, randInt, TIER_ORDER } = require('./enemy-pool.cjs');
+const { createEnemyPool, randInt } = require('./enemy-pool.cjs');
 const data = require('./enemies.mode2.data.json');
 
 const pool = createEnemyPool(data);

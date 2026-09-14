@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './Navbar.css';
 
-const API = 'http://localhost:7770';
+import { API } from './api';
 
 const LINKS = [
   { href: '/', label: 'Slot Machine' },
