@@ -516,6 +516,10 @@ body {
   font-size: 14px;
 }
 
+.set-bonus-total--over {
+  color: #f0a53c;
+}
+
 /* ---- preset selector ---- */
 
 .set-presets {
@@ -624,6 +628,18 @@ body {
   object-fit: contain;
 
   flex-shrink: 0;
+}
+
+/*
+ * Checkbox look shared by every settings toggle — `.set-faction input`
+ * only applies inside that specific layout, this is the same styling
+ * for a checkbox anywhere else (e.g. spawn bonus rows).
+ */
+.set-checkbox {
+  width: 15px;
+  height: 15px;
+
+  accent-color: #e0a52e;
 }
 
 /* ---- changelog ---- */

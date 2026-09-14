@@ -61,11 +61,20 @@ interface RollResult {
   ammo?: string;
   icon?: string | null; // spawn results only
   label?: string; // spawn results only — plain group name, no "x<count>"
+  value?: number; // count-roll's count reel only — presence marks a count entry
+  baseValue?: number; // count-roll only — the roll before a multiply/add bonus
+  bonus?: JobBonus | null; // count-roll only — set only for a count-affecting bonus
 }
 
 interface SpawnOption {
   label: string;
   icon: string | null;
+}
+
+interface JobBonus {
+  key: string;
+  label: string;
+  type: string;
 }
 
 interface Job {
@@ -79,6 +88,7 @@ interface Job {
   preset?: string;
   grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
+  bonus?: JobBonus | null; // mode 2 only — set when a spawn bonus applied
 }
 
 interface WinningEffect {
@@ -513,6 +523,125 @@ function SpawnReel({ title, pool, label, resultText, targetIcon, spin, landed }:
 }
 
 /* ========================================
+   COUNT REEL  (numeric — how many spawn, mode 2 only)
+======================================== */
+
+interface CountReelProps {
+  title: string;
+  target: number; // final count (shown in the result line under the reel)
+  baseTarget: number; // pre-bonus roll — what the reel itself lands on
+  bonusLabel?: string | null; // e.g. "x2" — only set for a count-affecting bonus
+  spin: boolean;
+  landed: boolean;
+}
+
+// Pure filler for the spin — the reel only ever actually lands on the
+// real rolled count (see `winnerLabel` below). These are just what
+// flies past while it spins, so a couple of joke/meme values are fine.
+const COUNT_FILLER = [
+  'x1',
+  'x2',
+  'x3',
+  'x4',
+  'x5',
+  'x10',
+  'x100',
+  'x1000',
+  'x67',
+  'x69',
+  'x1337',
+  'x52',
+  'x600',
+  'Лям двести',
+];
+
+function CountReel({ title, target, baseTarget, bonusLabel, spin, landed }: CountReelProps) {
+  // The reel visually lands on the roll BEFORE the bonus, with the
+  // bonus called out — the actually-final number only shows in the
+  // result line below (matches how the species reel already shows the
+  // full "BOARS x4 (x2 bonus)" text only in its own result line).
+  const winnerLabel = bonusLabel ? `x${baseTarget} (${bonusLabel} bonus)` : `x${baseTarget}`;
+
+  const { strip, targetIndex } = useMemo(() => {
+    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
+    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
+
+    const need = target_ + VISIBLE_ROWS + 2;
+    const pickRandom = (): string =>
+      COUNT_FILLER[Math.floor(Math.random() * COUNT_FILLER.length)];
+
+    const rows: string[] = [];
+
+    for (let k = 0; k < need; k++) {
+      let candidate = pickRandom();
+
+      for (let guard = 0; guard < 40; guard++) {
+        if (rows[k - 1] !== candidate && rows[k - 2] !== candidate) {
+          break;
+        }
+
+        candidate = pickRandom();
+      }
+
+      rows[k] = candidate;
+    }
+
+    rows[target_] = winnerLabel;
+
+    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
+      if (rows[n] === winnerLabel) {
+        for (let guard = 0; guard < 40; guard++) {
+          rows[n] = pickRandom();
+
+          if (rows[n] !== winnerLabel) {
+            break;
+          }
+        }
+      }
+    }
+
+    return { strip: rows, targetIndex: target_ };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+
+  return (
+    <div className={`reel-container ov-reel ov-count ${landed ? 'ov-reel--landed ov-count--landed' : ''}`}>
+      <h2 className="reel-title">{title}</h2>
+
+      <div className="reel-wrapper">
+        <div className="reel-window">
+          <div
+            className="reel"
+            style={{
+              transform: `translateY(-${offset}px)`,
+              transition: spin
+                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
+                : 'none',
+            }}
+          >
+            {strip.map((label, index) => (
+              <div className="reel-item ov-count-item" key={index}>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="top-gradient" />
+          <div className="bottom-gradient" />
+          <div className="reel-indicator" />
+        </div>
+      </div>
+
+      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
+        <span>x{target}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ========================================
    OVERLAY
 ======================================== */
 
@@ -637,29 +766,48 @@ export default function Overlay() {
   }
 
   return (
-    <div className={`ov-root ${phase === 'out' ? 'ov-root--out' : 'ov-root--in'}`}>
+    <div
+      className={`ov-root ${phase === 'out' ? 'ov-root--out' : 'ov-root--in'} ${
+        job.bonus ? 'ov-root--bonus' : ''
+      }`}
+    >
       <div className="ov-banner">
         <span className={`ov-banner-kind ${kindInfo(job.kind).className}`}>
           {kindInfo(job.kind).text}
         </span>
         <span className="ov-banner-user">{job.user}</span>
         <span className="ov-banner-label">{job.label}</span>
+        {job.bonus && (
+          <span className="ov-banner-bonus">BONUS {job.bonus.label}</span>
+        )}
       </div>
 
       <div className="ov-reels">
         {job.mode === 'spawn' ? (
-          job.results.map((result, index) => (
-            <SpawnReel
-              key={`${job.id}-${index}`}
-              title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
-              pool={job.spawnPool ?? []}
-              label={result.label ?? result.name ?? '???'}
-              resultText={result.name ?? '???'}
-              targetIcon={result.icon}
-              spin={spinning[index] ?? false}
-              landed={landed[index] ?? false}
-            />
-          ))
+          job.results.map((result, index) =>
+            typeof result.value === 'number' ? (
+              <CountReel
+                key={`${job.id}-${index}`}
+                title="Count"
+                target={result.value}
+                baseTarget={result.baseValue ?? result.value}
+                bonusLabel={result.bonus?.label ?? null}
+                spin={spinning[index] ?? false}
+                landed={landed[index] ?? false}
+              />
+            ) : (
+              <SpawnReel
+                key={`${job.id}-${index}`}
+                title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
+                pool={job.spawnPool ?? []}
+                label={result.label ?? result.name ?? '???'}
+                resultText={result.name ?? '???'}
+                targetIcon={result.icon}
+                spin={spinning[index] ?? false}
+                landed={landed[index] ?? false}
+              />
+            ),
+          )
         ) : (
           job.results.map((result, index) => (
             <Reel

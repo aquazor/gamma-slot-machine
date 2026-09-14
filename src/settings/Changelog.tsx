@@ -6,6 +6,22 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-14',
+    items: [
+      'Added a second spawn mode, "Count Roll" — one reel rolls how many, a separate reel rolls what shows up, instead of Random\'s independent per-item rolls; switch between them in Settings, and it\'s now the default mode for new sessions',
+      'Count Roll spawns have a chance of a bonus: double the count, +2 to the count, or a Tier Upgrade (spawns something from the tier above instead) — each shown right on the overlay, and each can be toggled on/off separately in Settings',
+      'A multi-sub gift bomb in Count Roll mode now always lands a bonus, picked from whichever bonuses are currently enabled',
+      'The overlay glows gold and pulses when a bonus lands, so it reads as special at a glance',
+      'Manual spawn buttons in Settings collapse to one button per category while Count Roll is active (the ×2/×3 versions only make sense in Random mode)',
+      'Fixed a bug where disabling a squad in Settings while on one spawn mode wouldn\'t carry over to the other mode — squad on/off is now shared between Random and Count Roll',
+      'Count Roll now shows a separate spinning reel for the count, landing on the roll before any bonus (e.g. "x2 (x2 bonus)") with the final total shown underneath — matches the species reel next to it',
+      'Bonus chances are now editable per bonus in Settings, as a percentage — and the values you set now survive a server restart',
+      'If enabled bonus chances add up to 100% or more, a bonus always lands and each one gets its fair share proportional to its own chance — instead of the first bonus in the list quietly hogging all the odds',
+      'The Tier Upgrade bonus result now reads "(Tier upgrade)" on the overlay instead of "(RARE bonus)"',
+      'Fixed a bug in Settings where editing one bonus\'s chance and then toggling a different bonus\'s checkbox could silently discard the unsaved edit',
+    ],
+  },
+  {
     date: '2026-09-13',
     items: [
       'Channel-point rewards consolidated to 3: Spawn Squads, Spawn Mutants, Loot Roll — each now rolls a random 1-3 instead of needing separate x1/x3 rewards',

@@ -3,6 +3,7 @@ const { EventEmitter } = require('events');
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
+const enemiesMode2 = require('./enemies-mode2.cjs');
 const bitsRewards = require('./bits-rewards.cjs');
 const {
   PRESETS,
@@ -144,7 +145,10 @@ function subEventOutcome(label, forceTriple) {
     return { label, count: rolls };
   }
 
-  return { mode: 'spawn', label, category, rolls };
+  // forceTriple (a multi-sub gift bomb) also guarantees a spawn bonus
+  // in roll mode 2 — ignored entirely by mode 1, which has no concept
+  // of bonuses and just uses `rolls` as before.
+  return { mode: 'spawn', label, category, rolls, forceBonus: forceTriple };
 }
 
 /*
@@ -308,6 +312,7 @@ class Roulette extends EventEmitter {
 
     this.overlayPresent = false;
     this.rewardMap = null;
+    this.rollMode = 'count-roll';
     this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
 
     const spawnTiers = enemies.spawnTiers();
@@ -344,6 +349,16 @@ class Roulette extends EventEmitter {
     return false;
   }
 
+  setRollMode(mode) {
+    if (mode === 'random' || mode === 'count-roll') {
+      this.rollMode = mode;
+
+      return true;
+    }
+
+    return false;
+  }
+
   setOverlayPresent(value) {
     const wasPresent = this.overlayPresent;
 
@@ -367,6 +382,7 @@ class Roulette extends EventEmitter {
       presets: Object.keys(PRESETS),
       spawnTier: this.spawnTier,
       spawnTiers: enemies.spawnTiers(),
+      rollMode: this.rollMode,
       queued: this.queue.length,
       current: this.current,
       history: this.history.slice(0, 10),
@@ -419,6 +435,11 @@ class Roulette extends EventEmitter {
   _buildSpawnJob(event, plan) {
     const category = plan.category === 'enemies' ? 'enemies' : 'mutants';
     const tier = this.spawnTier;
+
+    if (this.rollMode === 'count-roll') {
+      return this._buildSpawnJobCountRoll(event, plan, category, tier);
+    }
+
     const rolls = Math.min(3, Math.max(1, Number(plan.rolls) || 1));
 
     const spawnResults = enemies.rollSpawn(category, tier, rolls);
@@ -447,6 +468,59 @@ class Roulette extends EventEmitter {
         group: r.group,
         icon: r.icon,
       })),
+      createdAt: Date.now(),
+    };
+  }
+
+  /*
+   * "Count roll" mode: exactly one dual-slot roll (species + its own
+   * count), never N independent picks — see enemies-mode2.cjs for why
+   * `plan.rolls` is not used here. `plan.forceBonus` (a multi-sub gift
+   * bomb) guarantees a bonus instead of the normal per-roll chance.
+   */
+  _buildSpawnJobCountRoll(event, plan, category, tier) {
+    const result = enemiesMode2.rollDualSlot(category, tier, Boolean(plan.forceBonus));
+
+    if (!result) {
+      console.error(`Roulette: no spawn groups for ${category}/${tier} (mode 2)`);
+
+      return null;
+    }
+
+    return {
+      id: `spawn_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      mode: 'spawn',
+      kind: event.kind,
+      category,
+      spawnTier: tier,
+      spawnResults: [result],
+      bonus: result.bonus,
+      spawnPool: enemiesMode2.groupOptions(category, tier),
+      // Count reel rolls first, species reel second — the dual-slot
+      // mechanic this mode was built for ("1 слот роллит каунт, второй
+      // слот роллит кого спавнить").
+      results: [
+        {
+          slot: 'count',
+          name: String(result.count),
+          value: result.count,
+          baseValue: result.baseCount,
+          // Only a count-affecting bonus (multiply/add) belongs on the
+          // count reel — 'upgrade' changes the species roll, not this
+          // one, so the count reel has nothing to call out for it.
+          bonus:
+            result.bonus && result.bonus.type !== 'upgrade' ? result.bonus : null,
+        },
+        {
+          slot: 'spawn',
+          name: result.text,
+          label: result.label,
+          group: result.group,
+          icon: result.icon,
+        },
+      ],
       createdAt: Date.now(),
     };
   }

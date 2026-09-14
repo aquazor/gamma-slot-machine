@@ -17,7 +17,16 @@ export interface RouletteStatus {
   presets: string[];
   spawnTier: string;
   spawnTiers: string[];
+  rollMode: 'random' | 'count-roll';
   queued: number;
+}
+
+export interface SpawnBonus {
+  key: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  chance: number; // fraction 0-1, e.g. 0.033 = 3.3%
 }
 
 export interface Reward {

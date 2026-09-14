@@ -10,6 +10,7 @@ const { Roulette } = require('./roulette.cjs');
 const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
+const enemiesMode2 = require('./enemies-mode2.cjs');
 const bitsRewards = require('./bits-rewards.cjs');
 const { BITS_REWARDS_ENABLED } = require('./config.cjs');
 
@@ -305,12 +306,33 @@ app.post('/roulette/spawn-tier', (req, res) => {
   res.json(roulette.getState());
 });
 
+app.post('/roulette/roll-mode', (req, res) => {
+  const mode = (req.body || {}).mode;
+
+  if (!roulette.setRollMode(mode)) {
+    return res.status(400).json({ error: `Unknown roll mode: ${mode}` });
+  }
+
+  console.log(`Roulette roll mode -> ${mode}`);
+
+  res.json(roulette.getState());
+});
+
+// "Random" and "Count Roll" keep entirely separate faction-toggle state
+// (and separate bonus state, Count Roll only) so switching modes never
+// carries one mode's settings into the other — always act on whichever
+// pool is currently active.
+function activeSpawnPool() {
+  return roulette.rollMode === 'count-roll' ? enemiesMode2 : enemies;
+}
+
 /*
  * Which armed factions ('enemies' category) can currently be rolled —
- * a blanket on/off per faction, the same across every tier.
+ * a blanket on/off per faction, the same across every tier. Reflects
+ * whichever roll mode ("Random" or "Count Roll") is currently active.
  */
 app.get('/roulette/enemies', (req, res) => {
-  res.json({ factions: enemies.listFactions() });
+  res.json({ factions: activeSpawnPool().listFactions() });
 });
 
 app.post('/roulette/enemies/toggle', (req, res) => {
@@ -320,11 +342,54 @@ app.post('/roulette/enemies/toggle', (req, res) => {
     return res.status(400).json({ error: 'group is required' });
   }
 
-  enemies.setFactionEnabled(group, Boolean(enabled));
+  activeSpawnPool().setFactionEnabled(group, Boolean(enabled));
 
-  console.log(`Roulette faction "${group}" -> ${enabled ? 'enabled' : 'disabled'}`);
+  console.log(
+    `Roulette faction "${group}" -> ${enabled ? 'enabled' : 'disabled'} (${roulette.rollMode})`,
+  );
 
-  res.json({ factions: enemies.listFactions() });
+  res.json({ factions: activeSpawnPool().listFactions() });
+});
+
+/*
+ * "Count Roll" mode only: the 3 global spawn-bonus toggles (double
+ * count, +2, rare-upgrade). Applies across every tier that defines
+ * that bonus key.
+ */
+app.get('/roulette/bonuses', (req, res) => {
+  res.json({ bonuses: enemiesMode2.listBonuses() });
+});
+
+app.post('/roulette/bonuses/toggle', (req, res) => {
+  const { key, enabled } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  enemiesMode2.setBonusEnabled(key, Boolean(enabled));
+
+  console.log(`Roulette bonus "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ bonuses: enemiesMode2.listBonuses() });
+});
+
+app.post('/roulette/bonuses/chance', (req, res) => {
+  const { key, chance } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
+    return res.status(400).json({ error: 'chance must be a number' });
+  }
+
+  enemiesMode2.setBonusChance(key, chance);
+
+  console.log(`Roulette bonus "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
+
+  res.json({ bonuses: enemiesMode2.listBonuses() });
 });
 
 /*

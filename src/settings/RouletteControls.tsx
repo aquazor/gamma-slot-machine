@@ -7,6 +7,7 @@ interface Props {
   triggerBusy: boolean;
   selectPreset: (name: string) => void;
   selectSpawnTier: (name: string) => void;
+  selectRollMode: (mode: 'random' | 'count-roll') => void;
   manualRoll: (count: number) => void;
   manualSpawn: (category: 'mutants' | 'enemies', rolls: number) => void;
 }
@@ -16,12 +17,33 @@ function RouletteControls({
   triggerBusy,
   selectPreset,
   selectSpawnTier,
+  selectRollMode,
   manualRoll,
   manualSpawn,
 }: Props) {
   return (
     <section className="set-section">
       <h2 className="set-heading">Roulette</h2>
+
+      {roulette && (
+        <div className="set-presets">
+          <span className="set-muted">Spawn roll mode</span>
+          <div className="set-preset-group">
+            <button
+              className={`set-preset ${roulette.rollMode === 'random' ? 'is-active' : ''}`}
+              onClick={() => selectRollMode('random')}
+            >
+              Random
+            </button>
+            <button
+              className={`set-preset ${roulette.rollMode === 'count-roll' ? 'is-active' : ''}`}
+              onClick={() => selectRollMode('count-roll')}
+            >
+              Count Roll
+            </button>
+          </div>
+        </div>
+      )}
 
       {roulette && roulette.presets?.length > 0 && (
         <div className="set-presets">
@@ -73,7 +95,7 @@ function RouletteControls({
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Mutants</span>
-        {[1, 2, 3].map((n) => (
+        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
           <button
             key={n}
             className="set-btn"
@@ -87,7 +109,7 @@ function RouletteControls({
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Squads</span>
-        {[1, 2, 3].map((n) => (
+        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
           <button
             key={n}
             className="set-btn"

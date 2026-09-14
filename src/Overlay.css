@@ -73,6 +73,89 @@ body {
 }
 
 /* ========================================
+   BONUS MODE  —  applied to .ov-root whenever job.bonus is set, so a
+   bonus roll reads as special the instant it starts, not just once
+   the reel lands on it.
+======================================== */
+
+/*
+ * Only `opacity` is animated here (never border-color/box-shadow
+ * directly) — those force a repaint of the shadow itself on every
+ * frame and read as jerky. A static glow layer faded via opacity is
+ * GPU-composited instead, so the pulse stays smooth.
+ */
+
+.ov-root--bonus::before {
+  content: '';
+
+  position: fixed;
+  inset: 0;
+
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 200, 80, 0.32),
+    rgba(255, 200, 80, 0.08) 45%,
+    transparent 70%
+  );
+
+  opacity: 0.55;
+  animation: ov-bonus-pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+
+  pointer-events: none;
+  will-change: opacity;
+}
+
+@keyframes ov-bonus-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.ov-root--bonus .ov-banner {
+  border-color: #ffd873;
+  box-shadow:
+    0 0 30px rgba(255, 190, 60, 0.55),
+    inset 0 1px 0 rgba(255, 220, 130, 0.15);
+}
+
+.ov-root--bonus .reel-container {
+  position: relative;
+}
+
+.ov-root--bonus .reel-container::after {
+  content: '';
+
+  position: absolute;
+  inset: -2px;
+
+  border: 2px solid #ffd873;
+  border-radius: 12px;
+  box-shadow: 0 0 26px rgba(255, 200, 80, 0.6);
+
+  opacity: 0;
+  animation: ov-bonus-border-pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+
+  pointer-events: none;
+  will-change: opacity;
+}
+
+@keyframes ov-bonus-border-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ========================================
    BANNER
 ======================================== */
 
@@ -149,6 +232,36 @@ body {
   border-radius: 999px;
 
   text-transform: uppercase;
+}
+
+.ov-banner-bonus {
+  padding: 3px 12px;
+
+  background: linear-gradient(135deg, #ffd873, #ff9a3c);
+  color: #3a1400;
+
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  border-radius: 999px;
+
+  text-transform: uppercase;
+
+  box-shadow: 0 0 12px rgba(255, 180, 60, 0.6);
+
+  animation: ov-badge-pulse 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes ov-badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 /* ========================================
@@ -578,4 +691,40 @@ body {
 .ov-spawn .ov-result span {
   max-width: 280px;
   color: #ffc9c9;
+}
+
+/* ========================================
+   COUNT REEL  (numeric, gold accent — mode 2 only)
+======================================== */
+
+.ov-count .reel-title {
+  color: #ffd76a;
+  text-shadow: 0 0 8px rgba(255, 190, 60, 0.4);
+}
+
+.ov-count-item {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+
+  color: #2a1f0f;
+
+  padding: 6px 14px;
+
+  background: linear-gradient(180deg, #ffffff 0%, #f2ead8 50%, #e2cf9a 100%);
+}
+
+.ov-count--landed {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #e5bd65;
+
+  box-shadow:
+    0 0 18px rgba(229, 189, 101, 0.8),
+    inset 0 0 12px rgba(229, 189, 101, 0.18),
+    0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ov-count .ov-result span {
+  color: #ffe9a8;
 }

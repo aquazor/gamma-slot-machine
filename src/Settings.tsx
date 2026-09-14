@@ -10,6 +10,7 @@ import { copyToClipboard } from './settings/clipboard';
 import IntegrationsSection from './settings/IntegrationsSection';
 import PowerUpsInfo from './settings/PowerUpsInfo';
 import RouletteControls from './settings/RouletteControls';
+import SpawnBonuses from './settings/SpawnBonuses';
 import {
   API,
   type DeviceFlow,
@@ -283,6 +284,31 @@ export default function Settings() {
     [bumpSeq, isStaleSeq],
   );
 
+  const selectRollMode = useCallback(
+    async (mode: 'random' | 'count-roll'): Promise<void> => {
+      setRoulette((prev) => {
+        if (!prev || prev.rollMode === mode) {
+          return prev;
+        }
+
+        return { ...prev, rollMode: mode };
+      });
+
+      const s = bumpSeq();
+
+      const updated = await fetch(`${API}/roulette/roll-mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      }).then((res) => res.json());
+
+      if (!isStaleSeq(s) && !updated.error) {
+        setRoulette(updated);
+      }
+    },
+    [bumpSeq, isStaleSeq],
+  );
+
   const [copied, setCopied] = useState<boolean>(false);
 
   const copyOverlayUrl = useCallback(async (): Promise<void> => {
@@ -335,11 +361,14 @@ export default function Settings() {
                 triggerBusy={triggerBusy}
                 selectPreset={selectPreset}
                 selectSpawnTier={selectSpawnTier}
+                selectRollMode={selectRollMode}
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
               />
 
               <EnemyFactions />
+
+              <SpawnBonuses />
 
               <Changelog />
             </>
