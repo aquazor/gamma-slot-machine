@@ -12,7 +12,6 @@ dist
 dist-ssr
 build
 temp
-test
 *.local
 sea-config.json
 
