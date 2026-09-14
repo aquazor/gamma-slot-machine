@@ -6,6 +6,18 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-15',
+    items: [
+      'Spawn Bonuses and Positive Effects settings moved off the main Settings page onto their own new "Tweaking" page — linked from the navbar and from a shortcut on Settings itself',
+      'Positive Effects now show the same card layout as Spawn Bonuses, with each effect\'s own roll chance editable as a percentage, not just enable/disable',
+      'Added a "Restore defaults" button to both the Spawn Bonuses and Positive Effects sections — resets every chance and re-enables everything in one click',
+      'Removed the old Bits/cheer chat-command reward system entirely; Bits Power-ups (the native Twitch kind) are untouched and still work exactly the same',
+      'Fixed Give Ammunition\'s in-game message showing a garbled symbol instead of "×", and renamed its wording from "mag(s)" to "pack(s)"',
+      'The Bits Power-ups list in Settings and the setup guide now include "[SPIN] Positive Effects", which had been missing since that reward was added',
+      'Bits Power-ups now always roll the best case: Spawn Squads/Mutants and Loot Roll always give the max of 3, and every Power-up that can land a bonus (spawn bonuses and positive effects) always lands one',
+    ],
+  },
+  {
     date: '2026-09-14',
     items: [
       'Added a second spawn mode, "Count Roll" — one reel rolls how many, a separate reel rolls what shows up, instead of Random\'s independent per-item rolls; switch between them in Settings, and it\'s now the default mode for new sessions',

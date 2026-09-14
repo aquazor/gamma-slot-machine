@@ -243,15 +243,19 @@ function planForEvent(event, rewardMap) {
 
       const label = (event.powerUpTitle || 'BITS POWER-UP').toUpperCase();
 
+      // Bits power-ups always give the max roll (3) and, wherever a bonus
+      // concept exists (Count Roll spawns, positive effects), always land
+      // one — bits cost real money, so a power-up redemption should feel
+      // like a guaranteed best-case roll, not a regular one.
       if (def.kind === 'spawn') {
-        return { mode: 'spawn', label, category: def.category, rolls: randomSlotCount() };
+        return { mode: 'spawn', label, category: def.category, rolls: 3, forceBonus: true };
       }
 
       if (def.kind === 'perk') {
-        return { mode: 'perk', label };
+        return { mode: 'perk', label, forceBonus: true };
       }
 
-      return { mode: 'loot', label, count: randomSlotCount() };
+      return { mode: 'loot', label, count: 3 };
     }
 
     default:
@@ -453,8 +457,9 @@ class Roulette extends EventEmitter {
     }
 
     // Medicine's own item list is keyed by this same spawn tier — every
-    // other perk ignores it.
-    const perkValue = perks.rollPerkValue(perk.key, this.spawnTier);
+    // other perk ignores it. `plan.forceBonus` (bits power-ups) guarantees
+    // this perk's own bonus lands instead of the normal per-roll chance.
+    const perkValue = perks.rollPerkValue(perk.key, this.spawnTier, Boolean(plan.forceBonus));
 
     if (!perkValue) {
       console.error(`Roulette: perk "${perk.key}" has no rollable value`);

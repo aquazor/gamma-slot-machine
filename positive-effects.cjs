@@ -37,8 +37,12 @@ function formatMoney(amount) {
  * 100%, the leftover is "no bonus"; at/above 100%, a bonus is always
  * drawn, split proportionally by relative chance rather than the first
  * one in the list always winning. Returns the winning bonus def, or null.
+ *
+ * `forceGuaranteed` (bits power-ups) skips the "no bonus" slice entirely,
+ * same as enemies-mode2.cjs's own forceGuaranteed — a bonus always lands,
+ * still drawn proportionally by relative chance among the list.
  */
-function rollWeightedBonus(bonuses) {
+function rollWeightedBonus(bonuses, forceGuaranteed) {
   const list = Array.isArray(bonuses) ? bonuses : [];
   const total = list.reduce((sum, b) => sum + (Number.isFinite(b.chance) ? b.chance : 0), 0);
 
@@ -46,7 +50,7 @@ function rollWeightedBonus(bonuses) {
     return null;
   }
 
-  if (total >= 1) {
+  if (forceGuaranteed || total >= 1) {
     let roll = Math.random() * total;
 
     for (const bonus of list) {
@@ -272,11 +276,16 @@ function medicineComboForTier(def, tier) {
 /*
  * Medicine's own small chance of an extra bonus item on top of the
  * regular roll — tier-independent, drawn from `def.bonus.items`. Returns
- * { id, label } or null (no bonus, the common case).
+ * { id, label } or null (no bonus, the common case). `forceGuaranteed`
+ * (bits power-ups) treats the chance as 100% instead of `def.bonus.chance`.
  */
-function rollMedicineBonus(def) {
+function rollMedicineBonus(def, forceGuaranteed) {
   const bonusDef = def.bonus;
-  const chance = bonusDef && Number.isFinite(bonusDef.chance) ? bonusDef.chance : 0;
+  const chance = forceGuaranteed
+    ? 1
+    : bonusDef && Number.isFinite(bonusDef.chance)
+      ? bonusDef.chance
+      : 0;
   const bonusItems = bonusDef && Array.isArray(bonusDef.items) ? bonusDef.items : [];
 
   if (bonusItems.length === 0 || Math.random() >= chance) {
@@ -298,8 +307,12 @@ function rollMedicineBonus(def) {
  *                             `secondary` item (and bonus, if any) ride
  *                             along and only show up in `fullLabel` /
  *                             `giveIds`, see medicineComboForTier
+ *
+ * `forceBonus` (bits power-ups) guarantees this perk's own bonus lands
+ * instead of the normal per-roll chance — see rollWeightedBonus /
+ * rollMedicineBonus.
  */
-function rollPerkValue(key, tier) {
+function rollPerkValue(key, tier, forceBonus) {
   const def = perkDef(key);
 
   if (!def) {
@@ -309,7 +322,7 @@ function rollPerkValue(key, tier) {
   switch (key) {
     case 'immortality': {
       const seconds = randInt(def.min, def.max);
-      const bonus = rollWeightedBonus(def.bonuses);
+      const bonus = rollWeightedBonus(def.bonuses, forceBonus);
 
       let finalSeconds = seconds;
 
@@ -333,7 +346,7 @@ function rollPerkValue(key, tier) {
 
     case 'give-ammo': {
       const packs = randInt(def.min, def.max);
-      const bonus = rollWeightedBonus(def.bonuses);
+      const bonus = rollWeightedBonus(def.bonuses, forceBonus);
 
       let finalPacks = packs;
 
@@ -365,7 +378,7 @@ function rollPerkValue(key, tier) {
       }
 
       const amount = amounts[Math.floor(Math.random() * amounts.length)];
-      const bonus = rollWeightedBonus(def.bonuses);
+      const bonus = rollWeightedBonus(def.bonuses, forceBonus);
 
       let finalAmount = amount;
       let bonusLabel = bonus ? bonus.label : null;
@@ -401,7 +414,7 @@ function rollPerkValue(key, tier) {
       const secondaryItem = pickRandom(combo.secondary);
       const label = primaryItem.label || primaryItem.id; // what the reel lands on
       const secondary = { id: secondaryItem.id, label: secondaryItem.label || secondaryItem.id };
-      const bonus = rollMedicineBonus(def);
+      const bonus = rollMedicineBonus(def, forceBonus);
 
       const extras = [secondary.label];
 
