@@ -19,7 +19,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_ithacam37_stakeout_20x70',
-    name: 'Ithaca M37 Stakeout [20x70]',
+    name: 'Ithaca M37 Stakeout',
     repair: 'B',
     ammo: 'ammo_20x70_buck',
   },
@@ -79,7 +79,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_mossberg590_rail',
-    name: 'Mossberg 590A1 [rail]',
+    name: 'Mossberg 590A1',
     repair: 'B',
     ammo: 'ammo_12x70_buck;ammo_12x76_zhekan',
   },
@@ -139,7 +139,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_spas12_custom',
-    name: 'SPAS-12 [custom]',
+    name: 'SPAS-12',
     repair: 'C',
     ammo: 'ammo_12x70_buck;ammo_12x76_zhekan',
   },

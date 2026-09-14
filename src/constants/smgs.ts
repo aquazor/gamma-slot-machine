@@ -6,12 +6,6 @@ export const smgs = [
     ammo: 'ammo_9x19_fmj;ammo_9x19_pbp',
   },
   {
-    id: 'wpn_p90',
-    name: 'FN P90',
-    repair: 'C',
-    ammo: 'ammo_5.7x28_ss195',
-  },
-  {
     id: 'wpn_p90gamma',
     name: 'FN P90 [gamma]',
     repair: 'C',
