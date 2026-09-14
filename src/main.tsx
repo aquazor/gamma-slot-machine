@@ -13,6 +13,7 @@ const root = createRoot(document.getElementById('root')!);
  *   /settings    -> Twitch connection + roulette settings
  *   /tweaking    -> spawn bonus / positive effect chance tuning
  *   /bits-guide  -> Custom Power-ups setup walkthrough
+ *   /about       -> what this app does, setup steps, GitHub link
  */
 if (path === '/overlay') {
   import('./Overlay.tsx').then(({ default: Overlay }) => {
@@ -25,6 +26,10 @@ if (path === '/overlay') {
 } else if (path === '/tweaking') {
   import('./Tweaking.tsx').then(({ default: Tweaking }) => {
     root.render(<Tweaking />);
+  });
+} else if (path === '/about') {
+  import('./About.tsx').then(({ default: About }) => {
+    root.render(<About />);
   });
 } else if (path === '/bits-guide') {
   import('./BitsGuide.tsx').then(({ default: BitsGuide }) => {

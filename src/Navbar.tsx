@@ -4,10 +4,11 @@ import './Navbar.css';
 import { API } from './api';
 
 const LINKS = [
-  { href: '/', label: 'Slot Machine' },
+  { href: '/', label: 'Slot Machine (deprecated)' },
   { href: '/settings', label: 'Settings' },
   { href: '/tweaking', label: 'Tweaking' },
   { href: '/bits-guide', label: 'Bits Guide' },
+  { href: '/about', label: 'About' },
 ];
 
 interface TwitchStatus {

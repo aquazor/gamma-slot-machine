@@ -43,10 +43,11 @@ Twitch (EventSub)  →  server.cjs / roulette.cjs  →  command.txt  →  Lua br
 3. The result is pushed to the `/overlay` page over Server-Sent Events, so
    the slot-machine animation plays live in OBS, and written as plain-text
    commands to `command.txt` inside the GAMMA mod folder.
-4. A Lua script polling that file in-game (`slot_machine_bridge.script`, not part of
-   this repo — copied into the mod's `gamedata/scripts/` once) reads the
-   commands and gives the item, spawns the squad, or applies the effect
-   (temporary god mode, money, ammo, or a medical item).
+4. A Lua script polling that file in-game (`mod/gamedata/scripts/slot_machine_bridge.script`
+   — tracked in this repo, copied into the GAMMA install's own `gamedata/`
+   once, see below) reads the commands and gives the item, spawns the
+   squad, or applies the effect (temporary god mode, money, ammo, or a
+   medical item).
 
 The `/settings` page is where the streamer connects their Twitch account,
 tunes channel-point reward cost/limits/cooldowns, switches spawn/roll mode,
@@ -124,19 +125,26 @@ one can land.
 
 ## Installing the in-game Lua bridge
 
-This repo only produces `command.txt` — reading it in-game needs a Lua
-script (`slot_machine_bridge.script`) copied into the mod's own folder structure:
+The app only produces `command.txt` — reading it in-game needs a Lua script,
+tracked in this repo under `mod/`:
 
 ```
-<GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/gamedata/scripts/bridge/command.txt
+mod/gamedata/scripts/slot_machine_bridge.script
+mod/gamedata/scripts/bridge/command.txt   (empty placeholder, overwritten at runtime)
+mod/gamedata/sounds/spawn.ogg
 ```
 
-The script polls that file every couple of seconds and clears it once
+Copy the contents of `mod/gamedata/` into the mod's own folder structure
+inside your (large, MO2-managed) GAMMA install:
+
+```
+<GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/gamedata/
+```
+
+The script polls `command.txt` every couple of seconds and clears it once
 processed, dispatching each line by its prefix: `WEAPON` / `OUTFIT` /
 `HELMET` (loot), `SPAWN` (mutants/squads), `GODMODE` / `MONEY` / `AMMO_MAGS`
-/ `MEDKIT` (positive effects), and `MSG` (the in-game notification text). It
-is maintained and copied in manually rather than tracked in this repo, since
-it lives inside the (large, MO2-managed) GAMMA install.
+/ `MEDKIT` (positive effects), and `MSG` (the in-game notification text).
 
 ## Building the distributable `.exe`
 
@@ -176,4 +184,6 @@ twitch-eventsub.cjs    Twitch EventSub WebSocket client
 twitch-rewards.cjs     channel-point reward creation/sync + streamer overrides
 gamma-bridge.cjs       finds the GAMMA install, writes command.txt
 config.cjs             Twitch client id/scopes, channel-point + bits power-up reward definitions
+
+mod/                   the in-game Lua bridge — copy into <GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/ (see below)
 ```
