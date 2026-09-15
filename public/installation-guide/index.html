@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GAMMA Slot Machine — Setup Guide</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 40px 20px 60px;
+
+        min-height: 100vh;
+
+        background: radial-gradient(circle at 50% 0%, #1c150c, #0f0c08 60%);
+
+        font-family: Inter, Arial, Helvetica, sans-serif;
+        color: #f0e6d2;
+
+        display: flex;
+        justify-content: center;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 880px;
+
+        padding: 32px 34px 40px;
+
+        background: rgba(0, 0, 0, 0.6);
+
+        border: 1px solid rgba(179, 128, 31, 0.4);
+        border-radius: 14px;
+
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        margin: 0 0 6px;
+
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 30px;
+        color: #e5bd65;
+
+        text-shadow: 0 0 10px rgba(255, 190, 60, 0.25);
+      }
+
+      .tagline {
+        margin: 0 0 22px;
+
+        color: #9c8d74;
+        font-size: 16px;
+      }
+
+      .top-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+
+        margin-bottom: 6px;
+      }
+
+      .link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 7px 14px;
+
+        background: rgba(224, 165, 46, 0.08);
+
+        border: 1px solid rgba(224, 165, 46, 0.35);
+        border-radius: 8px;
+
+        color: #e0a52e;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .link:hover {
+        background: rgba(224, 165, 46, 0.14);
+        border-color: rgba(224, 165, 46, 0.55);
+      }
+
+      .discord {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        padding: 1px 9px 2px;
+
+        background: rgba(88, 101, 242, 0.16);
+        border: 1px solid rgba(88, 101, 242, 0.45);
+        border-radius: 999px;
+
+        color: #b4bbff;
+        font-weight: 700;
+      }
+
+      section {
+        padding: 22px 0;
+
+        border-top: 1px solid rgba(179, 128, 31, 0.2);
+      }
+
+      section:first-of-type {
+        border-top: none;
+        padding-top: 8px;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+
+        color: #b98f4a;
+      }
+
+      h3 {
+        margin: 10px 0;
+
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+
+        color: #cdb79a;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.55;
+      }
+
+      p:last-child {
+        margin-bottom: 0;
+      }
+
+      ul,
+      ol {
+        margin: 0 0 12px;
+        padding-left: 22px;
+        line-height: 1.6;
+      }
+
+      ul:last-child,
+      ol:last-child {
+        margin-bottom: 0;
+      }
+
+      li {
+        margin-bottom: 6px;
+      }
+
+      li:last-child {
+        margin-bottom: 0;
+      }
+
+      code {
+        padding: 2px 7px;
+
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 5px;
+
+        font-size: 0.92em;
+        color: #ffd873;
+      }
+
+      strong {
+        color: #f0e6d2;
+      }
+
+      .checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        margin: 0 0 4px;
+        padding: 14px 16px;
+
+        background: rgba(224, 165, 46, 0.06);
+        border: 1px solid rgba(179, 128, 31, 0.3);
+        border-radius: 10px;
+
+        list-style: none;
+      }
+
+      .checklist li {
+        margin: 0;
+        padding-left: 26px;
+        position: relative;
+      }
+
+      .checklist li::before {
+        content: '✓';
+
+        position: absolute;
+        left: 0;
+        top: 0;
+
+        color: #e0a52e;
+        font-weight: 700;
+      }
+
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+
+        margin: 0;
+        padding: 0;
+
+        list-style: none;
+        counter-reset: step;
+      }
+
+      .step {
+        counter-increment: step;
+      }
+
+      .step-text {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+
+        margin: 0 0 12px;
+
+        font-size: 16px;
+        color: #f0e6d2;
+      }
+
+      .step-text::before {
+        content: counter(step);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        width: 26px;
+        height: 26px;
+
+        background: #e0a52e;
+        color: #201200;
+        border-radius: 50%;
+
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .step-body {
+        padding-top: 2px;
+      }
+
+      .step-body strong {
+        color: #ffd873;
+      }
+
+      .step img,
+      .shot {
+        display: block;
+        max-width: 100%;
+
+        border: 1px solid rgba(179, 128, 31, 0.3);
+        border-radius: 10px;
+      }
+
+      .shot {
+        margin-top: 12px;
+      }
+
+      .downloads {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .link--drive {
+        color: #7cc6ff;
+
+        background: rgba(66, 133, 244, 0.1);
+        border-color: rgba(66, 133, 244, 0.4);
+      }
+
+      .link--drive:hover {
+        background: rgba(66, 133, 244, 0.18);
+        border-color: rgba(66, 133, 244, 0.6);
+      }
+
+      .note {
+        margin-top: 8px;
+
+        color: #9c8d74;
+        font-size: 14px;
+      }
+
+      footer {
+        margin-top: 8px;
+        padding-top: 22px;
+
+        border-top: 1px solid rgba(179, 128, 31, 0.2);
+
+        color: #9c8d74;
+        font-size: 14px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>🎰 GAMMA Slot Machine</h1>
+      <p class="tagline">
+        Setup Guide — from a fresh install to your first live roll on stream.
+      </p>
+
+      <div class="top-links">
+        <a
+          class="link"
+          href="https://github.com/aquazor/gamma-slot-machine/tree/dev"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>🐙</span> View source on GitHub
+        </a>
+      </div>
+
+      <section>
+        <h2>Downloads</h2>
+        <p>Get the mod and the app from either source below — same files, your pick.</p>
+        <div class="downloads">
+          <a
+            class="link link--drive"
+            href="https://drive.google.com/drive/folders/1_ue6V-3KKJ1Rdl0EWZzMR-9t-_X7aowQ"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>📁</span> Download from Google Drive
+          </a>
+          <a
+            class="link"
+            href="https://github.com/aquazor/gamma-slot-machine/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>🐙</span> Download from GitHub
+          </a>
+        </div>
+      </section>
+
+      <section>
+        <h2>What You'll Need</h2>
+        <ul class="checklist">
+          <li>S.T.A.L.K.E.R.: GAMMA installed and working, managed through MO2</li>
+          <li>The <strong>GAMMA Randomizer Slot Machine by rip_perri</strong> mod</li>
+          <li>
+            The <strong>GAMMA Slot Machine.exe</strong> app (this repo's packaged
+            <code>.exe</code>)
+          </li>
+          <li>A Twitch account for the streamer</li>
+          <li>OBS (or another broadcast software with a Browser Source)</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Part 1 — Install</h2>
+
+        <h3>1. Install the mod</h3>
+        <p>
+          Install <strong>GAMMA Randomizer Slot Machine by rip_perri</strong> with MO2,
+          like any other regular mod.
+        </p>
+        <p class="note">
+          Important: do not rename the mod, and choose the
+          <strong>Anomaly Launcher</strong> when running GAMMA — debug mode is not
+          required.
+        </p>
+        <img
+          class="shot"
+          src="step1-mod.jpg"
+          alt="Mod Organizer 2 with GAMMA Randomizer Slot Machine by rip_perri enabled in the mod list and Anomaly Launcher selected"
+        />
+
+        <h3>2. Run the app</h3>
+        <p>
+          Launch the <strong>GAMMA Slot Machine.exe</strong> app. The Settings page opens
+          automatically in your browser, and the app keeps running locally at
+          <code>localhost:7770</code> for as long as you want the roulette to react to
+          Twitch.
+        </p>
+      </section>
+
+      <section>
+        <h2>Part 2 — Connect Twitch</h2>
+
+        <ol class="steps">
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Launch the app. Its window confirms it found your GAMMA install and tells
+                you Twitch isn't connected yet.
+              </span>
+            </p>
+            <img
+              src="step1.jpg"
+              alt="App console on launch, showing it found the GAMMA install and that Twitch is not connected yet"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                On the Settings page, click <strong>Connect Twitch</strong>.
+              </span>
+            </p>
+            <img
+              src="step2.jpg"
+              alt="Settings page with an arrow pointing at the Connect Twitch button"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                A code appears in the app and a Twitch activation page opens in your
+                browser. Click <strong>Activate</strong>.
+              </span>
+            </p>
+            <img
+              src="step3.jpg"
+              alt="Twitch device activation page with the code entered and an arrow pointing at the Activate button"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Twitch asks you to confirm access for the app — click
+                <strong>Authorize</strong>.
+              </span>
+            </p>
+            <img
+              src="step4.jpg"
+              alt="Twitch authorization screen with an arrow pointing at the Authorize button"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Back in Settings, Twitch now shows <strong>Connected</strong> and
+                <strong>Listening</strong>, and your four channel-point rewards are
+                created and enabled automatically. While you're here, copy the
+                <strong>Browser Source URL</strong> — you'll need it in the next part.
+              </span>
+            </p>
+            <img
+              src="step5.jpg"
+              alt="Settings page showing Twitch connected and listening, channel point rewards active, and an arrow pointing at the Copy button for the overlay URL"
+            />
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Part 3 — Add The Overlay To OBS</h2>
+
+        <ol class="steps">
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                In OBS, click <strong>+</strong> under Sources, choose
+                <strong>Browser</strong>, then <strong>Add a new Browser</strong>.
+              </span>
+            </p>
+            <img
+              src="step6.jpg"
+              alt="OBS Add Source dialog with Browser selected and an arrow pointing at Add a new Browser"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Paste the overlay URL you copied, then set <strong>Width</strong> to
+                <code>1200</code> and <strong>Height</strong> to <code>600</code>. Click
+                <strong>OK</strong>.
+              </span>
+            </p>
+            <img
+              src="step7.jpg"
+              alt="OBS Browser Source properties with the overlay URL pasted and width/height set to 1200 by 600"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Back in Settings, the <strong>OBS overlay</strong> row should now show
+                <strong>Connected</strong> too.
+              </span>
+            </p>
+            <img
+              src="step8.jpg"
+              alt="Settings page showing the OBS overlay row as Connected"
+            />
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Part 4 — You're Live</h2>
+
+        <ol class="steps">
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                The app's console confirms everything is wired up: channel-point rewards
+                ready, Twitch EventSub connected, and subscribed to subs, gift subs,
+                resubs, channel points, and bits power-ups.
+              </span>
+            </p>
+            <img
+              src="step9.jpg"
+              alt="App console confirming channel point rewards ready and Twitch EventSub connected and subscribed"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Trigger a manual roll from Settings to test it — the overlay plays out
+                live in OBS with spinning reels and a final result.
+              </span>
+            </p>
+            <img
+              src="step10.jpg"
+              alt="OBS preview showing the slot machine overlay landing on a weapon, helmet and armor result"
+            />
+          </li>
+
+          <li class="step">
+            <p class="step-text">
+              <span class="step-body">
+                Every roll — loot, a spawn, or a positive effect — is logged live in the
+                console as it queues, rolls, and delivers in-game.
+              </span>
+            </p>
+            <img
+              src="step11.jpg"
+              alt="App console log showing multiple rolls queuing, rolling and delivering successfully"
+            />
+          </li>
+        </ol>
+
+        <p class="note">
+          That's it — subs, resubs, gift subs, channel-point redemptions and bits
+          power-ups will now trigger the roulette live on stream.
+        </p>
+      </section>
+
+      <footer>
+        Found a bug or something unclear in this guide? Message
+        <span class="discord"><span aria-hidden="true">💬</span>aquazor</span> on Discord.
+      </footer>
+    </div>
+  </body>
+</html>
