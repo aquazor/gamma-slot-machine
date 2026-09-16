@@ -4,6 +4,7 @@ import './About.css';
 import Navbar from './Navbar';
 
 const GITHUB_URL = 'https://github.com/aquazor/gamma-slot-machine/tree/dev';
+const SETUP_GUIDE_URL = 'https://aquazor.github.io/gamma-slot-machine/';
 
 export default function About() {
   return (
@@ -27,6 +28,15 @@ export default function About() {
           </p>
 
           <div className="about-links">
+            <a
+              className="set-link"
+              href={SETUP_GUIDE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="set-link-icon">📖</span>
+              Setup guide
+            </a>
             <a
               className="set-link"
               href={GITHUB_URL}
