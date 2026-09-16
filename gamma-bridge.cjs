@@ -137,7 +137,16 @@ function writeCommandLines(lines) {
   const command = lines.join('\n');
 
   try {
-    fs.writeFileSync(commandFile, command, 'utf8');
+    // Append, don't overwrite: the Lua side's poll loop (actor_on_update)
+    // doesn't run at all while a level is still loading, so an earlier
+    // delivery can still be sitting unread in the file. Appending means a
+    // second delivery during that window queues up alongside it instead
+    // of clobbering it outright — the Lua side already reads and
+    // processes every line in the file in one pass (see check_bridge in
+    // GAMMA MOD/gamedata/scripts/slot_machine_bridge.script), so nothing
+    // else needs to change there. A leading blank line before the first
+    // write is harmless — it's just skipped.
+    fs.appendFileSync(commandFile, `\n${command}`, 'utf8');
   } catch (error) {
     return { ok: false, error: `Failed to write command file: ${error.message}` };
   }
