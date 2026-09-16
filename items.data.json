@@ -8,7 +8,7 @@
     },
     {
       "id": "wpn_tt33_modern",
-      "name": "TT-33 7.62x25 TT [modern]",
+      "name": "TT-33 7.62x25 TT",
       "ammo": "ammo_7.62x25_p;ammo_7.62x25_ps",
       "repair": "A"
     },
@@ -44,7 +44,7 @@
     },
     {
       "id": "wpn_colt1911_n",
-      "name": "Colt M1911A1 .45 ACP [n]",
+      "name": "Colt M1911A1 .45 ACP",
       "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro",
       "repair": "A"
     },
@@ -80,14 +80,8 @@
     },
     {
       "id": "wpn_fnx45_custom",
-      "name": "FNX-45 [custom]",
+      "name": "FNX-45",
       "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro",
-      "repair": "A"
-    },
-    {
-      "id": "wpn_fort",
-      "name": "Fort-17 [fort]",
-      "ammo": "ammo_9x18_fmj;ammo_9x18_pmm",
       "repair": "A"
     },
     {
@@ -242,13 +236,13 @@
     },
     {
       "id": "wpn_sig220_n",
-      "name": "SIG P220 [n]",
+      "name": "SIG P220",
       "ammo": "ammo_11.43x23_fmj;ammo_11.43x23_hydro",
       "repair": "A"
     },
     {
       "id": "wpn_sig226",
-      "name": "SIG P226R [sig226]",
+      "name": "SIG P226R",
       "ammo": "ammo_9x19_fmj;ammo_9x19_pbp",
       "repair": "A"
     },
@@ -272,7 +266,7 @@
     },
     {
       "id": "wpn_walther_p99",
-      "name": "Walther P99 [p99]",
+      "name": "Walther P99",
       "ammo": "ammo_9x19_fmj;ammo_9x19_pbp",
       "repair": "A"
     },
@@ -308,7 +302,7 @@
     },
     {
       "id": "wpn_ithacam37_stakeout_20x70",
-      "name": "Ithaca M37 Stakeout [20x70]",
+      "name": "Ithaca M37 Stakeout",
       "ammo": "ammo_20x70_buck",
       "repair": "B"
     },
@@ -368,7 +362,7 @@
     },
     {
       "id": "wpn_mossberg590_rail",
-      "name": "Mossberg 590A1 [rail]",
+      "name": "Mossberg 590A1",
       "ammo": "ammo_12x70_buck;ammo_12x76_zhekan",
       "repair": "B"
     },
@@ -428,7 +422,7 @@
     },
     {
       "id": "wpn_spas12_custom",
-      "name": "SPAS-12 [custom]",
+      "name": "SPAS-12",
       "ammo": "ammo_12x70_buck;ammo_12x76_zhekan",
       "repair": "C"
     },
@@ -491,12 +485,6 @@
       "name": "Brugger & Thomet MP9",
       "ammo": "ammo_9x19_fmj;ammo_9x19_pbp",
       "repair": "A"
-    },
-    {
-      "id": "wpn_p90",
-      "name": "FN P90",
-      "ammo": "ammo_5.7x28_ss195",
-      "repair": "C"
     },
     {
       "id": "wpn_p90gamma",
@@ -698,7 +686,7 @@
     },
     {
       "id": "wpn_ak104_alfa",
-      "name": "AK-104 \"Alpha\" [alfa]",
+      "name": "AK-104 \"Alpha\"",
       "ammo": "ammo_7.62x39_fmj",
       "repair": "D"
     },
@@ -746,7 +734,7 @@
     },
     {
       "id": "wpn_ak74",
-      "name": "AK-74N [74]",
+      "name": "AK-74N",
       "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep",
       "repair": "C"
     },
@@ -776,7 +764,7 @@
     },
     {
       "id": "wpn_abakan_n",
-      "name": "AN-94 [n]",
+      "name": "AN-94",
       "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep",
       "repair": "C"
     },
@@ -836,13 +824,13 @@
     },
     {
       "id": "wpn_scar_siber",
-      "name": "FN SCAR-H [siber]",
+      "name": "FN SCAR-H",
       "ammo": "ammo_7.62x51_fmj",
       "repair": "D"
     },
     {
       "id": "wpn_g36v_rwap",
-      "name": "G36 [v_rwap]",
+      "name": "G36",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
@@ -860,13 +848,13 @@
     },
     {
       "id": "wpn_g36ka4_rwap",
-      "name": "G36K [ka4_rwap]",
+      "name": "G36K",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
     {
       "id": "wpn_ace52",
-      "name": "Galil ACE-52 [52]",
+      "name": "Galil ACE-52",
       "ammo": "ammo_7.62x51_fmj",
       "repair": "D"
     },
@@ -884,7 +872,7 @@
     },
     {
       "id": "wpn_l85_m2",
-      "name": "L85A2 [m2]",
+      "name": "L85A2",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
@@ -902,7 +890,7 @@
     },
     {
       "id": "wpn_m4a1_siber",
-      "name": "M4A1 [m4a1_siber]",
+      "name": "M4A1",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
@@ -926,19 +914,19 @@
     },
     {
       "id": "wpn_pkm_zenit_siber",
-      "name": "PKM \"Zenit\" [enit_siber]",
+      "name": "PKM \"Zenit\"",
       "ammo": "ammo_pkm_100",
       "repair": "D"
     },
     {
       "id": "wpn_pkm_siber",
-      "name": "PKM [siber]",
+      "name": "PKM",
       "ammo": "ammo_pkm_100",
       "repair": "D"
     },
     {
       "id": "wpn_pkp_siber",
-      "name": "PKP Pecheneg [siber]",
+      "name": "PKP Pecheneg",
       "ammo": "ammo_pkm_100",
       "repair": "D"
     },
@@ -1022,13 +1010,13 @@
     },
     {
       "id": "wpn_sig550",
-      "name": "SIG SG 550 [0]",
+      "name": "SIG SG 550",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
     {
       "id": "wpn_sig550_custom",
-      "name": "SIG SG 550 [custom]",
+      "name": "SIG SG 550",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
@@ -1058,7 +1046,7 @@
     },
     {
       "id": "wpn_vintorez_n1",
-      "name": "VSS Vintorez [n1]",
+      "name": "VSS Vintorez",
       "ammo": "ammo_9x39_pab9",
       "repair": "C"
     },
@@ -1125,12 +1113,6 @@
     {
       "id": "wpn_svu",
       "name": "OTs-03 SVU",
-      "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14",
-      "repair": "D"
-    },
-    {
-      "id": "wpn_svu_nimble",
-      "name": "OTs-03A SVU-A",
       "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14",
       "repair": "D"
     },
