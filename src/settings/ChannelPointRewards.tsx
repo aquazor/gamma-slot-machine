@@ -214,14 +214,20 @@ function ChannelPointRewards({ twitchConnected }: Props) {
     return null;
   }
 
+  const activeCount = rewardList.filter((reward) => reward.enabled).length;
+
   return (
     <section className="set-section">
       <button className="set-heading set-heading--toggle" onClick={() => setCollapsed((prev) => !prev)}>
         <span className={`set-chevron ${collapsed ? '' : 'is-open'}`}>▸</span>
         Channel point rewards
         {rewardList.length > 0 && (
-          <span className="set-heading-count">
-            {rewardList.filter((reward) => reward.enabled).length}/{rewardList.length} active
+          <span
+            className={`set-heading-count ${
+              activeCount > 0 ? 'set-heading-count--ok' : 'set-heading-count--off'
+            }`}
+          >
+            {activeCount}/{rewardList.length} active
           </span>
         )}
       </button>
