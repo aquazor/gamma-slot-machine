@@ -527,8 +527,6 @@ end
 local function handle_weapon(item_id, ammo_string)
     printf("GAMMA BRIDGE: Giving weapon: " .. item_id)
 
-    pause_equip_anim()
-
     local target_slot = get_weapon_target_slot()
 
     if REPLACE_CURRENT_ITEM then
@@ -683,6 +681,33 @@ end
 
 -- ---- Give Ammunition ----
 
+-- Melee weapons, the bolt, and grenades all occupy the
+-- "active item" slot but aren't firearms — a drawn one of these doesn't
+-- come back as "no active item" like the comment further down used to
+-- assume, actor:active_item() returns the item itself. Some of them
+-- (knives/axes especially) inherit a stray ammo_class from a shared
+-- weapon base section, so get_ammo_class() finds SOMETHING and
+-- give_ammo_for_weapon spawns a bogus/unrecognized item instead of
+-- quietly doing nothing; others just silently give nothing. Anomaly/GAMMA
+-- section-naming convention: knives/axes contain "knife"/"axe"
+-- (wpn_knife, wpn_knife2.., wpn_axe, wpn_axe2..), the detector item is
+-- exactly "bolt", grenades are all "grenade_<type>" (f1, rgd5, gd-05,
+-- ...) — matched by prefix so new grenade types are covered too.
+local function is_non_firearm(item)
+    local ok, section = pcall(function() return item:section() end)
+
+    if not ok or type(section) ~= "string" then
+        return false
+    end
+
+    local lower = section:lower()
+
+    return lower:find("knife", 1, true) ~= nil
+        or lower:find("axe", 1, true) ~= nil
+        or lower == "bolt"
+        or lower:find("^grenade_") ~= nil
+end
+
 local function get_ammo_class(section)
     local types = {}
     local ok, class_str = pcall(function() return ini_sys:r_string_ex(section, "ammo_class") end)
@@ -703,7 +728,7 @@ end
 -- type it currently has loaded (weapon:get_ammo_type()) — `count` is used
 -- as-is, straight from the roll, no per-round/magazine math on top
 local function give_ammo_for_weapon(weapon, count)
-    if not weapon then
+    if not weapon or is_non_firearm(weapon) then
         return false
     end
 
@@ -740,12 +765,13 @@ local function handle_ammo_mags(magazines_str)
     if magazines < 1 then magazines = 1 end
 
     local active = actor:active_item()
-    if active then
+    if active and not is_non_firearm(active) then
         give_ammo_for_weapon(active, magazines)
     else
-        -- no single "active" weapon (holstered/knife/etc) — fall back to
-        -- both weapon slots
-        printf("GAMMA BRIDGE: AMMO_MAGS - no active weapon, trying both weapon slots")
+        -- no active firearm (holstered, or a knife/axe/bolt/grenade is
+        -- out) — fall back to both weapon slots so ammo still reaches an
+        -- actual gun
+        printf("GAMMA BRIDGE: AMMO_MAGS - no active firearm, trying both weapon slots")
         give_ammo_for_weapon(actor:item_in_slot(ITEM_SLOTS.weapon2), magazines)
         give_ammo_for_weapon(actor:item_in_slot(ITEM_SLOTS.weapon3), magazines)
     end
