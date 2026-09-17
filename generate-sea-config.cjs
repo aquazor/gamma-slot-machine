@@ -30,6 +30,18 @@ for (const file of files) {
   assets[`dist/${relativePath}`] = file;
 }
 
+// The mod's own gamedata files, embedded so the packaged exe can
+// install/uninstall them (gamma-bridge.cjs installMod/uninstallMod)
+// without needing a separate mod download.
+const modGamedataPath = path.resolve('GAMMA MOD/gamedata');
+const modFiles = getFiles(modGamedataPath);
+
+for (const file of modFiles) {
+  const relativePath = path.relative(modGamedataPath, file).replace(/\\/g, '/');
+
+  assets[`mod-gamedata/${relativePath}`] = file;
+}
+
 const config = {
   main: path.resolve('build/server.cjs'),
   output: path.resolve('build/sea-prep.blob'),

@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { isSea, getAsset } = require('node:sea');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const twitchAuth = require('./twitch-auth.cjs');
 const { TwitchEventSub } = require('./twitch-eventsub.cjs');
 const { Roulette } = require('./roulette.cjs');
@@ -51,6 +51,136 @@ app.get('/gamma', (req, res) => {
     configured: Boolean(gammaPath),
     gammaPath,
   });
+});
+
+/*
+ * ---------------------------------------------------------
+ * MOD INSTALL (Anomaly/gamedata)
+ * ---------------------------------------------------------
+ * Manual install/uninstall from Settings, plus manual path overrides
+ * for the cases auto-detection can't cover. See gamma-bridge.cjs.
+ */
+
+app.get('/mod/status', (req, res) => {
+  const gammaPath = getGammaPath();
+  const status = bridge.getModStatus();
+  const overrides = bridge.getPathOverrides();
+
+  res.json({
+    gammaPath,
+    anomalyPath: status.anomalyPath,
+    installed: status.installed,
+    overrides,
+  });
+});
+
+app.post('/mod/install', (req, res) => {
+  const result = bridge.installMod();
+
+  if (!result.ok) {
+    console.warn(`Mod install failed: ${result.error}`);
+
+    return res.status(400).json({ error: result.error });
+  }
+
+  res.json({ success: true, anomalyPath: result.anomalyPath });
+});
+
+app.post('/mod/uninstall', (req, res) => {
+  const result = bridge.uninstallMod();
+
+  if (!result.ok) {
+    console.warn(`Mod uninstall failed: ${result.error}`);
+
+    return res.status(400).json({ error: result.error });
+  }
+
+  res.json({ success: true, anomalyPath: result.anomalyPath });
+});
+
+app.post('/mod/paths', (req, res) => {
+  const { gammaPath, anomalyPath } = req.body || {};
+
+  if (gammaPath !== undefined && gammaPath && !bridge.isValidGammaPath(gammaPath)) {
+    return res.status(400).json({ error: 'Not a valid GAMMA folder' });
+  }
+
+  if (
+    anomalyPath !== undefined &&
+    anomalyPath &&
+    !bridge.isValidAnomalyPath(anomalyPath)
+  ) {
+    return res.status(400).json({ error: 'Not a valid Anomaly folder' });
+  }
+
+  const overrides = bridge.setPathOverrides({ gammaPath, anomalyPath });
+
+  res.json({ success: true, overrides });
+});
+
+/*
+ * ---------------------------------------------------------
+ * NATIVE FOLDER PICKER
+ * ---------------------------------------------------------
+ * A browser's <input type="file" webkitdirectory> deliberately hides the
+ * real absolute path for security, so it's useless for telling this
+ * Node process where GAMMA/Anomaly actually live on disk. The only way
+ * to get a real Windows folder-picker dialog without an Electron/native
+ * shell is to ask Windows itself for one — so this spawns `powershell.exe`
+ * and asks it to show the built-in .NET FolderBrowserDialog, then reads
+ * back whatever path the user picked (or nothing, if they cancelled).
+ *
+ * What actually runs, spelled out (see WINFORMS_FOLDER_PICKER_SCRIPT):
+ *   1. Loads the standard .NET System.Windows.Forms assembly (ships with
+ *      every Windows install; this is the same DLL Windows' own Explorer
+ *      and countless other apps use for dialogs).
+ *   2. Opens a FolderBrowserDialog — a plain "choose a folder" window,
+ *      nothing else on screen, no network access, no file writes.
+ *   3. Prints the chosen path to stdout if the user clicked OK; prints
+ *      nothing if they cancelled.
+ * `kind` only ever selects one of the two fixed description strings
+ * below — no request data is ever interpolated into the script, so
+ * there's no injection surface here.
+ */
+const WINFORMS_FOLDER_PICKER_SCRIPT = (description) =>
+  [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    '$dialog = New-Object System.Windows.Forms.FolderBrowserDialog',
+    `$dialog.Description = '${description}'`,
+    '$result = $dialog.ShowDialog()',
+    'if ($result -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.SelectedPath }',
+  ].join('; ');
+
+app.post('/mod/browse-folder', (req, res) => {
+  const { kind } = req.body || {};
+  const description = kind === 'anomaly' ? 'Select your Anomaly folder' : 'Select your GAMMA folder';
+
+  execFile(
+    'powershell.exe',
+    ['-NoProfile', '-STA', '-Command', WINFORMS_FOLDER_PICKER_SCRIPT(description)],
+    { timeout: 5 * 60 * 1000 },
+    (error, stdout) => {
+      if (error) {
+        // Most likely PowerShell isn't available at all (e.g. a
+        // stripped-down Windows build, or the app running under Wine on
+        // Linux) — surface that instead of silently doing nothing, so
+        // the streamer knows to type the path in by hand instead.
+        console.warn(`Folder picker failed: ${error.message}`);
+
+        return res.json({ path: null, error: 'Could not open the folder picker' });
+      }
+
+      const selected = (stdout || '').toString().trim();
+
+      res.json({ path: selected || null });
+    },
+  );
+});
+
+app.post('/mod/paths/reset', (req, res) => {
+  bridge.clearPathOverrides();
+
+  res.json({ success: true });
 });
 
 /*
@@ -169,6 +299,33 @@ async function syncRewards() {
     console.log(`Channel-point rewards ready: ${map.size}`);
   } catch (error) {
     console.error('Failed to sync channel-point rewards:', error.message);
+  } finally {
+    rewardsSyncing = false;
+  }
+}
+
+/*
+ * Called on server startup and on a fresh Twitch connect. Only actually
+ * creates/force-enables rewards if the streamer opted into "auto-activate"
+ * in Settings — otherwise just reads whatever's currently live on Twitch
+ * (read-only) so redemptions keep routing without silently re-enabling
+ * something the streamer had turned off in a previous session.
+ */
+async function syncOrLoadRewards() {
+  if (rewards.getAutoActivate()) {
+    return syncRewards();
+  }
+
+  rewardsSyncing = true;
+
+  try {
+    const map = await rewards.buildRewardMap();
+
+    roulette.setRewardMap(map);
+
+    console.log(`Channel-point rewards loaded (auto-activate off): ${map.size}`);
+  } catch (error) {
+    console.error('Failed to load channel-point rewards:', error.message);
   } finally {
     rewardsSyncing = false;
   }
@@ -607,7 +764,7 @@ app.post('/twitch/auth/start', async (req, res) => {
         pendingDeviceFlow = { status: 'connected', error: null };
 
         startEventSub();
-        syncRewards();
+        syncOrLoadRewards();
       })
       .catch((error) => {
         console.error(error);
@@ -667,6 +824,27 @@ app.post('/twitch/rewards/enabled', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+/*
+ * Whether rewards should be auto-created/force-enabled on server startup
+ * or a fresh Twitch connect. Off by default — see syncOrLoadRewards().
+ */
+app.get('/twitch/rewards/auto-activate', (req, res) => {
+  res.json({ autoActivate: rewards.getAutoActivate() });
+});
+
+app.post('/twitch/rewards/auto-activate', async (req, res) => {
+  const autoActivate = Boolean((req.body || {}).autoActivate);
+
+  rewards.setAutoActivate(autoActivate);
+
+  // Flipping it on should take effect right away, not just next restart.
+  if (autoActivate) {
+    await syncRewards();
+  }
+
+  res.json({ autoActivate, rewards: await rewards.listRewards() });
 });
 
 /*
@@ -785,8 +963,19 @@ app.listen(PORT, () => {
   console.log(`${MOD_NAME} running on ${url}`);
 
   const gammaPath = getGammaPath();
+  const anomalyPath = bridge.getAnomalyPath();
 
-  console.log(`GAMMA path: ${gammaPath || 'NOT FOUND'}`);
+  if (gammaPath) {
+    console.log(`GAMMA path: ${gammaPath}`);
+  } else {
+    console.warn('GAMMA path: NOT FOUND — set it manually from Settings > Mod install');
+  }
+
+  if (anomalyPath) {
+    console.log(`Anomaly path: ${anomalyPath}`);
+  } else {
+    console.warn('Anomaly path: NOT FOUND — set it manually from Settings > Mod install');
+  }
 
   // If the user authorized Twitch in a previous run, reconnect now.
   twitchAuth
@@ -794,7 +983,7 @@ app.listen(PORT, () => {
     .then((tokens) => {
       if (tokens) {
         startEventSub();
-        syncRewards();
+        syncOrLoadRewards();
       } else {
         rewardsSyncing = false;
 

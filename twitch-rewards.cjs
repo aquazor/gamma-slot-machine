@@ -57,6 +57,39 @@ function saveOverrides(overrides) {
 }
 
 /*
+ * ---------------------------------------------------------
+ * AUTO-ACTIVATE ON STARTUP/CONNECT
+ * ---------------------------------------------------------
+ * Off by default: a server restart or Twitch reconnect used to always
+ * force every reward back to enabled (ensureRewards' "re-enabling
+ * everything on restart" behavior), silently undoing a streamer's
+ * "Disable rewards" from a previous session. Now that only happens if
+ * the streamer explicitly opts in via this checkbox in Settings — the
+ * "Enable rewards" / "Disable rewards" buttons remain manual actions
+ * that work regardless of this setting.
+ */
+
+const SETTINGS_PATH = path.join(os.homedir(), '.gamma-slot-machine', 'reward-settings.json');
+
+function getAutoActivate() {
+  try {
+    return Boolean(JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')).autoActivate);
+  } catch {
+    return false;
+  }
+}
+
+function setAutoActivate(autoActivate) {
+  const dir = path.dirname(SETTINGS_PATH);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ autoActivate: Boolean(autoActivate) }, null, 2), 'utf8');
+}
+
+/*
  * CHANNEL_POINT_REWARDS with any saved override merged in.
  */
 function effectiveRewards() {
@@ -512,4 +545,6 @@ module.exports = {
   listRewards,
   setRewardOverride,
   clearIndividualDisables,
+  getAutoActivate,
+  setAutoActivate,
 };
