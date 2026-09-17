@@ -79,3 +79,10 @@ export interface DeviceFlow {
   userCode: string;
   verificationUri: string;
 }
+
+export interface ModStatus {
+  gammaPath: string | null;
+  anomalyPath: string | null;
+  installed: 'installed' | 'partial' | 'not-installed' | 'unknown';
+  overrides: { gammaPath?: string; anomalyPath?: string };
+}

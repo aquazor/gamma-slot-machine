@@ -7,6 +7,7 @@ import ChannelPointRewards from './settings/ChannelPointRewards';
 import EnemyFactions from './settings/EnemyFactions';
 import { copyToClipboard } from './settings/clipboard';
 import IntegrationsSection from './settings/IntegrationsSection';
+import ModInstall from './settings/ModInstall';
 import PowerUpsInfo from './settings/PowerUpsInfo';
 import RouletteControls from './settings/RouletteControls';
 import {
@@ -362,6 +363,8 @@ export default function Settings() {
                 disconnect={disconnect}
                 copyOverlayUrl={copyOverlayUrl}
               />
+
+              <ModInstall />
 
               <ChannelPointRewards twitchConnected={twitch.connected} />
 

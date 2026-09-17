@@ -6,6 +6,16 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-17',
+    items: [
+      'Added a "Mod install" section in Settings — install or uninstall the mod directly into your Anomaly folder in one click, with a native folder browser for GAMMA/Anomaly if auto-detection can\'t find them. Manual installs into GAMMA\\mods keep working too',
+      'Fixed loot, spawns and Positive Effects not being delivered when launching the game directly (bypassing the GAMMA launcher/MO2) instead of only when launched normally',
+      'Added a short delay right after starting or loading a game before anything queued gets delivered, so other mods have time to finish their own startup first',
+      'The app\'s console now shows a clear warning if it can\'t find your GAMMA or Anomaly folder, and if an install/uninstall attempt fails',
+      'Channel-point rewards no longer force themselves back on every time the app restarts if you\'d turned them off — added an "Auto-activate on startup/connect" checkbox in Settings for streamers who want that behavior back',
+    ],
+  },
+  {
     date: '2026-09-15',
     items: [
       'Spawn Bonuses and Positive Effects settings moved off the main Settings page onto their own new "Tweaking" page — linked from the navbar and from a shortcut on Settings itself',
