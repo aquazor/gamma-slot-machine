@@ -27,6 +27,15 @@
 local next_check = 0
 local CHECK_INTERVAL = 500
 
+-- Grace period after any game start/load (see on_game_start below) before
+-- check_bridge will process anything, even if something's already queued.
+-- Other mods (e.g. weapon-parts/jamming systems) do their own setup right
+-- after a session starts; delivering an item in the first instant can run
+-- into that setup mid-flight and crash mods that aren't ours. Set to 0
+-- until on_game_start runs for the first time.
+local session_ready_at = 0
+local STARTUP_GRACE_MS = 500
+
 local AMMO_AMOUNTS = {
     ["ammo_9x19_fmj"] = 2,
     ["ammo_9x19_pbp"] = 3,
@@ -96,7 +105,15 @@ local AMMO_AMOUNTS = {
     ["ammo_og-7b"] = 2,
 }
 
-local COMMAND_PATH = "gamedata\\scripts\\bridge\\command.txt"
+-- A plain relative path here resolves against the process's current
+-- working directory, which is only the game root when launched through
+-- MO2/the GAMMA launcher — launching the exe directly leaves the CWD
+-- elsewhere, so the relative path silently reads/writes a different,
+-- empty file instead of failing loudly. getFS():update_path resolves
+-- through the engine's own fsgame.ltx-configured root instead, so it's
+-- correct regardless of how the game was launched — same pattern
+-- chaos_tricks/bft_binder.script uses for its own mod folder/events file.
+local COMMAND_PATH = getFS():update_path("$game_scripts$", "") .. "bridge\\command.txt"
 
 -- ========================================
 -- SLOT REPLACEMENT
@@ -965,6 +982,10 @@ function check_bridge()
         return
     end
 
+    if now < session_ready_at then
+        return
+    end
+
     if not db.actor then
         printf("GAMMA BRIDGE: Actor not ready")
         return
@@ -1023,6 +1044,8 @@ end
 
 function on_game_start()
     printf("GAMMA BRIDGE: Started")
+
+    session_ready_at = time_global() + STARTUP_GRACE_MS
 
     -- deliberately NOT clearing command.txt here anymore — this used to
     -- wipe out anything the app had already written before the game
