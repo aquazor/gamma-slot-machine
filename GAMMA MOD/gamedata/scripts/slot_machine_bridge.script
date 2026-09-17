@@ -954,6 +954,17 @@ function check_bridge()
 
     next_check = now + CHECK_INTERVAL
 
+    -- "fake_start" is GAMMA's throwaway character-creation preview level —
+    -- Chaos Tricks itself excludes this exact level name for the same
+    -- reason (see chaos_tricks/bft_events.script). Anything given here
+    -- goes to a temporary actor that's destroyed moments later when the
+    -- real level loads, so leave command.txt untouched until then instead
+    -- of silently consuming (and wasting) whatever's queued in it.
+    local ok_level, current_level = pcall(level.name)
+    if ok_level and current_level == "fake_start" then
+        return
+    end
+
     if not db.actor then
         printf("GAMMA BRIDGE: Actor not ready")
         return
