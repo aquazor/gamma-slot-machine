@@ -17,6 +17,8 @@ function ChannelPointRewards({ twitchConnected }: Props) {
   const [rewardErrors, setRewardErrors] = useState<Record<string, string>>({});
   const [rewardToggling, setRewardToggling] = useState<Record<string, boolean>>({});
   const [rewardsBusy, setRewardsBusy] = useState<boolean>(false);
+  const [autoActivate, setAutoActivateState] = useState<boolean>(false);
+  const [autoActivateBusy, setAutoActivateBusy] = useState<boolean>(false);
 
   // collapsed by default — editable list, hidden so nothing gets bumped by
   // accident; expand with the arrow next to the heading
@@ -40,6 +42,15 @@ function ChannelPointRewards({ twitchConnected }: Props) {
 
       return next;
     });
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API}/twitch/rewards/auto-activate`)
+      .then((res) => res.json())
+      .then((data) => setAutoActivateState(Boolean(data.autoActivate)))
+      .catch(() => {
+        // leave the default (off)
+      });
   }, []);
 
   useEffect(() => {
@@ -210,6 +221,29 @@ function ChannelPointRewards({ twitchConnected }: Props) {
     }
   };
 
+  const toggleAutoActivate = async (): Promise<void> => {
+    const next = !autoActivate;
+
+    setAutoActivateBusy(true);
+    setAutoActivateState(next);
+
+    try {
+      const res = await fetch(`${API}/twitch/rewards/auto-activate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoActivate: next }),
+      }).then((r) => r.json());
+
+      if (Array.isArray(res.rewards)) {
+        setRewardList(res.rewards);
+      }
+    } catch {
+      setAutoActivateState(!next);
+    } finally {
+      setAutoActivateBusy(false);
+    }
+  };
+
   if (!loaded) {
     return null;
   }
@@ -329,23 +363,36 @@ function ChannelPointRewards({ twitchConnected }: Props) {
               })}
             </div>
 
-            {rewardList.some((reward) => reward.enabled) ? (
-              <button
-                className="set-btn"
-                onClick={() => setRewardsEnabled(false)}
-                disabled={rewardsBusy}
-              >
-                {rewardsBusy ? 'Working…' : 'Disable rewards'}
-              </button>
-            ) : (
-              <button
-                className="set-btn set-btn--primary"
-                onClick={() => setRewardsEnabled(true)}
-                disabled={rewardsBusy}
-              >
-                {rewardsBusy ? 'Working…' : 'Enable rewards'}
-              </button>
-            )}
+            <div className="set-row">
+              {rewardList.some((reward) => reward.enabled) ? (
+                <button
+                  className="set-btn"
+                  onClick={() => setRewardsEnabled(false)}
+                  disabled={rewardsBusy}
+                >
+                  {rewardsBusy ? 'Working…' : 'Disable rewards'}
+                </button>
+              ) : (
+                <button
+                  className="set-btn set-btn--primary"
+                  onClick={() => setRewardsEnabled(true)}
+                  disabled={rewardsBusy}
+                >
+                  {rewardsBusy ? 'Working…' : 'Enable rewards'}
+                </button>
+              )}
+
+              <label className="set-auto-activate">
+                <input
+                  className="set-checkbox"
+                  type="checkbox"
+                  checked={autoActivate}
+                  onChange={toggleAutoActivate}
+                  disabled={autoActivateBusy}
+                />
+                Auto-activate on startup/connect
+              </label>
+            </div>
           </>
         ) : (
           <p className="set-muted">
