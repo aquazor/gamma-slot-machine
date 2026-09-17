@@ -491,7 +491,7 @@ function perkValuePool(key, tier) {
 
 /*
  * Turn a rolled perk + its rolled value into gamma-bridge command lines —
- * see GAMMA MOD/gamedata/scripts/slot_machine_bridge.script for the matching
+ * see GAMMA MOD/gamedata/scripts/zzzzzz_slot_machine_bridge.script for the matching
  * GODMODE / MONEY / AMMO_MAGS / MEDKIT line handlers.
  */
 function perkCommandLines(perk, perkValue, user) {

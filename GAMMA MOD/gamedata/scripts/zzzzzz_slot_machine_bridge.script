@@ -27,14 +27,12 @@
 local next_check = 0
 local CHECK_INTERVAL = 500
 
--- Grace period after any game start/load (see on_game_start below) before
--- check_bridge will process anything, even if something's already queued.
--- Other mods (e.g. weapon-parts/jamming systems) do their own setup right
--- after a session starts; delivering an item in the first instant can run
--- into that setup mid-flight and crash mods that aren't ours. Set to 0
--- until on_game_start runs for the first time.
-local session_ready_at = 0
-local STARTUP_GRACE_MS = 500
+-- actor_on_update callbacks (check_bridge etc.) are registered lazily,
+-- from actor_on_first_update, instead of unconditionally at file-load
+-- time — see the registration block near the bottom of this file for
+-- why. Guards against double-registering them if actor_on_first_update
+-- somehow ever fired more than once in a session.
+local update_callbacks_registered = false
 
 local AMMO_AMOUNTS = {
     ["ammo_9x19_fmj"] = 2,
@@ -982,10 +980,6 @@ function check_bridge()
         return
     end
 
-    if now < session_ready_at then
-        return
-    end
-
     if not db.actor then
         printf("GAMMA BRIDGE: Actor not ready")
         return
@@ -1045,8 +1039,6 @@ end
 function on_game_start()
     printf("GAMMA BRIDGE: Started")
 
-    session_ready_at = time_global() + STARTUP_GRACE_MS
-
     -- deliberately NOT clearing command.txt here anymore — this used to
     -- wipe out anything the app had already written before the game
     -- session started (e.g. rolled while sitting at the main menu),
@@ -1062,19 +1054,25 @@ function on_game_start()
     pcall(function() actor_effects.set_animations(true) end)
 end
 
--- Registered ONCE, right here, at script-load time (when the game
--- process boots — every .script file under gamedata\scripts is loaded
--- then, not per level/session) — deliberately NOT from inside
--- on_game_start above. RegisterScriptCallback registrations persist for
--- the whole lifetime of the game process on their own; redoing them from
--- on_game_start made check_bridge/process_pending_* depend on exactly
--- when/how often that fires, which turned out to be unreliable for
--- picking up commands queued before the actor even exists yet (e.g.
--- rolled while still sitting at the main menu).
-RegisterScriptCallback("actor_on_update", check_bridge)
-RegisterScriptCallback("actor_on_update", process_pending_equips)
-RegisterScriptCallback("actor_on_update", process_pending_spawns)
-RegisterScriptCallback("actor_on_update", process_godmode)
+-- actor_on_update callbacks are registered from actor_on_first_update
+-- (fires once per session, after the actor and other mods' own
+-- first-update setup — weapon parts, jamming state, etc. — have run)
+-- instead of unconditionally here at script-load time. Guard flag
+-- prevents double-registering if that ever fired more than once.
+local function register_update_callbacks()
+    if update_callbacks_registered then
+        return
+    end
+
+    update_callbacks_registered = true
+
+    RegisterScriptCallback("actor_on_update", check_bridge)
+    RegisterScriptCallback("actor_on_update", process_pending_equips)
+    RegisterScriptCallback("actor_on_update", process_pending_spawns)
+    RegisterScriptCallback("actor_on_update", process_godmode)
+end
+
+RegisterScriptCallback("actor_on_first_update", register_update_callbacks)
 
 RegisterScriptCallback("monster_on_death_callback", on_creature_death)
 RegisterScriptCallback("npc_on_death_callback", on_creature_death)

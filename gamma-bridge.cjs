@@ -339,8 +339,8 @@ function writeCommandLines(lines) {
     // second delivery during that window queues up alongside it instead
     // of clobbering it outright — the Lua side already reads and
     // processes every line in the file in one pass (see check_bridge in
-    // GAMMA MOD/gamedata/scripts/slot_machine_bridge.script), so nothing
-    // else needs to change there. A leading blank line before the first
+    // GAMMA MOD/gamedata/scripts/zzzzzz_slot_machine_bridge.script), so
+    // nothing else needs to change there. A leading blank line before the first
     // write is harmless — it's just skipped.
     fs.appendFileSync(commandFile, `\n${command}`, 'utf8');
   } catch (error) {
@@ -374,7 +374,25 @@ function giveLoadout(payload) {
 
 // Relative to GAMMA MOD/gamedata/. Always overwritten on install/
 // update — they're static mod code/assets, never touched at runtime.
-const STATIC_MOD_FILES = ['scripts/slot_machine_bridge.script', 'sounds/spawn.ogg'];
+//
+// The script is named zzzz_-prefixed (not just slot_machine_bridge.script)
+// so it's one of the very last .script files X-Ray loads alphabetically —
+// same convention arti_jamming's own files use. Our actor_on_update
+// callbacks then get registered (from actor_on_first_update) after
+// theirs, instead of before, which was the actual cause of an
+// intermittent crash in arti_jamming.script when we changed a weapon's
+// ammo count before its own per-frame state was set up for that frame.
+const STATIC_MOD_FILES = ['scripts/zzzzzz_slot_machine_bridge.script', 'sounds/spawn.ogg'];
+
+// Filenames this mod used before settling on the zzzzzz_ prefix above —
+// removed on install so a machine that already has an old file doesn't
+// end up running multiple versions at once (duplicate
+// RegisterScriptCallback registrations, competing for the same
+// command.txt).
+const LEGACY_STATIC_MOD_FILES = [
+  'scripts/slot_machine_bridge.script',
+  'scripts/zzzz_slot_machine_bridge.script',
+];
 
 // Created empty if missing, but never overwritten — it's the live
 // runtime queue, and clobbering it on every reinstall/update would
@@ -434,6 +452,14 @@ function installMod() {
   const gamedataPath = getAnomalyGamedataPath(anomalyPath);
 
   try {
+    for (const relativePath of LEGACY_STATIC_MOD_FILES) {
+      const legacyPath = path.join(gamedataPath, ...toDestSegments(relativePath));
+
+      if (fs.existsSync(legacyPath)) {
+        fs.unlinkSync(legacyPath);
+      }
+    }
+
     for (const relativePath of STATIC_MOD_FILES) {
       const destPath = path.join(gamedataPath, ...toDestSegments(relativePath));
 
@@ -463,7 +489,7 @@ function uninstallMod() {
   }
 
   const gamedataPath = getAnomalyGamedataPath(anomalyPath);
-  const allRelative = [...STATIC_MOD_FILES, COMMAND_FILE_RELATIVE];
+  const allRelative = [...STATIC_MOD_FILES, ...LEGACY_STATIC_MOD_FILES, COMMAND_FILE_RELATIVE];
 
   try {
     for (const relativePath of allRelative) {
