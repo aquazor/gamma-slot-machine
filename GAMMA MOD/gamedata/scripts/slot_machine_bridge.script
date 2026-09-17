@@ -1013,14 +1013,12 @@ end
 function on_game_start()
     printf("GAMMA BRIDGE: Started")
 
-    local file = io.open(COMMAND_PATH, "w")
-    if file then
-        file:write("")
-        file:close()
-        printf("GAMMA BRIDGE: Command file cleared on startup")
-    else
-        printf("GAMMA BRIDGE: Failed to clear command file on startup")
-    end
+    -- deliberately NOT clearing command.txt here anymore — this used to
+    -- wipe out anything the app had already written before the game
+    -- session started (e.g. rolled while sitting at the main menu),
+    -- destroying it before check_bridge ever got a chance to read it.
+    -- check_bridge's own read-then-clear cycle already handles whatever
+    -- is sitting in the file once it starts polling.
 
     is_level_changing = false
     pending_spawns = {}
@@ -1028,17 +1026,26 @@ function on_game_start()
     -- un-stick animation suppression if the game crashed mid-equip
     anims_off = false
     pcall(function() actor_effects.set_animations(true) end)
-
-    RegisterScriptCallback("actor_on_update", check_bridge)
-    RegisterScriptCallback("actor_on_update", process_pending_equips)
-    RegisterScriptCallback("actor_on_update", process_pending_spawns)
-    RegisterScriptCallback("actor_on_update", process_godmode)
-
-    RegisterScriptCallback("monster_on_death_callback", on_creature_death)
-    RegisterScriptCallback("npc_on_death_callback", on_creature_death)
-    RegisterScriptCallback("on_before_level_changing", on_level_change)
-    -- don't let Immortality persist stuck-on across a level change
-    RegisterScriptCallback("on_before_level_changing", godmode_off)
-
-    printf("GAMMA BRIDGE: Callbacks registered")
 end
+
+-- Registered ONCE, right here, at script-load time (when the game
+-- process boots — every .script file under gamedata\scripts is loaded
+-- then, not per level/session) — deliberately NOT from inside
+-- on_game_start above. RegisterScriptCallback registrations persist for
+-- the whole lifetime of the game process on their own; redoing them from
+-- on_game_start made check_bridge/process_pending_* depend on exactly
+-- when/how often that fires, which turned out to be unreliable for
+-- picking up commands queued before the actor even exists yet (e.g.
+-- rolled while still sitting at the main menu).
+RegisterScriptCallback("actor_on_update", check_bridge)
+RegisterScriptCallback("actor_on_update", process_pending_equips)
+RegisterScriptCallback("actor_on_update", process_pending_spawns)
+RegisterScriptCallback("actor_on_update", process_godmode)
+
+RegisterScriptCallback("monster_on_death_callback", on_creature_death)
+RegisterScriptCallback("npc_on_death_callback", on_creature_death)
+RegisterScriptCallback("on_before_level_changing", on_level_change)
+-- don't let Immortality persist stuck-on across a level change
+RegisterScriptCallback("on_before_level_changing", godmode_off)
+
+printf("GAMMA BRIDGE: Callbacks registered")
