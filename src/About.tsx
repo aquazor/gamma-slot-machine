@@ -51,23 +51,25 @@ export default function About() {
           <section className="set-section">
             <h2 className="set-heading">Setup</h2>
 
-            <p>Two separate pieces, both needed:</p>
+            <p>
+              One app, does both jobs. Launch <strong>GAMMA Slot Machine.exe</strong> and
+              the Settings page opens automatically in your browser, running locally at{' '}
+              <code>localhost:7770</code>.
+            </p>
 
             <ol className="about-list">
               <li>
-                <strong>GAMMA Randomizer Slot Machine by rip_perri</strong> — the in-game
-                mod. Install it with MO2 like any other regular mod.
-                <br />
-                <strong>Important:</strong> do not rename the mod, and choose the Anomaly
-                Launcher when running GAMMA (debug mode is not required).
+                <strong>Install the mod</strong> — open the <strong>Mod install</strong>{' '}
+                section in Settings and click <strong>Install</strong>. It copies itself
+                straight into your Anomaly folder, so it works whether you launch through
+                the Anomaly Launcher or the game exe directly. (Installing it by hand with
+                MO2 into <code>GAMMA\mods</code> still works too, if you&apos;d rather do
+                it that way.)
               </li>
               <li>
-                <strong>GAMMA Slot Machine App</strong> — the app that runs the roulette
-                itself. Launch it and the Settings page opens automatically in your
-                browser. Log in with your Twitch account there to activate the events
-                (subs, gift subs, channel points, etc.) — without logging in, nothing on
-                Twitch will trigger a roll. The app runs locally on your own machine, at{' '}
-                <code>localhost:7770</code>.
+                <strong>Connect Twitch</strong> — log in with your Twitch account from
+                Settings to activate the events (subs, gift subs, channel points, etc.) —
+                without logging in, nothing on Twitch will trigger a roll.
               </li>
             </ol>
           </section>
@@ -82,7 +84,10 @@ export default function About() {
             </p>
 
             <ul className="about-list">
-              <li>rolls <strong>loot</strong> — a weapon, a helmet, and/or an armor set for the streamer,</li>
+              <li>
+                rolls <strong>loot</strong> — a weapon, a helmet, and/or an armor set for
+                the streamer,
+              </li>
               <li>
                 <strong>spawns</strong> something in-game — a pack of mutants or a hostile
                 squad near the streamer, or
@@ -105,10 +110,18 @@ export default function About() {
             <h3 className="set-subheading">1. Channel Points</h3>
             <p>Four redeemable rewards, each costing channel points:</p>
             <ul className="about-list">
-              <li><code>[SPIN] Spawn Squads</code> — spawns a hostile squad</li>
-              <li><code>[SPIN] Spawn Mutants</code> — spawns a mutant pack</li>
-              <li><code>[SPIN] Loot Roll</code> — rolls gear for the streamer</li>
-              <li><code>[SPIN] Positive Effects</code> — rolls a random positive effect</li>
+              <li>
+                <code>[SPIN] Spawn Squads</code> — spawns a hostile squad
+              </li>
+              <li>
+                <code>[SPIN] Spawn Mutants</code> — spawns a mutant pack
+              </li>
+              <li>
+                <code>[SPIN] Loot Roll</code> — rolls gear for the streamer
+              </li>
+              <li>
+                <code>[SPIN] Positive Effects</code> — rolls a random positive effect
+              </li>
             </ul>
 
             <h3 className="set-subheading">2. Bits Power-Ups</h3>
@@ -120,44 +133,40 @@ export default function About() {
               positive-effect bonuses alike). See the Bits Power-Ups guide, linked from
               Settings, for how to create them on Twitch.
             </p>
-            <p className="set-muted">
-              Note: this is a limited-time Twitch event feature, and Twitch is retiring it
-              on September 18, 2026 — after that date, this trigger goes away.
-            </p>
-
             <h3 className="set-subheading">3. Subs, Resubs &amp; Gift Subs</h3>
             <ul className="about-list">
               <li>
                 A brand-new sub, a resub, or a single gifted sub has EQUAL odds (1-in-4
-                each) of rolling: loot, a squad, a mutant pack, or a positive effect — with
-                a random 1-3 count for loot/squad/mutant either way (Random mode).
+                each) of rolling: loot, a squad, a mutant pack, or a positive effect —
+                with a random 1-3 count for loot/squad/mutant either way (Random mode).
               </li>
               <li>
-                Gifting MORE THAN ONE sub at once (a &quot;gift bomb&quot;) still has those
-                same 1-in-4 odds — it&apos;s not guaranteed to be a spawn or anything else.
-                What changes is the SIZE and the ODDS once it lands on loot or a spawn:
+                Gifting MORE THAN ONE sub at once (a &quot;gift bomb&quot;) still has
+                those same 1-in-4 odds — it&apos;s not guaranteed to be a spawn or
+                anything else. What changes is the SIZE and the ODDS once it lands on loot
+                or a spawn:
                 <ul className="about-list">
                   <li>
                     It always uses the maximum count of 3 instead of a random 1-3 (3 loot
                     items, or 3 independently-rolled squad/mutant groups in Random mode).
                   </li>
                   <li>
-                    If it lands on a squad or mutant spawn while Count Roll mode is active,
-                    that spawn is also GUARANTEED to land a bonus — Count Roll always does
-                    a single roll regardless of gift size, so the &quot;always 3&quot; part
-                    doesn&apos;t apply there, only the guaranteed bonus does.
+                    If it lands on a squad or mutant spawn while Count Roll mode is
+                    active, that spawn is also GUARANTEED to land a bonus — Count Roll
+                    always does a single roll regardless of gift size, so the &quot;always
+                    3&quot; part doesn&apos;t apply there, only the guaranteed bonus does.
                   </li>
                   <li>
-                    A gift bomb landing on a positive effect still rolls normally, with the
-                    effect&apos;s own regular bonus chance — the guaranteed-bonus treatment
-                    is a bits-power-up-only perk.
+                    A gift bomb landing on a positive effect still rolls normally, with
+                    the effect&apos;s own regular bonus chance — the guaranteed-bonus
+                    treatment is a bits-power-up-only perk.
                   </li>
                 </ul>
               </li>
               <li>
                 The size of the gift bomb itself (2 subs, 5 subs, 50 subs…) doesn&apos;t
-                change any of this further — every gift bomb bigger than 1 gets exactly the
-                same treatment, however big it is.
+                change any of this further — every gift bomb bigger than 1 gets exactly
+                the same treatment, however big it is.
               </li>
             </ul>
 
@@ -182,12 +191,20 @@ export default function About() {
             <h2 className="set-heading">Positive Effects</h2>
             <p>A fourth kind of roll, picked at random among four effects:</p>
             <ul className="about-list">
-              <li><strong>Immortality</strong> — temporary invulnerability for a rolled duration</li>
-              <li><strong>Give Ammunition</strong> — a rolled number of ammo packs for whatever&apos;s in hand</li>
-              <li><strong>Give Money</strong> — a rolled cash drop</li>
               <li>
-                <strong>Medicine</strong> — a medical item (varies by difficulty tier) plus
-                a secondary supply item, and a small chance of an extra bonus item
+                <strong>Immortality</strong> — temporary invulnerability for a rolled
+                duration
+              </li>
+              <li>
+                <strong>Give Ammunition</strong> — a rolled number of ammo packs for
+                whatever&apos;s in hand
+              </li>
+              <li>
+                <strong>Give Money</strong> — a rolled cash drop
+              </li>
+              <li>
+                <strong>Medicine</strong> — a medical item (varies by difficulty tier)
+                plus a secondary supply item, and a small chance of an extra bonus item
               </li>
             </ul>
             <p>
@@ -220,16 +237,16 @@ export default function About() {
             <p>
               A more &quot;slot machine&quot; feeling version, with two separate spinning
               reels: the first rolls a NUMBER — how many are about to spawn — and the
-              second rolls WHAT spawns — which mutant type or which squad. Only one type of
-              thing spawns per roll (never a mix), but the count can still be as small as 1
-              or fairly large, and — unlike Random mode — Count Roll spawns have a chance
-              at a bonus (below).
+              second rolls WHAT spawns — which mutant type or which squad. Only one type
+              of thing spawns per roll (never a mix), but the count can still be as small
+              as 1 or fairly large, and — unlike Random mode — Count Roll spawns have a
+              chance at a bonus (below).
             </p>
             <p className="set-muted">
               Note: because Count Roll always does a single &quot;what + how many&quot;
-              roll, reward descriptions that mention rolling &quot;1-3&quot; are describing
-              Random mode&apos;s behavior — while Count Roll is active, those same rewards
-              still work, they just always produce one roll instead.
+              roll, reward descriptions that mention rolling &quot;1-3&quot; are
+              describing Random mode&apos;s behavior — while Count Roll is active, those
+              same rewards still work, they just always produce one roll instead.
             </p>
           </section>
 
@@ -240,8 +257,13 @@ export default function About() {
               normal result. At most one bonus can apply per roll:
             </p>
             <ul className="about-list">
-              <li><strong>x2 Double Count</strong> — doubles however many were about to spawn</li>
-              <li><strong>+2 Plus Two</strong> — adds 2 more to the spawn count</li>
+              <li>
+                <strong>x2 Double Count</strong> — doubles however many were about to
+                spawn
+              </li>
+              <li>
+                <strong>+2 Plus Two</strong> — adds 2 more to the spawn count
+              </li>
               <li>
                 <strong>Rare Tier Upgrade</strong> — instead of a normal pick, spawns
                 something from the NEXT tier up (e.g. a Basic roll can spawn something
@@ -252,19 +274,19 @@ export default function About() {
             </ul>
             <p>
               By default, each bonus has a 3.3% chance per roll (about a 1-in-10 chance of
-              ANY bonus landing). The streamer can turn any bonus on or off, fine-tune each
-              one&apos;s exact chance as a percentage, and restore the defaults in one
-              click — all from the Tweaking page, and the tweaks survive the app being
+              ANY bonus landing). The streamer can turn any bonus on or off, fine-tune
+              each one&apos;s exact chance as a percentage, and restore the defaults in
+              one click — all from the Tweaking page, and the tweaks survive the app being
               closed and reopened. If the enabled bonuses&apos; chances add up to 100% or
-              more, a bonus becomes GUARANTEED on every roll (split fairly between whichever
-              bonuses are enabled, based on their relative chances).
+              more, a bonus becomes GUARANTEED on every roll (split fairly between
+              whichever bonuses are enabled, based on their relative chances).
             </p>
             <p>
               A landed bonus is impossible to miss on stream: the whole roulette glows and
-              pulses gold while it plays out, a &quot;BONUS&quot; badge appears, the number
-              reel shows the roll it landed on with the bonus called out (e.g. &quot;x2 (x2
-              bonus)&quot;), and the final result underneath shows the true total (e.g.
-              &quot;x4&quot;).
+              pulses gold while it plays out, a &quot;BONUS&quot; badge appears, the
+              number reel shows the roll it landed on with the bonus called out (e.g.
+              &quot;x2 (x2 bonus)&quot;), and the final result underneath shows the true
+              total (e.g. &quot;x4&quot;).
             </p>
             <p>
               Tier Upgrade specifically respects the same faction restrictions described
@@ -276,8 +298,8 @@ export default function About() {
           <section className="set-section">
             <h2 className="set-heading">Difficulty Tiers: Basic / Advanced / Expert</h2>
             <p>
-              Both mutant packs and hostile squads come in three tiers, switchable any time
-              in Settings, affecting every spawn until changed again. Higher tiers
+              Both mutant packs and hostile squads come in three tiers, switchable any
+              time in Settings, affecting every spawn until changed again. Higher tiers
               generally mean stronger, tougher, and more varied enemies.
             </p>
 
@@ -318,10 +340,10 @@ export default function About() {
             <h2 className="set-heading">Turning Off Specific Squads Or Mutants</h2>
             <p>
               The streamer can individually disable any hostile squad faction (say, never
-              wanting Duty to spawn) from Settings — a disabled faction is skipped entirely
-              and can never come up, in either Random or Count Roll mode, and the on/off
-              state is shared between both modes (turning a squad off is a single switch,
-              not a separate one per mode).
+              wanting Duty to spawn) from Settings — a disabled faction is skipped
+              entirely and can never come up, in either Random or Count Roll mode, and the
+              on/off state is shared between both modes (turning a squad off is a single
+              switch, not a separate one per mode).
             </p>
             <p>
               There&apos;s currently no equivalent on/off switch for individual mutant
@@ -332,11 +354,11 @@ export default function About() {
           <section className="set-section">
             <h2 className="set-heading">The Overlay (What Viewers See)</h2>
             <p>
-              Every roll appears as an animated overlay on stream: a badge at the top shows
-              who/what triggered it (Channel Points, Bits Power-up, New Sub, Resub, Gift
-              Sub, or Manual) and the viewer&apos;s name, then one or two spinning reels
-              play out with sound and sparkle effects before landing on the final result.
-              If a bonus lands, the whole thing gets a distinct gold glow and a
+              Every roll appears as an animated overlay on stream: a badge at the top
+              shows who/what triggered it (Channel Points, Bits Power-up, New Sub, Resub,
+              Gift Sub, or Manual) and the viewer&apos;s name, then one or two spinning
+              reels play out with sound and sparkle effects before landing on the final
+              result. If a bonus lands, the whole thing gets a distinct gold glow and a
               &quot;BONUS&quot; badge so it&apos;s obvious at a glance that something
               special just happened.
             </p>
@@ -349,8 +371,8 @@ export default function About() {
               subs, etc.) reflect the defaults as of this guide. Bonus chances, positive
               effect odds, and which squads are enabled can all be changed by the streamer
               at any time from Settings and the Tweaking page, so the exact odds in effect
-              on stream may differ from the defaults listed here if they&apos;ve been tuned
-              since.
+              on stream may differ from the defaults listed here if they&apos;ve been
+              tuned since.
             </p>
           </section>
         </div>
