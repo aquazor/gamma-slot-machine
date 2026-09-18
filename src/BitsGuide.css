@@ -1,0 +1,65 @@
+.bits-guide-intro {
+  margin-bottom: 20px;
+}
+
+.set-rewards--powerups {
+  margin-bottom: 28px;
+}
+
+.bits-guide-step-names {
+  margin-top: 14px;
+}
+
+.bits-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+  counter-reset: bits-guide-step;
+}
+
+.bits-guide-step {
+  counter-increment: bits-guide-step;
+}
+
+.bits-guide-step-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 0 0 10px;
+
+  font-size: 16px;
+  color: #f0e6d2;
+}
+
+.bits-guide-step-text::before {
+  content: counter(bits-guide-step);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 24px;
+  height: 24px;
+
+  background: #e0a52e;
+  color: #201200;
+  border-radius: 50%;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bits-guide-step img {
+  display: block;
+  max-width: 100%;
+
+  border: 1px solid rgba(179, 128, 31, 0.3);
+  border-radius: 10px;
+}

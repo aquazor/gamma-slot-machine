@@ -7,7 +7,7 @@ export const pistols = [
   },
   {
     id: 'wpn_tt33_modern',
-    name: 'TT-33 7.62x25 TT [modern]',
+    name: 'TT-33 7.62x25 TT',
     repair: 'A',
     ammo: 'ammo_7.62x25_p;ammo_7.62x25_ps',
   },
@@ -43,7 +43,7 @@ export const pistols = [
   },
   {
     id: 'wpn_colt1911_n',
-    name: 'Colt M1911A1 .45 ACP [n]',
+    name: 'Colt M1911A1 .45 ACP',
     repair: 'A',
     ammo: 'ammo_11.43x23_fmj;ammo_11.43x23_hydro',
   },
@@ -79,15 +79,9 @@ export const pistols = [
   },
   {
     id: 'wpn_fnx45_custom',
-    name: 'FNX-45 [custom]',
+    name: 'FNX-45',
     repair: 'A',
     ammo: 'ammo_11.43x23_fmj;ammo_11.43x23_hydro',
-  },
-  {
-    id: 'wpn_fort',
-    name: 'Fort-17 [fort]',
-    repair: 'A',
-    ammo: 'ammo_9x18_fmj;ammo_9x18_pmm',
   },
   {
     id: 'wpn_fort17',
@@ -241,13 +235,13 @@ export const pistols = [
   },
   {
     id: 'wpn_sig220_n',
-    name: 'SIG P220 [n]',
+    name: 'SIG P220',
     repair: 'A',
     ammo: 'ammo_11.43x23_fmj;ammo_11.43x23_hydro',
   },
   {
     id: 'wpn_sig226',
-    name: 'SIG P226R [sig226]',
+    name: 'SIG P226R',
     repair: 'A',
     ammo: 'ammo_9x19_fmj;ammo_9x19_pbp',
   },
@@ -271,7 +265,7 @@ export const pistols = [
   },
   {
     id: 'wpn_walther_p99',
-    name: 'Walther P99 [p99]',
+    name: 'Walther P99',
     repair: 'A',
     ammo: 'ammo_9x19_fmj;ammo_9x19_pbp',
   },

@@ -5,6 +5,7 @@ export * from './shotguns';
 export * from './pistols';
 export * from './outfits-exo';
 export * from './outfits-heavy';
+export * from './outfits-heavy-no-exo';
 export * from './outfits-light';
 export * from './outfits-medium';
 export * from './outfits-field';

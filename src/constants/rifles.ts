@@ -49,7 +49,7 @@ export const rifles = [
   },
   {
     id: 'wpn_ak104_alfa',
-    name: 'AK-104 "Alpha" [alfa]',
+    name: 'AK-104 "Alpha"',
     repair: 'D',
     ammo: 'ammo_7.62x39_fmj',
   },
@@ -97,7 +97,7 @@ export const rifles = [
   },
   {
     id: 'wpn_ak74',
-    name: 'AK-74N [74]',
+    name: 'AK-74N',
     repair: 'C',
     ammo: 'ammo_5.45x39_fmj;ammo_5.45x39_ep',
   },
@@ -127,7 +127,7 @@ export const rifles = [
   },
   {
     id: 'wpn_abakan_n',
-    name: 'AN-94 [n]',
+    name: 'AN-94',
     repair: 'C',
     ammo: 'ammo_5.45x39_fmj;ammo_5.45x39_ep',
   },
@@ -187,13 +187,13 @@ export const rifles = [
   },
   {
     id: 'wpn_scar_siber',
-    name: 'FN SCAR-H [siber]',
+    name: 'FN SCAR-H',
     repair: 'D',
     ammo: 'ammo_7.62x51_fmj',
   },
   {
     id: 'wpn_g36v_rwap',
-    name: 'G36 [v_rwap]',
+    name: 'G36',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
@@ -211,13 +211,13 @@ export const rifles = [
   },
   {
     id: 'wpn_g36ka4_rwap',
-    name: 'G36K [ka4_rwap]',
+    name: 'G36K',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
   {
     id: 'wpn_ace52',
-    name: 'Galil ACE-52 [52]',
+    name: 'Galil ACE-52',
     repair: 'D',
     ammo: 'ammo_7.62x51_fmj',
   },
@@ -235,7 +235,7 @@ export const rifles = [
   },
   {
     id: 'wpn_l85_m2',
-    name: 'L85A2 [m2]',
+    name: 'L85A2',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
@@ -253,7 +253,7 @@ export const rifles = [
   },
   {
     id: 'wpn_m4a1_siber',
-    name: 'M4A1 [m4a1_siber]',
+    name: 'M4A1',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
@@ -277,19 +277,19 @@ export const rifles = [
   },
   {
     id: 'wpn_pkm_zenit_siber',
-    name: 'PKM "Zenit" [enit_siber]',
+    name: 'PKM "Zenit"',
     repair: 'D',
     ammo: 'ammo_pkm_100',
   },
   {
     id: 'wpn_pkm_siber',
-    name: 'PKM [siber]',
+    name: 'PKM',
     repair: 'D',
     ammo: 'ammo_pkm_100',
   },
   {
     id: 'wpn_pkp_siber',
-    name: 'PKP Pecheneg [siber]',
+    name: 'PKP Pecheneg',
     repair: 'D',
     ammo: 'ammo_pkm_100',
   },
@@ -373,13 +373,13 @@ export const rifles = [
   },
   {
     id: 'wpn_sig550',
-    name: 'SIG SG 550 [0]',
+    name: 'SIG SG 550',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
   {
     id: 'wpn_sig550_custom',
-    name: 'SIG SG 550 [custom]',
+    name: 'SIG SG 550',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
@@ -409,7 +409,7 @@ export const rifles = [
   },
   {
     id: 'wpn_vintorez_n1',
-    name: 'VSS Vintorez [n1]',
+    name: 'VSS Vintorez',
     repair: 'C',
     ammo: 'ammo_9x39_pab9',
   },

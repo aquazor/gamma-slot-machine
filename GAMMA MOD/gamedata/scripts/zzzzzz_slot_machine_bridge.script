@@ -1,0 +1,1083 @@
+-- ==========================================================
+-- GAMMA BRIDGE  (loot + spawn + perks)
+-- ==========================================================
+-- Reads gamedata\scripts\bridge\command.txt every CHECK_INTERVAL ms.
+-- Line formats:
+--   WEAPON|<id>|<ammo_id;ammo_id;...>
+--   OUTFIT|<id>
+--   HELMET|<id>
+--   SPAWN|<section;section;...>|<count>
+--   GODMODE|<seconds>          -- temporary invulnerability (Immortality perk)
+--   MONEY|<amount>             -- Give Money perk
+--   AMMO_MAGS|<count>          -- N magazines for whatever's in hand (Give Ammunition perk)
+--   MEDKIT|<item_id>|<count>   -- Medicine perk, one item per roll
+--
+-- Changes vs the original loot-only bridge:
+--   * CHECK_INTERVAL 2000 -> 500 ms
+--   * check_bridge order: read -> CLEAR -> process
+--     (so a write that lands during processing survives to the next poll
+--      instead of being truncated away)
+--   * SPAWN command: group spawn near the player
+--   * GODMODE/MONEY/AMMO_MAGS/MEDKIT: perk commands — g_god console toggle
+--     for invulnerability, ammo_class + get_ammo_type() lookup for ammo
+--     (count is used as rolled, no per-round math), plain
+--     alife_create_item for money/medkit items.
+-- ==========================================================
+
+local next_check = 0
+local CHECK_INTERVAL = 500
+
+-- actor_on_update callbacks (check_bridge etc.) are registered lazily,
+-- from actor_on_first_update, instead of unconditionally at file-load
+-- time — see the registration block near the bottom of this file for
+-- why. Guards against double-registering them if actor_on_first_update
+-- somehow ever fired more than once in a session.
+local update_callbacks_registered = false
+
+local AMMO_AMOUNTS = {
+    ["ammo_9x19_fmj"] = 2,
+    ["ammo_9x19_pbp"] = 3,
+    ["ammo_9x19_ap"] = 2,
+
+    ["ammo_5.7x28_ss190"] = 1,
+    ["ammo_5.7x28_ss195"] = 3,
+
+    ["ammo_9x18_fmj"] = 2,
+    ["ammo_9x18_pmm"] = 3,
+    ["ammo_9x18_ap"] = 2,
+
+    ["ammo_11.43x23_fmj"] = 2,
+    ["ammo_11.43x23_hydro"] = 2,
+
+    ["ammo_7.62x25_p"] = 2,
+    ["ammo_7.62x25_ps"] = 2,
+
+    ["ammo_9x21_sp10"] = 3,
+
+    ["ammo_338_lapua"] = 1,
+    ["ammo_338_federal"] = 1,
+
+    ["ammo_7.62x51_fmj"] = 2,
+    ["ammo_7.62x51_ap"] = 1,
+
+    ["ammo_gauss"] = 2,
+
+    ["ammo_7.92x33_fmj"] = 2,
+    ["ammo_7.92x33_ap"] = 1,
+
+    ["ammo_7.62x54_7h1"] = 1,
+    ["ammo_7.62x54_7h14"] = 1,
+    ["ammo_7.62x54_ap"] = 1,
+
+    ["ammo_7.62x39_fmj"] = 2,
+    ["ammo_7.62x39_ap"] = 2,
+
+    ["ammo_12.7x55_fmj"] = 1,
+    ["ammo_12.7x55_ap"] = 1,
+
+    ["ammo_357_hp_mag"] = 3,
+
+    ["ammo_12x70_buck"] = 2,
+    ["ammo_12x70_buck_self"] = 2,
+    ["ammo_12x76_zhekan"] = 1,
+    ["ammo_12x76_dart"] = 1,
+
+    ["ammo_20x70_buck"] = 2,
+
+    ["ammo_23x75_shrapnel"] = 2,
+    ["ammo_23x75_barrikada"] = 1,
+
+    ["ammo_9x39_pab9"] = 2,
+    ["ammo_9x39_ap"] = 2,
+
+    ["ammo_5.56x45_fmj"] = 2,
+    ["ammo_5.56x45_ss190"] = 2,
+    ["ammo_5.56x45_ap"] = 1,
+
+    ["ammo_5.45x39_fmj"] = 2,
+    ["ammo_5.45x39_ep"] = 2,
+    ["ammo_5.45x39_ap"] = 1,
+
+    ["ammo_pkm_100"] = 2,
+
+    ["ammo_og-7b"] = 2,
+}
+
+-- A plain relative path here resolves against the process's current
+-- working directory, which is only the game root when launched through
+-- MO2/the GAMMA launcher — launching the exe directly leaves the CWD
+-- elsewhere, so the relative path silently reads/writes a different,
+-- empty file instead of failing loudly. getFS():update_path resolves
+-- through the engine's own fsgame.ltx-configured root instead, so it's
+-- correct regardless of how the game was launched — same pattern
+-- chaos_tricks/bft_binder.script uses for its own mod folder/events file.
+local COMMAND_PATH = getFS():update_path("$game_scripts$", "") .. "bridge\\command.txt"
+
+-- ========================================
+-- SLOT REPLACEMENT
+-- ========================================
+
+local ITEM_SLOTS = {
+    weapon2 = 2, -- pistol slot (also 1/3 depending on item)
+    weapon3 = 3, -- rifle slot
+    outfit = 7,
+    helmet = 12,
+}
+
+-- set to false if you'd rather just add items to inventory without
+-- kicking out / auto-equipping what's currently in the slot
+local REPLACE_CURRENT_ITEM = true
+
+-- pending equip requests, retried on a schedule (try every
+-- RETRY_INTERVAL, give up after RETRY_LIMIT tries) instead of checking
+-- every single frame
+local pending_equips = {}
+local RETRY_INTERVAL = 200   -- ms between attempts
+local RETRY_LIMIT = 5        -- give up after this many failed attempts
+
+-- slot -> item id of the last item WE gave for that slot, whether or not
+-- it's actually been equipped yet. Equipping only happens later, via
+-- process_pending_equips's move_to_slot — so if two WEAPON/OUTFIT/HELMET
+-- lines land in the same check_bridge() batch (e.g. two loot rolls that
+-- piled up in command.txt while the game was loading), the second one's
+-- remove_in_slot() would otherwise only see the actor's still-unchanged
+-- live slot, miss the first roll's freshly-created-but-not-yet-equipped
+-- item entirely, and leave it sitting as a loose inventory item once
+-- process_pending_equips tries to equip both into the same slot. This
+-- table lets remove_in_slot clean up that not-yet-equipped item too.
+local last_given_in_slot = {}
+
+-- suppress the weapon draw / item-swap animation while items are being
+-- given & equipped (actor_effects.set_animations(false),
+-- restore ~1 s after the last item)
+local SUPPRESS_EQUIP_ANIM = true
+local anims_off = false
+local anims_restore_at = 0
+local ANIM_RESTORE_MS = 1500
+
+local function pause_equip_anim()
+    if not SUPPRESS_EQUIP_ANIM then
+        return
+    end
+
+    if not anims_off then
+        local ok, on = pcall(function() return actor_effects.is_animations_on() end)
+        if ok and on then
+            anims_off = true
+            pcall(function() actor_effects.set_animations(false) end)
+        end
+    end
+
+    anims_restore_at = time_global() + ANIM_RESTORE_MS
+end
+
+local function tick_equip_anim()
+    if anims_off and time_global() >= anims_restore_at then
+        anims_off = false
+        pcall(function() actor_effects.set_animations(true) end)
+    end
+end
+
+-- ========================================
+-- SPAWN  (mutants / enemies)
+-- ========================================
+
+local SPAWN_MIN_RANGE   = 12   -- cluster centre distance from the player
+local SPAWN_MAX_RANGE   = 15   -- (uniform random between min and max)
+local SPAWN_CLUSTER_MIN = 2    -- each creature's distance from the cluster centre
+local SPAWN_CLUSTER_MAX = 4
+local SPAWN_STAGGER     = 30   -- ms between individual spawns (CT: 0.03 s)
+local SPAWN_FX          = true -- particle at each spawn point
+-- the sound plays ONCE per burst, not per creature: a group spawn fires
+-- do_spawn 3-5 times within ~150 ms, and one sound per creature = noise
+local SPAWN_SOUND_COOLDOWN = 700
+local last_spawn_sound = 0
+
+-- Sound played at every spawn point. Path is relative to
+-- <mod>\gamedata\sounds\  , no extension, backslashes for subfolders.
+-- Must be a MONO 44100 Hz .ogg (X-Ray rejects other rates).
+-- Current file: <mod>\gamedata\sounds\spawn.ogg
+local SPAWN_SOUND       = "spawn"
+local SPAWN_PARTICLE    = "anomaly2\\electra2_blast"
+
+-- PDA-corner notification. The server sends a  MSG|<kind>|<text>  line
+-- (kind = loot | spawn | perk) before the action lines; that text is shown.
+local SHOW_MSG          = true
+local MSG_COLORS = {
+    loot  = "%c[255,120,235,120]",   -- green
+    spawn = "%c[255,240,90,90]",     -- red
+    perk  = "%c[255,180,120,255]",   -- purple
+}
+local MSG_COLOR_DEFAULT = "%c[255,255,175,0]" -- orange (plain MSG / fallback)
+
+-- per-batch state for the auto fallback message
+local batch_msg_shown = false
+local batch_spawn_count = 0
+
+-- one cluster point per command.txt batch, not per SPAWN line - so a
+-- multi-group roll (e.g. "x3": 3 SPAWN lines in one write) drops all
+-- groups in the SAME spot instead of scattering each to its own
+-- random point near the player
+local batch_cluster = nil
+
+-- if true, only creatures spawned by this bridge get remove_all_restrictions()
+-- on death. Set to false to do this for every creature death instead.
+local SPAWN_RESTRICTIONS_SPAWNED_ONLY = true
+
+local pending_spawns = {}      -- { {section=, pos=}, ... }
+local next_spawn = 0
+local spawned_ids = {}         -- id -> true, for the on-death cleanup
+local is_level_changing = false
+
+-- ========================================
+-- SLOT HELPERS
+-- ========================================
+
+local function remove_in_slot(slot)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    -- a not-yet-equipped item this same run already gave for this slot
+    -- (see last_given_in_slot above): re-target its still-pending request
+    -- to release instead of equip, rather than trying to alife_release it
+    -- here directly. A freshly alife_create_item'd object is often not
+    -- yet "online" (queryable via level.object_by_id) for a frame or
+    -- more — releasing it synchronously here just silently no-ops on a
+    -- nil object, and dropping its pending_equips entry regardless left
+    -- it stuck forever: never equipped, never released, just sitting in
+    -- inventory. Reusing process_pending_equips's existing retry-until-
+    -- found loop for the release instead avoids that race entirely.
+    local pending_id = last_given_in_slot[slot]
+    if pending_id then
+        local retargeted = false
+
+        for _, req in ipairs(pending_equips) do
+            if req.item_id == pending_id then
+                req.action = "release"
+                retargeted = true
+            end
+        end
+
+        if not retargeted then
+            -- nothing pending for it (shouldn't normally happen) — fall
+            -- back to a direct, best-effort release
+            local pending_obj = level.object_by_id(pending_id)
+            if pending_obj then
+                alife_release(pending_obj)
+            end
+        end
+
+        last_given_in_slot[slot] = nil
+    end
+
+    local current = actor:item_in_slot(slot)
+    if current then
+        alife_release(current)
+    end
+end
+
+local function get_weapon_target_slot()
+    local actor = db.actor
+    local active = actor:active_slot()
+    if active == ITEM_SLOTS.weapon2 or active == ITEM_SLOTS.weapon3 then
+        return active
+    end
+    return ITEM_SLOTS.weapon3
+end
+
+local function queue_equip(item_id, slot)
+    last_given_in_slot[slot] = item_id
+
+    pending_equips[#pending_equips + 1] = {
+        item_id = item_id,
+        slot = slot,
+        action = "equip",
+        tries = 0,
+        next_try = time_global(), -- attempt immediately on the next check
+    }
+end
+
+-- runs every frame via actor_on_update, but each individual request
+-- is only actually attempted once its own next_try time has passed,
+-- so in practice it behaves like a 200ms-interval retry, not a
+-- per-frame poll
+function process_pending_equips()
+    tick_equip_anim()   -- must run every frame, even when the queue is empty
+
+    if #pending_equips == 0 then
+        return
+    end
+
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local now = time_global()
+    local still_pending = {}
+
+    for _, req in ipairs(pending_equips) do
+        if now < req.next_try then
+            -- not time to retry yet, keep waiting as-is
+            still_pending[#still_pending + 1] = req
+        else
+            local obj = level.object_by_id(req.item_id)
+
+            if obj then
+                if req.action == "release" then
+                    -- superseded by a later item for the same slot before
+                    -- it ever got equipped (see remove_in_slot) — drop it
+                    -- instead of equipping it
+                    printf("GAMMA BRIDGE: releasing superseded item id " .. req.item_id)
+                    alife_release(obj)
+                else
+                    printf("GAMMA BRIDGE: equip attempt for item id " .. req.item_id .. " at " .. now)
+                    pause_equip_anim()
+                    actor:move_to_slot(obj, req.slot)
+                end
+                -- resolved, don't requeue
+            else
+                req.tries = req.tries + 1
+                if req.tries < RETRY_LIMIT then
+                    req.next_try = now + RETRY_INTERVAL
+                    still_pending[#still_pending + 1] = req
+                else
+                    printf(
+                        "GAMMA BRIDGE: gave up waiting to "
+                            .. (req.action == "release" and "release" or "equip")
+                            .. " item id "
+                            .. req.item_id
+                    )
+                end
+            end
+        end
+    end
+    pending_equips = still_pending
+end
+
+-- ========================================
+-- SPAWN HELPERS
+-- ========================================
+
+local function fire_ray(pos, dir)
+    if ray_pick == nil then
+        return nil
+    end
+    local pick = ray_pick()
+    pick:set_position(pos)
+    pick:set_direction(dir)
+    pick:set_flags(2)   -- collide with static level geometry only
+    pick:set_range(200)
+    pick:query()
+    return pick:get_distance()
+end
+
+-- snap Y to the ground: two downward rays (from +10 and from pos.y),
+-- take the lower ground hit. Falls back to the requested Y if ray_pick
+-- is not available.
+local function fix_height(pos)
+    local down = vector():set(0, -1, 0)
+
+    local from_high = vector():set(pos.x, pos.y + 10, pos.z)
+    local from_pos  = vector():set(pos.x, pos.y, pos.z)
+
+    local h1 = fire_ray(from_high, down)
+    local h2 = fire_ray(from_pos, down)
+
+    if h1 == nil and h2 == nil then
+        return pos.y
+    end
+
+    local y1 = h1 and (from_high.y - h1) or nil
+    local y2 = h2 and (from_pos.y - h2) or nil
+
+    if y1 and y2 then
+        return math.min(y1, y2)
+    end
+
+    return y1 or y2
+end
+
+-- random point on a ring around base_point (flat XZ plane)
+local function get_random_point_around(min_dist, max_dist, base_point)
+    local angle = math.pi * 2 * math.random()
+    local dx, dz = math.cos(angle), math.sin(angle)
+    local dist = min_dist + math.random() * (max_dist - min_dist)
+
+    local p = vector():set(base_point.x, base_point.y, base_point.z)
+    p.x = p.x + dist * dx
+    p.z = p.z + dist * dz
+    return p
+end
+
+-- keep fx objects referenced until they finish, otherwise Lua GC can
+-- collect them mid-play (this is why the sound was silent)
+local fx_keepalive = {}
+
+local function fx_hold(obj)
+    fx_keepalive[#fx_keepalive + 1] = obj
+    if #fx_keepalive > 24 then
+        table.remove(fx_keepalive, 1)
+    end
+end
+
+local function play_spawn_fx(pos)
+    if not SPAWN_FX then
+        return
+    end
+
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local ok1, err1 = pcall(function()
+        local p = particles_object(SPAWN_PARTICLE)
+        p:play_at_pos(pos)
+        fx_hold(p)
+    end)
+    if not ok1 then
+        printf("GAMMA BRIDGE: fx particle error: " .. tostring(err1))
+    end
+
+    local now = time_global()
+    if now - last_spawn_sound >= SPAWN_SOUND_COOLDOWN then
+        last_spawn_sound = now
+
+        local ok2, err2 = pcall(function()
+            local s = sound_object(SPAWN_SOUND)
+            -- 2D, played on the actor: guaranteed audible regardless of where
+            -- the creature lands. play_at_pos + s2d proved silent on this install.
+            s:play(actor, 0, sound_object.s2d)
+            s.volume = 1.0
+            fx_hold(s)
+        end)
+        if not ok2 then
+            printf("GAMMA BRIDGE: fx sound error: " .. tostring(err2))
+        end
+    end
+end
+
+-- PDA-corner notification. kind = "loot" | "spawn" | nil (default colour)
+local function show_message(text, kind)
+    if not SHOW_MSG or not text or text == "" then
+        return
+    end
+
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local color = MSG_COLORS[kind or ""] or MSG_COLOR_DEFAULT
+
+    pcall(function()
+        news_manager.send_tip(actor, color .. text, nil, "recent_surge", 6000, nil)
+    end)
+
+    batch_msg_shown = true
+end
+
+local function queue_spawn(section, pos)
+    pending_spawns[#pending_spawns + 1] = { section = section, pos = pos }
+end
+
+local function do_spawn(section, pos)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    pos.y = fix_height(pos)
+
+    local se = alife_create(section, pos, actor:level_vertex_id(), actor:game_vertex_id())
+    if se then
+        spawned_ids[se.id] = true
+        printf("GAMMA BRIDGE: spawned " .. section .. " id " .. se.id)
+        play_spawn_fx(pos)
+    else
+        printf("GAMMA BRIDGE: alife_create failed for " .. section)
+    end
+end
+
+-- one per SPAWN_STAGGER ms, so a big pack doesn't hitch a single frame
+function process_pending_spawns()
+    if #pending_spawns == 0 or is_level_changing then
+        return
+    end
+    if not db.actor then
+        return
+    end
+
+    local now = time_global()
+    if now < next_spawn then
+        return
+    end
+    next_spawn = now + SPAWN_STAGGER
+
+    local task = table.remove(pending_spawns, 1)
+    if task then
+        local ok, err = pcall(do_spawn, task.section, task.pos)
+        if not ok then
+            printf("GAMMA BRIDGE: spawn error " .. tostring(err))
+        end
+    end
+end
+
+local function handle_spawn(sections_str, count)
+    if is_level_changing then
+        return
+    end
+
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local sections = {}
+    for s in sections_str:gmatch("[^;]+") do
+        s = s:gsub("^%s*(.-)%s*$", "%1")
+        if s ~= "" then
+            sections[#sections + 1] = s
+        end
+    end
+
+    if #sections == 0 then
+        printf("GAMMA BRIDGE: SPAWN with no sections")
+        return
+    end
+
+    count = tonumber(count) or 1
+    if count < 1 then count = 1 end
+
+    -- one cluster centre SPAWN_MIN..MAX m from the player, each creature
+    -- SPAWN_CLUSTER_MIN..MAX m from that centre. Shared across every SPAWN
+    -- line in this same command.txt batch (see batch_cluster) so a x3 roll
+    -- lands as one mixed squad, not three separate scattered ones.
+    if not batch_cluster then
+        batch_cluster = get_random_point_around(SPAWN_MIN_RANGE, SPAWN_MAX_RANGE, actor:position())
+    end
+    local cluster = batch_cluster
+
+    for _ = 1, count do
+        local pos = get_random_point_around(SPAWN_CLUSTER_MIN, SPAWN_CLUSTER_MAX, cluster)
+        local section = sections[math.random(#sections)]
+        queue_spawn(section, pos)
+    end
+
+    batch_spawn_count = batch_spawn_count + count
+
+    printf("GAMMA BRIDGE: SPAWN queued " .. count .. " x (" .. sections_str .. ")")
+end
+
+-- ========================================
+-- ON DEATH  -- clear movement restrictors so the
+-- creature (or, if SPAWN_RESTRICTIONS_SPAWNED_ONLY is false, any dying npc/monster) can path freely
+-- ========================================
+
+local function on_creature_death(victim)
+    if not victim then
+        return
+    end
+
+    if SPAWN_RESTRICTIONS_SPAWNED_ONLY and not spawned_ids[victim:id()] then
+        return
+    end
+
+    pcall(function()
+        victim:remove_all_restrictions()
+    end)
+
+    spawned_ids[victim:id()] = nil
+end
+
+local function on_level_change()
+    is_level_changing = true
+    pending_spawns = {}
+end
+
+-- ========================================
+-- LOOT LINE HANDLERS
+-- ========================================
+
+local function handle_weapon(item_id, ammo_string)
+    printf("GAMMA BRIDGE: Giving weapon: " .. item_id)
+
+    local target_slot = get_weapon_target_slot()
+
+    if REPLACE_CURRENT_ITEM then
+        remove_in_slot(target_slot)
+    end
+
+    local new_weapon = alife_create_item(item_id, db.actor)
+
+    printf("GAMMA BRIDGE: Weapon created: " .. item_id)
+
+    if REPLACE_CURRENT_ITEM and new_weapon then
+        queue_equip(new_weapon.id, target_slot)
+    end
+
+    if ammo_string and ammo_string ~= "" then
+        for ammo_id in ammo_string:gmatch("[^;]+") do
+            ammo_id = ammo_id:gsub("^%s*(.-)%s*$", "%1")
+
+            if ammo_id ~= "" then
+                local amount = AMMO_AMOUNTS[ammo_id]
+
+                if amount then
+                    printf("GAMMA BRIDGE: Giving ammo: " .. ammo_id .. " x" .. amount)
+                    for _ = 1, amount do
+                        alife_create_item(ammo_id, db.actor)
+                    end
+                else
+                    printf("GAMMA BRIDGE: Unknown ammo: " .. ammo_id)
+                end
+            end
+        end
+    else
+        printf("GAMMA BRIDGE: No ammo specified for " .. item_id)
+    end
+end
+
+local function handle_outfit(outfit_id)
+    printf("GAMMA BRIDGE: Giving outfit: " .. outfit_id)
+
+    pause_equip_anim()
+
+    if REPLACE_CURRENT_ITEM then
+        remove_in_slot(ITEM_SLOTS.outfit)
+    end
+
+    local new_outfit = alife_create_item(outfit_id, db.actor)
+
+    printf("GAMMA BRIDGE: Outfit created: " .. outfit_id)
+
+    if REPLACE_CURRENT_ITEM and new_outfit then
+        queue_equip(new_outfit.id, ITEM_SLOTS.outfit)
+    end
+end
+
+local function handle_helmet(helmet_id)
+    printf("GAMMA BRIDGE: Giving helmet: " .. helmet_id)
+
+    pause_equip_anim()
+
+    if REPLACE_CURRENT_ITEM then
+        remove_in_slot(ITEM_SLOTS.helmet)
+    end
+
+    local new_helmet = alife_create_item(helmet_id, db.actor)
+
+    printf("GAMMA BRIDGE: Helmet created: " .. helmet_id)
+
+    if REPLACE_CURRENT_ITEM and new_helmet then
+        queue_equip(new_helmet.id, ITEM_SLOTS.helmet)
+    end
+end
+
+-- ========================================
+-- PERK HANDLERS  (Immortality / Give Ammo / Give Money / Medicine)
+-- ========================================
+-- g_god console toggle for invulnerability, ammo_class + get_ammo_type()
+-- lookup for ammo, plain alife_create_item for money/medkit items.
+
+-- ---- Immortality ----
+
+local godmode_active = false
+local godmode_end_at = 0
+
+local function godmode_set_full_stats()
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    -- runs every frame while godmode is active — pcall so a field/method
+    -- that doesn't exist on this exact build never breaks the per-frame
+    -- callback chain (check_bridge / process_pending_spawns etc. share it)
+    local ok, err = pcall(function()
+        actor:set_health_ex(1)
+        actor.bleeding = 1
+        actor.radiation = -1
+        actor.power = 1
+        actor.satiety = 1
+        actor.psy_health = 1
+    end)
+
+    if not ok then
+        printf("GAMMA BRIDGE: godmode_set_full_stats error: " .. tostring(err))
+    end
+end
+
+local function godmode_off()
+    if not godmode_active then
+        return
+    end
+    godmode_active = false
+    printf("GAMMA BRIDGE: Godmode off")
+    local ok, err = pcall(function() get_console():execute("g_god off") end)
+    if not ok then
+        printf("GAMMA BRIDGE: godmode off error: " .. tostring(err))
+    end
+end
+
+local function handle_godmode(seconds_str)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local seconds = tonumber(seconds_str) or 60
+    if seconds < 1 then seconds = 1 end
+
+    printf("GAMMA BRIDGE: Godmode on for " .. seconds .. "s")
+    godmode_set_full_stats()
+    godmode_active = true
+    godmode_end_at = time_global() + seconds * 1000
+
+    local ok, err = pcall(function() get_console():execute("g_god on") end)
+    if not ok then
+        printf("GAMMA BRIDGE: godmode on error: " .. tostring(err))
+    end
+end
+
+-- runs every frame via actor_on_update; keeps stats topped up while
+-- active and turns itself off once the duration elapses
+function process_godmode()
+    if not godmode_active then
+        return
+    end
+
+    godmode_set_full_stats()
+
+    if time_global() >= godmode_end_at then
+        godmode_off()
+    end
+end
+
+-- ---- Give Ammunition ----
+
+-- Melee weapons, the bolt, and grenades all occupy the
+-- "active item" slot but aren't firearms — a drawn one of these doesn't
+-- come back as "no active item" like the comment further down used to
+-- assume, actor:active_item() returns the item itself. Some of them
+-- (knives/axes especially) inherit a stray ammo_class from a shared
+-- weapon base section, so get_ammo_class() finds SOMETHING and
+-- give_ammo_for_weapon spawns a bogus/unrecognized item instead of
+-- quietly doing nothing; others just silently give nothing. Anomaly/GAMMA
+-- section-naming convention: knives/axes contain "knife"/"axe"
+-- (wpn_knife, wpn_knife2.., wpn_axe, wpn_axe2..), the detector item is
+-- exactly "bolt", grenades are all "grenade_<type>" (f1, rgd5, gd-05,
+-- ...) — matched by prefix so new grenade types are covered too.
+local function is_non_firearm(item)
+    local ok, section = pcall(function() return item:section() end)
+
+    if not ok or type(section) ~= "string" then
+        return false
+    end
+
+    local lower = section:lower()
+
+    return lower:find("knife", 1, true) ~= nil
+        or lower:find("axe", 1, true) ~= nil
+        or lower == "bolt"
+        or lower:find("^grenade_") ~= nil
+end
+
+local function get_ammo_class(section)
+    local types = {}
+    local ok, class_str = pcall(function() return ini_sys:r_string_ex(section, "ammo_class") end)
+
+    if ok and class_str then
+        for t in class_str:gmatch("[^,]+") do
+            t = t:gsub("^%s*(.-)%s*$", "%1")
+            if t ~= "" then
+                types[#types + 1] = t
+            end
+        end
+    end
+
+    return types
+end
+
+-- gives `count` ammo items for ONE weapon object, based on whichever ammo
+-- type it currently has loaded (weapon:get_ammo_type()) — `count` is used
+-- as-is, straight from the roll, no per-round/magazine math on top
+local function give_ammo_for_weapon(weapon, count)
+    if not weapon or is_non_firearm(weapon) then
+        return false
+    end
+
+    local ok, err = pcall(function()
+        local section = weapon:section()
+        local types = get_ammo_class(section)
+        local ammo_type = weapon:get_ammo_type() or 0
+        local ammo_section = types[ammo_type + 1]
+
+        if ammo_section then
+            printf("GAMMA BRIDGE: Giving ammo for " .. section .. ": " .. ammo_section .. " x" .. count)
+            for _ = 1, count do
+                alife_create_item(ammo_section, db.actor)
+            end
+        else
+            printf("GAMMA BRIDGE: No ammo section found for " .. section)
+        end
+    end)
+
+    if not ok then
+        printf("GAMMA BRIDGE: give_ammo_for_weapon error: " .. tostring(err))
+    end
+
+    return ok
+end
+
+local function handle_ammo_mags(magazines_str)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local magazines = tonumber(magazines_str) or 1
+    if magazines < 1 then magazines = 1 end
+
+    local active = actor:active_item()
+    if active and not is_non_firearm(active) then
+        give_ammo_for_weapon(active, magazines)
+    else
+        -- no active firearm (holstered, or a knife/axe/bolt/grenade is
+        -- out) — fall back to both weapon slots so ammo still reaches an
+        -- actual gun
+        printf("GAMMA BRIDGE: AMMO_MAGS - no active firearm, trying both weapon slots")
+        give_ammo_for_weapon(actor:item_in_slot(ITEM_SLOTS.weapon2), magazines)
+        give_ammo_for_weapon(actor:item_in_slot(ITEM_SLOTS.weapon3), magazines)
+    end
+end
+
+-- ---- Give Money ----
+
+local function handle_money(amount_str)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local amount = tonumber(amount_str) or 0
+    if amount < 1 then
+        return
+    end
+
+    printf("GAMMA BRIDGE: Giving money: " .. amount)
+    actor:give_money(amount)
+end
+
+-- ---- Medicine ----
+
+local function handle_medkit(item_id, count_str)
+    if not db.actor then
+        return
+    end
+
+    local count = tonumber(count_str) or 1
+    if count < 1 then count = 1 end
+
+    printf("GAMMA BRIDGE: Giving medkit item: " .. item_id .. " x" .. count)
+    for _ = 1, count do
+        alife_create_item(item_id, db.actor)
+    end
+end
+
+-- ========================================
+-- LINE DISPATCH
+-- ========================================
+
+local function handle_line(line)
+    local msg_kind, msg_text = line:match("^MSG|(%a+)|(.+)$")
+    if msg_kind and (msg_kind == "loot" or msg_kind == "spawn" or msg_kind == "perk") then
+        show_message(msg_text, msg_kind)
+        return
+    end
+
+    local msg = line:match("^MSG|(.+)$")
+    if msg then
+        show_message(msg, nil)
+        return
+    end
+
+    local spawn_sections, spawn_count = line:match("^SPAWN|([^|]+)|(%d+)$")
+    if spawn_sections then
+        handle_spawn(spawn_sections, spawn_count)
+        return
+    end
+
+    local item_id, ammo_string = line:match("^WEAPON|([^|]+)|?(.*)$")
+    if item_id then
+        handle_weapon(item_id, ammo_string)
+        return
+    end
+
+    local outfit_id = line:match("^OUTFIT|(.+)$")
+    if outfit_id then
+        handle_outfit(outfit_id)
+        return
+    end
+
+    local helmet_id = line:match("^HELMET|(.+)$")
+    if helmet_id then
+        handle_helmet(helmet_id)
+        return
+    end
+
+    local godmode_seconds = line:match("^GODMODE|(%d+)$")
+    if godmode_seconds then
+        handle_godmode(godmode_seconds)
+        return
+    end
+
+    local money_amount = line:match("^MONEY|(%d+)$")
+    if money_amount then
+        handle_money(money_amount)
+        return
+    end
+
+    local ammo_mags = line:match("^AMMO_MAGS|(%d+)$")
+    if ammo_mags then
+        handle_ammo_mags(ammo_mags)
+        return
+    end
+
+    local medkit_id, medkit_count = line:match("^MEDKIT|([^|]+)|(%d+)$")
+    if medkit_id then
+        handle_medkit(medkit_id, medkit_count)
+        return
+    end
+
+    printf("GAMMA BRIDGE: Unknown command: " .. line)
+end
+
+-- ========================================
+-- BRIDGE LOOP
+-- ========================================
+
+function check_bridge()
+    local now = time_global()
+
+    if now < next_check then
+        return
+    end
+
+    next_check = now + CHECK_INTERVAL
+
+    -- "fake_start" is GAMMA's throwaway character-creation preview level —
+    -- Chaos Tricks itself excludes this exact level name for the same
+    -- reason (see chaos_tricks/bft_events.script). Anything given here
+    -- goes to a temporary actor that's destroyed moments later when the
+    -- real level loads, so leave command.txt untouched until then instead
+    -- of silently consuming (and wasting) whatever's queued in it.
+    local ok_level, current_level = pcall(level.name)
+    if ok_level and current_level == "fake_start" then
+        return
+    end
+
+    if not db.actor then
+        printf("GAMMA BRIDGE: Actor not ready")
+        return
+    end
+
+    local file = io.open(COMMAND_PATH, "r")
+
+    if not file then
+        printf("GAMMA BRIDGE: FAILED to open command file")
+        return
+    end
+
+    local command = file:read("*a")
+    file:close()
+
+    command = command or ""
+    command = command:gsub("^\239\187\191", "")          -- strip UTF-8 BOM (manual edits)
+    command = command:gsub("^%s*(.-)%s*$", "%1")
+
+    if command == "" then
+        return
+    end
+
+    -- clear BEFORE processing: anything written during the (possibly
+    -- slow) spawn/equip processing survives to the next poll
+    local clear_file = io.open(COMMAND_PATH, "w")
+    if clear_file then
+        clear_file:write("")
+        clear_file:close()
+    else
+        printf("GAMMA BRIDGE: Failed to clear command file")
+    end
+
+    printf("GAMMA BRIDGE: command received")
+
+    batch_msg_shown = false
+    batch_spawn_count = 0
+    batch_cluster = nil
+
+    for line in command:gmatch("[^\r\n]+") do
+        local ok, err = pcall(handle_line, line)
+        if not ok then
+            printf("GAMMA BRIDGE: line error (" .. line .. "): " .. tostring(err))
+        end
+    end
+
+    -- manual-testing fallback: a SPAWN with no MSG line still says something
+    if batch_spawn_count > 0 and not batch_msg_shown then
+        show_message("Spawned " .. batch_spawn_count .. " creature(s)", "spawn")
+    end
+end
+
+-- ========================================
+-- INIT
+-- ========================================
+
+function on_game_start()
+    printf("GAMMA BRIDGE: Started")
+
+    -- deliberately NOT clearing command.txt here anymore — this used to
+    -- wipe out anything the app had already written before the game
+    -- session started (e.g. rolled while sitting at the main menu),
+    -- destroying it before check_bridge ever got a chance to read it.
+    -- check_bridge's own read-then-clear cycle already handles whatever
+    -- is sitting in the file once it starts polling.
+
+    is_level_changing = false
+    pending_spawns = {}
+
+    -- un-stick animation suppression if the game crashed mid-equip
+    anims_off = false
+    pcall(function() actor_effects.set_animations(true) end)
+end
+
+-- actor_on_update callbacks are registered from actor_on_first_update
+-- (fires once per session, after the actor and other mods' own
+-- first-update setup — weapon parts, jamming state, etc. — have run)
+-- instead of unconditionally here at script-load time. Guard flag
+-- prevents double-registering if that ever fired more than once.
+local function register_update_callbacks()
+    if update_callbacks_registered then
+        return
+    end
+
+    update_callbacks_registered = true
+
+    RegisterScriptCallback("actor_on_update", check_bridge)
+    RegisterScriptCallback("actor_on_update", process_pending_equips)
+    RegisterScriptCallback("actor_on_update", process_pending_spawns)
+    RegisterScriptCallback("actor_on_update", process_godmode)
+end
+
+RegisterScriptCallback("actor_on_first_update", register_update_callbacks)
+
+RegisterScriptCallback("monster_on_death_callback", on_creature_death)
+RegisterScriptCallback("npc_on_death_callback", on_creature_death)
+RegisterScriptCallback("on_before_level_changing", on_level_change)
+-- don't let Immortality persist stuck-on across a level change
+RegisterScriptCallback("on_before_level_changing", godmode_off)
+
+printf("GAMMA BRIDGE: Callbacks registered")

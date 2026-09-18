@@ -66,12 +66,6 @@ export const snipers = [
     ammo: 'ammo_7.62x54_7h1;ammo_7.62x54_7h14',
   },
   {
-    id: 'wpn_svu_nimble',
-    name: 'OTs-03A SVU-A',
-    repair: 'D',
-    ammo: 'ammo_7.62x54_7h1;ammo_7.62x54_7h14',
-  },
-  {
     id: 'wpn_remington700',
     name: 'Remington 700',
     repair: 'C',
