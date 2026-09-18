@@ -50,7 +50,7 @@
       h1 {
         margin: 0 0 6px;
 
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: Georgia, 'Times New Roman', serif;
         font-size: 30px;
         color: #e5bd65;
 
@@ -207,7 +207,7 @@
       }
 
       .checklist li::before {
-        content: "✓";
+        content: '✓';
 
         position: absolute;
         left: 0;
@@ -341,9 +341,9 @@
       <section>
         <h2>Downloads</h2>
         <p>
-          Grab the app below — it can install the mod for you automatically
-          (Part 4). A manual mod download is also there if you'd rather install
-          it through MO2 yourself.
+          Grab the app below — it can install the mod for you automatically (Part 4). A
+          manual mod download is also there if you'd rather install it through MO2
+          yourself.
         </p>
         <div class="downloads">
           <a
@@ -370,8 +370,8 @@
         <ul class="checklist">
           <li>S.T.A.L.K.E.R.: GAMMA installed and working</li>
           <li>
-            The <strong>GAMMA Slot Machine.exe</strong> app — it installs the
-            mod itself, no separate MO2 setup needed
+            The <strong>GAMMA Slot Machine.exe</strong> app — it installs the mod itself,
+            no separate MO2 setup needed
           </li>
           <li>A Twitch account for the streamer</li>
           <li>OBS (or another broadcast software with a Browser Source)</li>
@@ -381,14 +381,14 @@
       <section>
         <h2>Part 1 — Run The App</h2>
         <p>
-          Launch <strong>GAMMA Slot Machine.exe</strong>. The Settings page
-          opens automatically in your browser, and the app keeps running locally
-          at <code>localhost:7770</code> for as long as you want the roulette to
-          react to Twitch.
+          Launch <strong>GAMMA Slot Machine.exe</strong>. The Settings page opens
+          automatically in your browser, and the app keeps running locally at
+          <code>localhost:7770</code> for as long as you want the roulette to react to
+          Twitch.
         </p>
         <p>
-          Its console confirms it found your GAMMA and Anomaly folders, and that
-          Twitch isn't connected yet.
+          Its console confirms it found your GAMMA and Anomaly folders, and that Twitch
+          isn't connected yet.
         </p>
         <img
           class="shot"
@@ -396,8 +396,8 @@
           alt="App console on launch, showing it found the GAMMA and Anomaly folders and that Twitch is not connected yet"
         />
         <p class="note">
-          If it says <code>NOT FOUND</code> instead, that's fine — you can set
-          both folders by hand from Settings → Mod install (step 9 below).
+          If it says <code>NOT FOUND</code> instead, that's fine — you can set both
+          folders by hand from Settings → Mod install (step 9 below).
         </p>
         <img
           class="shot"
@@ -425,8 +425,8 @@
           <li class="step">
             <p class="step-text">
               <span class="step-body">
-                A code appears in the app and a Twitch activation page opens in
-                your browser. Enter it and click <strong>Activate</strong>.
+                A Twitch activation page opens in your browser. Click
+                <strong>Activate</strong>.
               </span>
             </p>
             <img
@@ -452,9 +452,8 @@
             <p class="step-text">
               <span class="step-body">
                 Back in Settings, wait a moment and check that Twitch shows
-                <strong>Connected</strong> and <strong>Listening</strong>, then
-                copy the <strong>Browser Source URL</strong> — you'll need it in
-                the next part.
+                <strong>Connected</strong> and <strong>Listening</strong>, then copy the
+                <strong>Browser Source URL</strong> — you'll need it in the next part.
               </span>
             </p>
             <img
@@ -469,12 +468,11 @@
         <h2>Part 3 — Add The Overlay To OBS</h2>
 
         <ol class="steps">
-          <li class="step" style="counter-increment: step 2">
+          <li class="step">
             <p class="step-text">
               <span class="step-body">
                 In OBS, click <strong>+</strong> under Sources, choose
-                <strong>Browser</strong>, then
-                <strong>Add a new Browser</strong>.
+                <strong>Browser</strong>, then <strong>Add a new Browser</strong>.
               </span>
             </p>
             <img
@@ -487,8 +485,8 @@
             <p class="step-text">
               <span class="step-body">
                 Paste the overlay URL you copied, set <strong>Width</strong> to
-                <code>1200</code> and <strong>Height</strong> to
-                <code>600</code>, then click <strong>OK</strong>.
+                <code>1200</code> and <strong>Height</strong> to <code>600</code>, then
+                click <strong>OK</strong>.
               </span>
             </p>
             <img
@@ -507,28 +505,28 @@
           src="step8.jpg"
           alt="Settings page showing the OBS overlay row as Connected"
         />
-      </section>
-
-      <section>
-        <h2>Part 4 — Install The Mod</h2>
         <p>
-          The app's console should also confirm your channel-point rewards
-          loaded and Twitch EventSub is connected and subscribed.
+          The app's console should also confirm your channel-point rewards loaded and
+          Twitch EventSub is connected and subscribed.
         </p>
         <img
           class="shot"
           src="step9.jpg"
           alt="App console confirming channel-point rewards loaded and Twitch EventSub connected and subscribed"
         />
+      </section>
+
+      <section>
+        <h2>Part 4 — Install The Mod</h2>
 
         <ol class="steps">
-          <li class="step" style="counter-increment: step 2">
+          <li class="step">
             <p class="step-text">
               <span class="step-body">
                 Open the <strong>Mod install</strong> section and click
-                <strong>Install</strong> — this copies the mod straight into
-                your Anomaly folder, so it works whether you launch through the
-                GAMMA launcher or the game exe directly.
+                <strong>Install</strong> — this copies the mod straight into your Anomaly
+                folder, so it works whether you launch through the Anomaly Launcher in MO2
+                or the game exe directly.
               </span>
             </p>
             <img
@@ -552,9 +550,8 @@
               <span class="step-body">
                 Open <strong>Channel point rewards</strong> and click
                 <strong>Enable rewards</strong>. Tick
-                <strong>Auto-activate on startup/connect</strong> too if you
-                want them to turn back on by themselves next time you open the
-                app.
+                <strong>Auto-activate on startup/connect</strong> too if you want them to
+                turn back on by themselves next time you open the app.
               </span>
             </p>
             <img
@@ -567,8 +564,8 @@
             <p class="step-text">
               <span class="step-body">
                 (Optional, recommended) Set up
-                <strong>Bits power-ups</strong> too, following the linked
-                step-by-step guide.
+                <strong>Bits power-ups</strong> too, following the linked step-by-step
+                guide.
               </span>
             </p>
             <img
@@ -582,8 +579,8 @@
       <section>
         <h2>Part 6 — You're Live</h2>
         <p>
-          Once everything above is set, try any of these events and watch the
-          roulette play out in OBS.
+          Once everything above is set, try any of these events and watch the roulette
+          play out in OBS.
         </p>
         <img
           class="shot"
@@ -596,8 +593,8 @@
           alt="OBS preview showing the slot machine overlay landing on a weapon, helmet and armor result"
         />
         <p class="note">
-          Subs, resubs, gift subs, channel-point redemptions and bits power-ups
-          will now trigger the roulette live on stream.
+          Subs, resubs, gift subs, channel-point redemptions and bits power-ups will now
+          trigger the roulette live on stream.
         </p>
       </section>
 
