@@ -337,7 +337,17 @@ function process_pending_equips()
                     pause_equip_anim()
                     actor:move_to_slot(obj, req.slot)
                 end
-                -- resolved, don't requeue
+
+                -- resolved, don't requeue. Also stop tracking it in
+                -- last_given_in_slot (unless something newer already
+                -- overwrote that slot's entry) — otherwise a much later,
+                -- unrelated roll targeting this same slot number would
+                -- find this stale id via remove_in_slot() and release it
+                -- even though the player may have long since moved it out
+                -- of the slot into their own inventory by hand.
+                if last_given_in_slot[req.slot] == req.item_id then
+                    last_given_in_slot[req.slot] = nil
+                end
             else
                 req.tries = req.tries + 1
                 if req.tries < RETRY_LIMIT then
@@ -350,6 +360,10 @@ function process_pending_equips()
                             .. " item id "
                             .. req.item_id
                     )
+
+                    if last_given_in_slot[req.slot] == req.item_id then
+                        last_given_in_slot[req.slot] = nil
+                    end
                 end
             end
         end
