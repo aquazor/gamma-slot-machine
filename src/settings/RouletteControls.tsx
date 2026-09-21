@@ -11,6 +11,7 @@ interface Props {
   manualRoll: (count: number) => void;
   manualSpawn: (category: 'mutants' | 'enemies', rolls: number) => void;
   manualPerk: () => void;
+  manualNegativeEffect: () => void;
 }
 
 function RouletteControls({
@@ -22,6 +23,7 @@ function RouletteControls({
   manualRoll,
   manualSpawn,
   manualPerk,
+  manualNegativeEffect,
 }: Props) {
   return (
     <section className="set-section">
@@ -127,6 +129,13 @@ function RouletteControls({
         <span className="set-muted">Manual positive effect</span>
         <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
           Positive Effects
+        </button>
+      </div>
+
+      <div className="set-trigger">
+        <span className="set-muted">Manual negative effect</span>
+        <button className="set-btn" onClick={() => manualNegativeEffect()} disabled={triggerBusy}>
+          Negative Effects
         </button>
       </div>
 

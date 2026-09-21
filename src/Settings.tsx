@@ -248,6 +248,21 @@ export default function Settings() {
     }
   }, [refreshRouletteStatus]);
 
+  const manualNegativeEffect = useCallback(async (): Promise<void> => {
+    setTriggerBusy(true);
+
+    try {
+      await fetch(`${API}/roulette/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'negative', user: 'Streamer' }),
+      });
+    } finally {
+      setTriggerBusy(false);
+      refreshRouletteStatus();
+    }
+  }, [refreshRouletteStatus]);
+
   const selectPreset = useCallback(
     async (name: string): Promise<void> => {
       setRoulette((prev) => {
@@ -379,6 +394,7 @@ export default function Settings() {
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
                 manualPerk={manualPerk}
+                manualNegativeEffect={manualNegativeEffect}
               />
 
               <EnemyFactions />

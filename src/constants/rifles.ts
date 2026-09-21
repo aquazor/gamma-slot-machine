@@ -37,7 +37,7 @@ export const rifles = [
   },
   {
     id: 'wpn_ak101',
-    name: 'AK-101 [1]',
+    name: 'AK-101',
     repair: 'C',
     ammo: 'ammo_5.56x45_fmj;ammo_5.56x45_ss190',
   },
@@ -73,7 +73,7 @@ export const rifles = [
   },
   {
     id: 'wpn_ak12_m1',
-    name: 'AK-12 [m1]',
+    name: 'AK-12',
     repair: 'C',
     ammo: 'ammo_5.45x39_fmj;ammo_5.45x39_ep',
   },
@@ -337,7 +337,7 @@ export const rifles = [
   },
   {
     id: 'wpn_rpk74_16_drum',
-    name: 'RPK-16 LMG [drum]',
+    name: 'RPK-16 LMG Drum',
     repair: 'D',
     ammo: 'ammo_5.45x39_fmj;ammo_5.45x39_ep',
   },

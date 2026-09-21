@@ -11,6 +11,13 @@
 --   MONEY|<amount>             -- Give Money perk
 --   AMMO_MAGS|<count>          -- N magazines for whatever's in hand (Give Ammunition perk)
 --   MEDKIT|<item_id>|<count>   -- Medicine perk, one item per roll
+--   DROP_WEAPON                -- Negative effect: drops whatever ends up active
+--   BREAK_ITEM|<percent>       -- Negative effect: damages a random equipped item's condition
+--   TIME_FACTOR|<value>|<secs>   -- Negative effect: time_factor <value> for <secs>, then resets to 1
+--   EMPTY_POCKETS                 -- Negative effect: takes all of the actor's current money
+--                                    and drops a rough equivalent in money props nearby
+--   ALCOHOL|<amount>           -- Negative effect: ChangeAlcohol(amount), same as drinking vodka
+--   GIVE_JUNK|<item_id>|<count>   -- Negative effect: dead weight junk item, one roll
 --
 -- Changes vs the original loot-only bridge:
 --   * CHECK_INTERVAL 2000 -> 500 ms
@@ -139,6 +146,18 @@ local RETRY_LIMIT = 5        -- give up after this many failed attempts
 -- drawn into hand (actor:activate_slot) — same idea as Chaos Tricks'
 -- own equip_after_delay, which waits a beat after move_to_slot too
 local ACTIVATE_DELAY = 100   -- ms
+
+-- functions to run once ALL pending equip/activate work has fully
+-- drained (#pending_equips == 0) — used by DROP_WEAPON so it acts on
+-- whatever the actor ends up holding AFTER every WEAPON/OUTFIT/HELMET
+-- line in the same (or an overlapping) batch has actually resolved,
+-- instead of whatever happened to be active the instant the line was
+-- parsed, which could still be mid-equip from an earlier delivery.
+local pending_after_equip = {}
+
+local function queue_after_equip(fn)
+    pending_after_equip[#pending_after_equip + 1] = fn
+end
 
 -- suppress the weapon draw / item-swap animation while items are being
 -- given & equipped (actor_effects.set_animations(false),
@@ -275,6 +294,26 @@ local function queue_equip(item_id, slot)
     }
 end
 
+-- runs pending_after_equip callbacks (see queue_after_equip) once
+-- #pending_equips has actually drained to zero. Pulled out so it can be
+-- called both when the queue was already empty on entry and after this
+-- frame's processing empties it.
+local function drain_pending_after_equip()
+    if #pending_equips > 0 or #pending_after_equip == 0 then
+        return
+    end
+
+    local actions = pending_after_equip
+    pending_after_equip = {}
+
+    for _, fn in ipairs(actions) do
+        local ok, err = pcall(fn)
+        if not ok then
+            printf("GAMMA BRIDGE: pending_after_equip action error: " .. tostring(err))
+        end
+    end
+end
+
 -- runs every frame via actor_on_update, but each individual request
 -- is only actually attempted once its own next_try time has passed,
 -- so in practice it behaves like a 200ms-interval retry, not a
@@ -283,6 +322,7 @@ function process_pending_equips()
     tick_equip_anim()   -- must run every frame, even when the queue is empty
 
     if #pending_equips == 0 then
+        drain_pending_after_equip()
         return
     end
 
@@ -351,6 +391,8 @@ function process_pending_equips()
         end
     end
     pending_equips = still_pending
+
+    drain_pending_after_equip()
 end
 
 -- ========================================
@@ -885,6 +927,267 @@ local function handle_medkit(item_id, count_str)
 end
 
 -- ========================================
+-- NEGATIVE EFFECT HANDLERS
+-- ========================================
+-- Drop Weapon / Break Item / Time Factor / Empty Pockets / Drink Vodka /
+-- Give Junk. Every branch logs what it inspected and did, since these all
+-- touch live actor/item state and are the easiest thing to get subtly
+-- wrong.
+
+-- ---- Drop Weapon ----
+
+-- Deferred via queue_after_equip (see near pending_after_equip above) so
+-- this only ever acts once every WEAPON/OUTFIT/HELMET delivery already
+-- in flight — from this batch or an earlier one still catching up after
+-- a slow level load — has fully resolved. Dropping whatever's "active"
+-- the instant this line is parsed would risk dropping a stale item
+-- that's mid-equip instead of the last thing actually given.
+local function handle_drop_weapon()
+    printf(
+        "GAMMA BRIDGE: DROP_WEAPON queued, waiting for "
+            .. #pending_equips
+            .. " pending equip(s) to resolve first"
+    )
+
+    queue_after_equip(function()
+        local actor = db.actor
+        if not actor then
+            printf("GAMMA BRIDGE: DROP_WEAPON - actor not ready, skipping")
+            return
+        end
+
+        local weapon = actor:active_item()
+        if not weapon then
+            printf("GAMMA BRIDGE: DROP_WEAPON - no active item, nothing to drop")
+            return
+        end
+
+        local ok_section, section = pcall(function() return weapon:section() end)
+        printf("GAMMA BRIDGE: DROP_WEAPON - dropping active item: " .. tostring(ok_section and section or weapon))
+
+        local ok, err = pcall(function() actor:drop_item(weapon) end)
+        if ok then
+            printf("GAMMA BRIDGE: DROP_WEAPON - dropped successfully")
+        else
+            printf("GAMMA BRIDGE: DROP_WEAPON - drop failed: " .. tostring(err))
+        end
+    end)
+end
+
+-- ---- Break Item ----
+
+local BREAKABLE_SLOTS = { ITEM_SLOTS.outfit, ITEM_SLOTS.helmet }
+
+local function handle_break_item(percent_str)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local percent = tonumber(percent_str) or 10
+    if percent < 1 then percent = 1 end
+    if percent > 100 then percent = 100 end
+
+    local candidates = {}
+    for _, slot in ipairs(BREAKABLE_SLOTS) do
+        if actor:item_in_slot(slot) then
+            candidates[#candidates + 1] = slot
+        end
+    end
+
+    if #candidates == 0 then
+        printf("GAMMA BRIDGE: BREAK_ITEM - nothing equipped in outfit/helmet slot, skipping")
+        return
+    end
+
+    local slot = candidates[math.random(#candidates)]
+    local item = actor:item_in_slot(slot)
+
+    local ok, err = pcall(function()
+        local section = item:section()
+        local before = item:condition()
+        local after = math.max(0, before - percent / 100)
+        item:set_condition(after)
+        printf(
+            "GAMMA BRIDGE: BREAK_ITEM - slot "
+                .. slot
+                .. " ("
+                .. section
+                .. ") condition "
+                .. before
+                .. " -> "
+                .. after
+                .. " (-"
+                .. percent
+                .. "%)"
+        )
+    end)
+
+    if not ok then
+        printf("GAMMA BRIDGE: BREAK_ITEM error: " .. tostring(err))
+    end
+end
+
+-- ---- Time Factor ----
+
+local time_factor_active = false
+local time_factor_end_at = 0
+
+local function time_factor_off()
+    if not time_factor_active then
+        return
+    end
+
+    time_factor_active = false
+    printf("GAMMA BRIDGE: Time Factor off, time_factor reset to 1")
+
+    local ok, err = pcall(function() get_console():execute("time_factor 1") end)
+    if not ok then
+        printf("GAMMA BRIDGE: Time Factor reset error: " .. tostring(err))
+    end
+end
+
+local function handle_time_factor(value_str, seconds_str)
+    local value = tonumber(value_str) or 1
+    local seconds = tonumber(seconds_str) or 30
+    if seconds < 1 then seconds = 1 end
+
+    printf("GAMMA BRIDGE: Time Factor - time_factor " .. value .. " for " .. seconds .. "s")
+
+    local ok, err = pcall(function() get_console():execute("time_factor " .. value) end)
+    if not ok then
+        printf("GAMMA BRIDGE: Time Factor set error: " .. tostring(err))
+        return
+    end
+
+    time_factor_active = true
+    time_factor_end_at = time_global() + seconds * 1000
+end
+
+-- runs every frame via actor_on_update; turns itself off once the
+-- duration elapses, same shape as process_godmode
+function process_time_factor()
+    if not time_factor_active then
+        return
+    end
+
+    if time_global() >= time_factor_end_at then
+        time_factor_off()
+    end
+end
+
+-- ---- Empty Pockets ----
+
+-- Biggest bills first, matching negative-effects.data.json's empty-pockets
+-- moneyItems list. Greedy breakdown doesn't need to hit the amount taken
+-- exactly, just land close - leftover under 10 just isn't represented.
+local MONEY_PROP_ITEMS = {
+    { id = "money_5000", value = 5000 },
+    { id = "money_1000", value = 1000 },
+    { id = "money_500",  value = 500 },
+    { id = "money_100",  value = 100 },
+    { id = "money_50",   value = 50 },
+    { id = "money_10",   value = 10 },
+}
+
+local MONEY_PROP_MIN_DIST = 1
+local MONEY_PROP_MAX_DIST = 3
+local MONEY_PROP_MAX_COUNT = 40 -- safety cap so a rich actor doesn't spam the ground
+
+local function spawn_money_props(actor, amount)
+    local pos = actor:position()
+    local spawned = 0
+    local total_value = 0
+
+    for _, entry in ipairs(MONEY_PROP_ITEMS) do
+        while amount - total_value >= entry.value and spawned < MONEY_PROP_MAX_COUNT do
+            local spawn_pos = get_random_point_around(MONEY_PROP_MIN_DIST, MONEY_PROP_MAX_DIST, pos)
+            spawn_pos.y = fix_height(spawn_pos)
+
+            local se = alife_create(entry.id, spawn_pos, actor:level_vertex_id(), actor:game_vertex_id())
+            if se then
+                spawned = spawned + 1
+                total_value = total_value + entry.value
+            else
+                printf("GAMMA BRIDGE: EMPTY_POCKETS - alife_create failed for " .. entry.id)
+                break
+            end
+        end
+
+        if spawned >= MONEY_PROP_MAX_COUNT then
+            break
+        end
+    end
+
+    printf(
+        "GAMMA BRIDGE: EMPTY_POCKETS - spawned " .. spawned .. " money prop(s) worth ~"
+            .. total_value .. " (target " .. amount .. ")"
+    )
+end
+
+local EMPTY_POCKETS_KEEP = 2000 -- always leaves the actor with at least this much
+
+local function handle_empty_pockets()
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local current = actor:money()
+    local amount = current - EMPTY_POCKETS_KEEP
+
+    if amount <= 0 then
+        printf("GAMMA BRIDGE: EMPTY_POCKETS - actor has " .. current .. ", already at/under the " .. EMPTY_POCKETS_KEEP .. " floor, skipping")
+        return
+    end
+
+    actor:give_money(-amount)
+    printf("GAMMA BRIDGE: EMPTY_POCKETS - lost " .. amount .. " (kept " .. EMPTY_POCKETS_KEEP .. ")")
+
+    spawn_money_props(actor, amount)
+end
+
+-- ---- Drink Vodka ----
+
+-- Same call GAMMA/Anomaly's own vodka item uses internally — changes the
+-- actor's alcohol level directly, so the game's own drunk screen-sway
+-- effect kicks in without spawning or consuming any item.
+local function handle_alcohol(amount_str)
+    local actor = db.actor
+    if not actor then
+        return
+    end
+
+    local amount = tonumber(amount_str) or 0.2
+
+    local ok, err = pcall(function()
+        actor:cast_Actor():conditions():ChangeAlcohol(amount)
+    end)
+
+    if ok then
+        printf("GAMMA BRIDGE: ALCOHOL - increased by " .. amount)
+    else
+        printf("GAMMA BRIDGE: ALCOHOL error: " .. tostring(err))
+    end
+end
+
+-- ---- Junk Item ----
+
+local function handle_give_junk(item_id, count_str)
+    if not db.actor then
+        return
+    end
+
+    local count = tonumber(count_str) or 1
+    if count < 1 then count = 1 end
+
+    printf("GAMMA BRIDGE: GIVE_JUNK - giving " .. item_id .. " x" .. count)
+    for _ = 1, count do
+        alife_create_item(item_id, db.actor)
+    end
+end
+
+-- ========================================
 -- LINE DISPATCH
 -- ========================================
 
@@ -946,6 +1249,40 @@ local function handle_line(line)
     local medkit_id, medkit_count = line:match("^MEDKIT|([^|]+)|(%d+)$")
     if medkit_id then
         handle_medkit(medkit_id, medkit_count)
+        return
+    end
+
+    if line == "DROP_WEAPON" then
+        handle_drop_weapon()
+        return
+    end
+
+    local break_percent = line:match("^BREAK_ITEM|(%d+)$")
+    if break_percent then
+        handle_break_item(break_percent)
+        return
+    end
+
+    local time_factor_value, time_factor_seconds = line:match("^TIME_FACTOR|([%d%.]+)|(%d+)$")
+    if time_factor_value then
+        handle_time_factor(time_factor_value, time_factor_seconds)
+        return
+    end
+
+    if line == "EMPTY_POCKETS" then
+        handle_empty_pockets()
+        return
+    end
+
+    local alcohol_amount = line:match("^ALCOHOL|([%d%.]+)$")
+    if alcohol_amount then
+        handle_alcohol(alcohol_amount)
+        return
+    end
+
+    local junk_id, junk_count = line:match("^GIVE_JUNK|([^|]+)|(%d+)$")
+    if junk_id then
+        handle_give_junk(junk_id, junk_count)
         return
     end
 
@@ -1066,6 +1403,7 @@ local function register_update_callbacks()
     RegisterScriptCallback("actor_on_update", process_pending_equips)
     RegisterScriptCallback("actor_on_update", process_pending_spawns)
     RegisterScriptCallback("actor_on_update", process_godmode)
+    RegisterScriptCallback("actor_on_update", process_time_factor)
 end
 
 RegisterScriptCallback("actor_on_first_update", register_update_callbacks)
@@ -1073,7 +1411,8 @@ RegisterScriptCallback("actor_on_first_update", register_update_callbacks)
 RegisterScriptCallback("monster_on_death_callback", on_creature_death)
 RegisterScriptCallback("npc_on_death_callback", on_creature_death)
 RegisterScriptCallback("on_before_level_changing", on_level_change)
--- don't let Immortality persist stuck-on across a level change
+-- don't let Immortality / Time Factor persist stuck-on across a level change
 RegisterScriptCallback("on_before_level_changing", godmode_off)
+RegisterScriptCallback("on_before_level_changing", time_factor_off)
 
 printf("GAMMA BRIDGE: Callbacks registered")

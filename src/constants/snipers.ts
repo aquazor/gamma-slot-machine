@@ -127,7 +127,7 @@ export const snipers = [
   },
   {
     id: 'wpn_svd_m1',
-    name: 'SVD [m1]',
+    name: 'SVD',
     repair: 'D',
     ammo: 'ammo_7.62x54_7h1;ammo_7.62x54_7h14',
   },

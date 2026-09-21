@@ -85,7 +85,7 @@ export const pistols = [
   },
   {
     id: 'wpn_fort17',
-    name: 'Fort-17 [fort17]',
+    name: 'Fort-17',
     repair: 'A',
     ammo: 'ammo_9x18_fmj;ammo_9x18_pmm',
   },
@@ -157,7 +157,7 @@ export const pistols = [
   },
   {
     id: 'wpn_pm_custom',
-    name: 'Makarov PM Pistol 9x18 [custom]',
+    name: 'Makarov PM Pistol 9x18',
     repair: 'A',
     ammo: 'ammo_9x18_fmj;ammo_9x18_pmm',
   },
