@@ -109,7 +109,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_raptr',
-    name: 'RAPTR [raptr]',
+    name: 'RAPTR',
     repair: 'D',
     ammo: 'ammo_12x70_buck;ammo_12x76_zhekan',
   },
@@ -121,7 +121,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_saiga12s_m1',
-    name: 'Saiga-12 [saiga12s_m1]',
+    name: 'Saiga-12',
     repair: 'C',
     ammo: 'ammo_12x70_buck;ammo_12x76_zhekan',
   },
@@ -145,7 +145,7 @@ export const shotguns = [
   },
   {
     id: 'wpn_spas12_nimble',
-    name: 'SPAS-12 [nimble]',
+    name: 'SPAS-12 Nimble',
     repair: 'C',
     ammo: 'ammo_12x70_buck;ammo_12x76_zhekan',
   },

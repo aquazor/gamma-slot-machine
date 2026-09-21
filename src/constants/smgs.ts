@@ -7,13 +7,13 @@ export const smgs = [
   },
   {
     id: 'wpn_p90gamma',
-    name: 'FN P90 [gamma]',
+    name: 'FN P90',
     repair: 'C',
     ammo: 'ammo_5.7x28_ss195',
   },
   {
     id: 'wpn_p90_gs',
-    name: 'FN P90 [gs]',
+    name: 'FN P90 GS',
     repair: 'C',
     ammo: 'ammo_5.7x28_ss195',
   },

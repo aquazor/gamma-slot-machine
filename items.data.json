@@ -86,7 +86,7 @@
     },
     {
       "id": "wpn_fort17",
-      "name": "Fort-17 [fort17]",
+      "name": "Fort-17",
       "ammo": "ammo_9x18_fmj;ammo_9x18_pmm",
       "repair": "A"
     },
@@ -158,7 +158,7 @@
     },
     {
       "id": "wpn_pm_custom",
-      "name": "Makarov PM Pistol 9x18 [custom]",
+      "name": "Makarov PM Pistol 9x18",
       "ammo": "ammo_9x18_fmj;ammo_9x18_pmm",
       "repair": "A"
     },
@@ -392,7 +392,7 @@
     },
     {
       "id": "wpn_raptr",
-      "name": "RAPTR [raptr]",
+      "name": "RAPTR",
       "ammo": "ammo_12x70_buck;ammo_12x76_zhekan",
       "repair": "D"
     },
@@ -404,7 +404,7 @@
     },
     {
       "id": "wpn_saiga12s_m1",
-      "name": "Saiga-12 [saiga12s_m1]",
+      "name": "Saiga-12",
       "ammo": "ammo_12x70_buck;ammo_12x76_zhekan",
       "repair": "C"
     },
@@ -428,7 +428,7 @@
     },
     {
       "id": "wpn_spas12_nimble",
-      "name": "SPAS-12 [nimble]",
+      "name": "SPAS-12 Nimble",
       "ammo": "ammo_12x70_buck;ammo_12x76_zhekan",
       "repair": "C"
     },
@@ -488,13 +488,13 @@
     },
     {
       "id": "wpn_p90gamma",
-      "name": "FN P90 [gamma]",
+      "name": "FN P90",
       "ammo": "ammo_5.7x28_ss195",
       "repair": "C"
     },
     {
       "id": "wpn_p90_gs",
-      "name": "FN P90 [gs]",
+      "name": "FN P90 GS",
       "ammo": "ammo_5.7x28_ss195",
       "repair": "C"
     },
@@ -674,7 +674,7 @@
     },
     {
       "id": "wpn_ak101",
-      "name": "AK-101 [1]",
+      "name": "AK-101",
       "ammo": "ammo_5.56x45_fmj;ammo_5.56x45_ss190",
       "repair": "C"
     },
@@ -710,7 +710,7 @@
     },
     {
       "id": "wpn_ak12_m1",
-      "name": "AK-12 [m1]",
+      "name": "AK-12",
       "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep",
       "repair": "C"
     },
@@ -974,7 +974,7 @@
     },
     {
       "id": "wpn_rpk74_16_drum",
-      "name": "RPK-16 LMG [drum]",
+      "name": "RPK-16 LMG Drum",
       "ammo": "ammo_5.45x39_fmj;ammo_5.45x39_ep",
       "repair": "D"
     },
@@ -1178,7 +1178,7 @@
     },
     {
       "id": "wpn_svd_m1",
-      "name": "SVD [m1]",
+      "name": "SVD",
       "ammo": "ammo_7.62x54_7h1;ammo_7.62x54_7h14",
       "repair": "D"
     },
