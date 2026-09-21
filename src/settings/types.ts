@@ -35,7 +35,7 @@ export interface Reward {
   title: string;
   cost: number;
   enabled: boolean;
-  kind: 'loot' | 'spawn' | 'perk';
+  kind: 'loot' | 'spawn' | 'perk' | 'negative';
   category: 'mutants' | 'enemies' | null;
   count: number | null;
   rolls: number | null;
@@ -65,6 +65,16 @@ export interface Perk {
   icon: string | null;
   chance: number; // relative roll weight, e.g. 0.3 = 30%
   enabled: boolean;
+}
+
+export interface NegativeEffect {
+  key: string;
+  label: string;
+  description: string;
+  icon: string | null;
+  chance: number; // relative roll weight, e.g. 0.3 = 30%
+  enabled: boolean;
+  hasValueRoll: boolean;
 }
 
 export interface EnemyFaction {

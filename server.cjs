@@ -12,6 +12,7 @@ const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
 const perks = require('./positive-effects.cjs');
+const negativeEffects = require('./negative-effects.cjs');
 
 const { getGammaPath, MOD_NAME } = bridge;
 
@@ -603,11 +604,56 @@ app.post('/roulette/perks/reset', (req, res) => {
   res.json({ perks: perks.listPerks() });
 });
 
+app.get('/roulette/negative-effects', (req, res) => {
+  res.json({ effects: negativeEffects.listEffects() });
+});
+
+app.post('/roulette/negative-effects/toggle', (req, res) => {
+  const { key, enabled } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  negativeEffects.setEffectEnabled(key, Boolean(enabled));
+
+  console.log(`Roulette negative effect "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ effects: negativeEffects.listEffects() });
+});
+
+app.post('/roulette/negative-effects/chance', (req, res) => {
+  const { key, chance } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
+    return res.status(400).json({ error: 'chance must be a number' });
+  }
+
+  negativeEffects.setEffectChance(key, chance);
+
+  console.log(`Roulette negative effect "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
+
+  res.json({ effects: negativeEffects.listEffects() });
+});
+
+app.post('/roulette/negative-effects/reset', (req, res) => {
+  negativeEffects.resetEffects();
+
+  console.log('Roulette negative effects -> restored to defaults');
+
+  res.json({ effects: negativeEffects.listEffects() });
+});
+
 /*
  * Manual roll fired from the settings page (no Twitch event).
  *   { user, count }               -> loot roll
  *   { user, kind: "spawn", category: "mutants" | "enemies" }
  *   { user, kind: "perk" }
+ *   { user, kind: "negative" }
  */
 app.post('/roulette/trigger', (req, res) => {
   const { user, count, kind, category } = req.body || {};
@@ -625,6 +671,8 @@ app.post('/roulette/trigger', (req, res) => {
     };
   } else if (kind === 'perk') {
     event = { kind: 'manual-perk', user: who };
+  } else if (kind === 'negative') {
+    event = { kind: 'manual-negative', user: who };
   } else {
     event = {
       kind: 'manual',

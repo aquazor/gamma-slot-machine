@@ -1,7 +1,7 @@
 /*
  * ---------------------------------------------------------
  * NEGATIVE EFFECTS  (Drop Weapon / Empty Pockets / Break Item / Time Factor /
- * Drink Vodka / Hunger / Junk Item)
+ * Drink Vodka / Junk Item)
  * ---------------------------------------------------------
  * Same dual-slot shape as positive-effects.cjs: slot 1 picks ONE effect
  * (weighted by each effect's own `chance` among enabled ones), slot 2
@@ -13,7 +13,7 @@
  * among them and turns the winner into gamma-bridge command lines — see
  * GAMMA MOD/gamedata/scripts/zzzzzz_slot_machine_bridge.script for the
  * matching DROP_WEAPON / BREAK_ITEM / TIME_FACTOR / EMPTY_POCKETS / ALCOHOL /
- * HUNGER / GIVE_JUNK line handlers.
+ * GIVE_JUNK line handlers.
  */
 
 const fs = require('fs');
@@ -170,11 +170,10 @@ function resetEffects() {
 
 const EFFECT_DESCRIPTIONS = {
   'drop-weapon': "Drops whatever's currently in hand",
-  'empty-pockets': 'Takes every ruble the streamer is carrying and drops it on the ground',
-  'break-item': 'Damages a random equipped weapon/armor/helmet',
+  'empty-pockets': 'Takes almost all the streamer\'s money (keeps a small floor) and drops it on the ground',
+  'break-item': 'Damages the streamer\'s equipped armor or helmet',
   'time-factor': 'Speeds up or slows down in-game time for a while',
   alcohol: 'Instant drunk effect, no vodka required',
-  hunger: 'Drops satiety straight to critical',
   'junk-item': 'Dead weight - a useless item takes up inventory space',
 };
 
@@ -252,7 +251,6 @@ function rollNegativeEffect() {
  *                 along as `speedValue`, only used to build the
  *                 TIME_FACTOR command line.
  *   alcohol:      value = an alcohol amount to add (ChangeAlcohol)
- *   hunger:       value = the satiety level to force the actor down to
  *
  * `forceBonus` (reserved for a future bits-power-up "always worst case"
  * treatment, same idea as positive-effects.cjs's own forceBonus) makes
@@ -307,7 +305,10 @@ function rollEffectValue(key, forceBonus) {
       if (bonus && bonus.type === 'add') {
         finalSeconds = seconds + bonus.value;
       } else if (bonus && bonus.type === 'multiply') {
-        finalSeconds = seconds * bonus.value;
+        // x1.5 (and other non-integer multipliers) can land on a
+        // fractional second — the Lua bridge's TIME_FACTOR dispatch only
+        // matches whole seconds (%d+), so round before it ever leaves here.
+        finalSeconds = Math.round(seconds * bonus.value);
       }
 
       return {
@@ -323,27 +324,18 @@ function rollEffectValue(key, forceBonus) {
     }
 
     case 'alcohol': {
-      const base = Number.isFinite(def.value) ? def.value : 0.2;
+      const base = round2(randFloat(def.min ?? 0.05, def.max ?? 0.2));
       const bonus = rollWeightedBonus(def.bonuses, forceBonus);
       const finalValue = bonus && bonus.type === 'multiply' ? round2(base * bonus.value) : base;
+      const basePercent = Math.round(base * 100);
+      const finalPercent = Math.round(finalValue * 100);
 
       return {
         value: finalValue,
-        label: bonus ? `+${base} (${bonus.label} bonus)` : `+${base}`,
+        label: bonus ? `${basePercent}% (${bonus.label} bonus)` : `${basePercent}%`,
         icon: null,
         bonus: bonus ? { key: bonus.key, label: bonus.label, type: bonus.type } : null,
-        fullLabel: `+${finalValue}`,
-      };
-    }
-
-    case 'hunger': {
-      const value = round2(randFloat(def.min, def.max));
-
-      return {
-        value,
-        label: `${Math.round(value * 100)}%`,
-        icon: null,
-        fullLabel: `${Math.round(value * 100)}% satiety`,
+        fullLabel: `${finalPercent}%`,
       };
     }
 
@@ -398,18 +390,12 @@ function effectValuePool(key) {
     }
 
     case 'alcohol': {
-      const base = Number.isFinite(def.value) ? def.value : 0.2;
+      const min = Number.isFinite(def.min) ? def.min : 0.05;
+      const max = Number.isFinite(def.max) ? def.max : 0.2;
 
       return [
-        { label: `${base}`, icon: null },
-        { label: `${round2(base * 2)}`, icon: null },
-      ];
-    }
-
-    case 'hunger': {
-      return [
-        { label: `${def.min}`, icon: null },
-        { label: `${def.max}`, icon: null },
+        { label: `${Math.round(min * 100)}%`, icon: null },
+        { label: `${Math.round(max * 100)}%`, icon: null },
       ];
     }
 
@@ -467,13 +453,6 @@ function negativeEffectCommandLines(effect, effectValue, user) {
     case 'alcohol':
       if (effectValue) {
         lines.push(`ALCOHOL|${effectValue.value}`);
-      }
-
-      break;
-
-    case 'hunger':
-      if (effectValue) {
-        lines.push(`HUNGER|${effectValue.value}`);
       }
 
       break;

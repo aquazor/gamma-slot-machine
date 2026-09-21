@@ -17,7 +17,6 @@
 --   EMPTY_POCKETS                 -- Negative effect: takes all of the actor's current money
 --                                    and drops a rough equivalent in money props nearby
 --   ALCOHOL|<amount>           -- Negative effect: ChangeAlcohol(amount), same as drinking vodka
---   HUNGER|<value>             -- Negative effect: sets satiety directly
 --   GIVE_JUNK|<item_id>|<count>   -- Negative effect: dead weight junk item, one roll
 --
 -- Changes vs the original loot-only bridge:
@@ -931,7 +930,7 @@ end
 -- NEGATIVE EFFECT HANDLERS
 -- ========================================
 -- Drop Weapon / Break Item / Time Factor / Empty Pockets / Drink Vodka /
--- Hunger. Every branch logs what it inspected and did, since these all
+-- Give Junk. Every branch logs what it inspected and did, since these all
 -- touch live actor/item state and are the easiest thing to get subtly
 -- wrong.
 
@@ -977,7 +976,7 @@ end
 
 -- ---- Break Item ----
 
-local BREAKABLE_SLOTS = { ITEM_SLOTS.weapon2, ITEM_SLOTS.weapon3, ITEM_SLOTS.outfit, ITEM_SLOTS.helmet }
+local BREAKABLE_SLOTS = { ITEM_SLOTS.outfit, ITEM_SLOTS.helmet }
 
 local function handle_break_item(percent_str)
     local actor = db.actor
@@ -997,7 +996,7 @@ local function handle_break_item(percent_str)
     end
 
     if #candidates == 0 then
-        printf("GAMMA BRIDGE: BREAK_ITEM - nothing equipped in any weapon/outfit/helmet slot, skipping")
+        printf("GAMMA BRIDGE: BREAK_ITEM - nothing equipped in outfit/helmet slot, skipping")
         return
     end
 
@@ -1126,20 +1125,24 @@ local function spawn_money_props(actor, amount)
     )
 end
 
+local EMPTY_POCKETS_KEEP = 2000 -- always leaves the actor with at least this much
+
 local function handle_empty_pockets()
     local actor = db.actor
     if not actor then
         return
     end
 
-    local amount = actor:money()
+    local current = actor:money()
+    local amount = current - EMPTY_POCKETS_KEEP
+
     if amount <= 0 then
-        printf("GAMMA BRIDGE: EMPTY_POCKETS - actor has no money, skipping")
+        printf("GAMMA BRIDGE: EMPTY_POCKETS - actor has " .. current .. ", already at/under the " .. EMPTY_POCKETS_KEEP .. " floor, skipping")
         return
     end
 
     actor:give_money(-amount)
-    printf("GAMMA BRIDGE: EMPTY_POCKETS - lost " .. amount)
+    printf("GAMMA BRIDGE: EMPTY_POCKETS - lost " .. amount .. " (kept " .. EMPTY_POCKETS_KEEP .. ")")
 
     spawn_money_props(actor, amount)
 end
@@ -1165,27 +1168,6 @@ local function handle_alcohol(amount_str)
         printf("GAMMA BRIDGE: ALCOHOL - increased by " .. amount)
     else
         printf("GAMMA BRIDGE: ALCOHOL error: " .. tostring(err))
-    end
-end
-
--- ---- Hunger ----
-
-local function handle_hunger(value_str)
-    local actor = db.actor
-    if not actor then
-        return
-    end
-
-    local value = tonumber(value_str) or 0.15
-
-    local ok, err = pcall(function()
-        local before = actor.satiety
-        actor.satiety = value
-        printf("GAMMA BRIDGE: HUNGER - satiety " .. tostring(before) .. " -> " .. value)
-    end)
-
-    if not ok then
-        printf("GAMMA BRIDGE: HUNGER error: " .. tostring(err))
     end
 end
 
@@ -1295,12 +1277,6 @@ local function handle_line(line)
     local alcohol_amount = line:match("^ALCOHOL|([%d%.]+)$")
     if alcohol_amount then
         handle_alcohol(alcohol_amount)
-        return
-    end
-
-    local hunger_value = line:match("^HUNGER|([%d%.]+)$")
-    if hunger_value then
-        handle_hunger(hunger_value)
         return
     end
 

@@ -81,11 +81,13 @@ interface Job {
   user: string;
   label: string;
   kind: string;
-  mode?: 'loot' | 'spawn' | 'perk';
+  mode?: 'loot' | 'spawn' | 'perk' | 'negative';
   category?: string;
   spawnPool?: SpawnOption[];
   perkPool?: SpawnOption[]; // perk roll's slot 1 (which perk) filler
   perkValuePool?: SpawnOption[]; // perk roll's slot 2 (its value) filler
+  effectPool?: SpawnOption[]; // negative effect roll's slot 1 (which effect) filler
+  effectValuePool?: SpawnOption[]; // negative effect roll's slot 2 (its value) filler
   preset?: string;
   grades?: Partial<Record<Slot, string[]>>;
   results: RollResult[];
@@ -135,6 +137,7 @@ const KIND_INFO: Record<string, { text: string; className: string }> = {
   manual: { text: 'Manual', className: 'ov-kind--manual' },
   'manual-spawn': { text: 'Manual', className: 'ov-kind--manual' },
   'manual-perk': { text: 'Manual', className: 'ov-kind--manual' },
+  'manual-negative': { text: 'Manual', className: 'ov-kind--manual' },
 };
 
 function kindInfo(kind: string): { text: string; className: string } {
@@ -876,6 +879,30 @@ export default function Overlay() {
                 key={`${job.id}-${index}`}
                 title={title}
                 pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
+                label={result.label ?? result.name ?? '???'}
+                resultText={result.name ?? '???'}
+                targetIcon={result.icon}
+                spin={spinning[index] ?? false}
+                landed={landed[index] ?? false}
+                hidden={!started}
+              />
+            );
+          })
+        ) : job.mode === 'negative' ? (
+          // slot 0 = which effect, slot 1 (if present) = that effect's
+          // rolled value — some effects (Drop Weapon, Empty Pockets) have
+          // no second roll at all, so `job.results` may be length 1; the
+          // spin/landed timing in runJob already keys off results.length,
+          // so a single-entry job just plays one reel.
+          job.results.map((result, index) => {
+            const title = index === 1 ? 'Amount' : 'Negative Effect';
+            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+
+            return (
+              <SpawnReel
+                key={`${job.id}-${index}`}
+                title={title}
+                pool={(index === 1 ? job.effectValuePool : job.effectPool) ?? []}
                 label={result.label ?? result.name ?? '???'}
                 resultText={result.name ?? '???'}
                 targetIcon={result.icon}

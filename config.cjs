@@ -91,6 +91,16 @@ const CHANNEL_POINT_REWARDS = [
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
   },
+  {
+    key: 'negative-effects',
+    title: '[SPIN] Negative Effects',
+    cost: 3000,
+    prompt: 'Roll a random negative effect on the streamer: dropped weapon, lost money, '
+      + 'broken gear, time warp, drunk, or a junk item.',
+    kind: 'negative',
+    maxPerUserPerStream: 2,
+    cooldownSeconds: 60,
+  },
 ];
 
 // Titles this app used to manage but has since consolidated away. Deleted
@@ -119,6 +129,7 @@ const CUSTOM_POWER_UPS = [
   { title: '[SPIN] Spawn Mutants', kind: 'spawn', category: 'mutants' },
   { title: '[SPIN] Loot Roll', kind: 'loot' },
   { title: '[SPIN] Positive Effects', kind: 'perk' },
+  { title: '[SPIN] Negative Effects', kind: 'negative' },
 ];
 
 // Difficulty presets for the Twitch roulette — the streamer switches

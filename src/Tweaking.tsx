@@ -2,6 +2,7 @@ import './Settings.css';
 
 import Navbar from './Navbar';
 import PositiveEffects from './settings/PositiveEffects';
+import NegativeEffects from './settings/NegativeEffects';
 import SpawnBonuses from './settings/SpawnBonuses';
 
 export default function Tweaking() {
@@ -20,6 +21,8 @@ export default function Tweaking() {
           <SpawnBonuses />
 
           <PositiveEffects />
+
+          <NegativeEffects />
         </div>
       </div>
     </>

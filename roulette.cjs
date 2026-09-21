@@ -5,6 +5,7 @@ const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
 const perks = require('./positive-effects.cjs');
+const negativeEffects = require('./negative-effects.cjs');
 const {
   PRESETS,
   DEFAULT_PRESET,
@@ -191,6 +192,10 @@ function planForEvent(event, rewardMap) {
         return { mode: 'perk', label: name.toUpperCase() };
       }
 
+      if (def.kind === 'negative') {
+        return { mode: 'negative', label: name.toUpperCase() };
+      }
+
       return {
         mode: 'loot',
         label: name.toUpperCase(),
@@ -211,6 +216,9 @@ function planForEvent(event, rewardMap) {
 
     case 'manual-perk':
       return { mode: 'perk', label: 'MANUAL POSITIVE EFFECT' };
+
+    case 'manual-negative':
+      return { mode: 'negative', label: 'MANUAL NEGATIVE EFFECT' };
 
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
@@ -253,6 +261,10 @@ function planForEvent(event, rewardMap) {
 
       if (def.kind === 'perk') {
         return { mode: 'perk', label, forceBonus: true };
+      }
+
+      if (def.kind === 'negative') {
+        return { mode: 'negative', label, forceBonus: true };
       }
 
       return { mode: 'loot', label, count: 3 };
@@ -406,6 +418,8 @@ class Roulette extends EventEmitter {
       job = this._buildSpawnJob(event, plan);
     } else if (plan.mode === 'perk') {
       job = this._buildPerkJob(event, plan);
+    } else if (plan.mode === 'negative') {
+      job = this._buildNegativeEffectJob(event, plan);
     } else {
       job = this._buildLootJob(event, plan);
     }
@@ -506,6 +520,67 @@ class Roulette extends EventEmitter {
           icon: perkValue.icon,
         },
       ],
+      createdAt: Date.now(),
+    };
+  }
+
+  /*
+   * A negative effect roll — same dual-slot shape as _buildPerkJob, except
+   * some effects (Drop Weapon, Empty Pockets) have no second roll at all
+   * (negativeEffects.hasValueRoll === false): `results` then has just the
+   * one entry and the overlay should render a single reel for those.
+   */
+  _buildNegativeEffectJob(event, plan) {
+    const effect = negativeEffects.rollNegativeEffect();
+
+    if (!effect) {
+      console.error('Roulette: no negative effects enabled');
+
+      return null;
+    }
+
+    const effectValue = effect.hasValueRoll
+      ? negativeEffects.rollEffectValue(effect.key, Boolean(plan.forceBonus))
+      : null;
+
+    if (effect.hasValueRoll && !effectValue) {
+      console.error(`Roulette: negative effect "${effect.key}" has no rollable value`);
+
+      return null;
+    }
+
+    const results = [
+      {
+        slot: 'negative',
+        name: effect.label,
+        label: effect.label,
+        icon: effect.icon,
+      },
+    ];
+
+    if (effectValue) {
+      results.push({
+        slot: 'negative-value',
+        name: effectValue.fullLabel || effectValue.label,
+        label: effectValue.label,
+        icon: effectValue.icon,
+      });
+    }
+
+    return {
+      id: `negative_${Date.now()}_${++this._seq}`,
+      user: event.user || 'Anonymous',
+      label: plan.label,
+      mode: 'negative',
+      kind: event.kind,
+      effect,
+      effectValue,
+      bonus: effectValue && effectValue.bonus
+        ? { key: effectValue.bonus.key, label: '', type: effectValue.bonus.type }
+        : null,
+      effectPool: negativeEffects.listEffects().map((e) => ({ label: e.label, icon: e.icon })),
+      effectValuePool: effectValue ? negativeEffects.effectValuePool(effect.key) : [],
+      results,
       createdAt: Date.now(),
     };
   }
@@ -663,6 +738,10 @@ class Roulette extends EventEmitter {
     } else if (job.mode === 'perk') {
       give = bridge.writeCommandLines(
         perks.perkCommandLines(job.perk, job.perkValue, job.user),
+      );
+    } else if (job.mode === 'negative') {
+      give = bridge.writeCommandLines(
+        negativeEffects.negativeEffectCommandLines(job.effect, job.effectValue, job.user),
       );
     } else {
       give = bridge.giveLoadout({
