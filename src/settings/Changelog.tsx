@@ -6,6 +6,31 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-22',
+    items: [
+      'Added a new roll outcome, "Negative Effects" — Drop Weapon, Empty Pockets, Break Item, Time Factor, Drink Vodka, or Junk Item, picked at random (weighted odds among whichever are enabled in Settings). Triggered by its own channel-point reward and bits power-up ("[SPIN] Negative Effects")',
+      'Most Negative Effects roll a second reel for the specific value — how much condition Break Item strips, how strong and how long Time Factor runs, how drunk Drink Vodka gets you, or which junk item you\'re stuck with. Drop Weapon and Empty Pockets are single-shot with no second roll',
+      'Break Item, Time Factor and Drink Vodka each have their own chance of a bonus on top — extra % damage or a double for Break Item, extra seconds/double/1.5x duration for Time Factor, a 1.5x or double dose for Drink Vodka',
+      'Break Item only targets your armor or helmet now, never your weapon',
+      'Empty Pockets always leaves you with at least 2000 rubles instead of taking everything, and drops the lost cash on the ground near you as spendable props',
+      'Added a Negative Effects section to the Tweaking page, same as Positive Effects — enable/disable each one and edit its roll chance as a percentage',
+      'The Bits Power-ups list and setup guide now include "[SPIN] Negative Effects"',
+    ],
+  },
+  {
+    date: '2026-09-21',
+    items: [
+      'Fixed a bug where giving a new weapon while a different weapon was already equipped in another slot could remove the wrong one',
+      'A newly given weapon in your second or third weapon slot now draws into your hand automatically instead of just sitting in your inventory',
+    ],
+  },
+  {
+    date: '2026-09-18',
+    items: [
+      'Fixed a crash that could happen when a weapon or ammo delivery landed right as the game was still finishing loading',
+    ],
+  },
+  {
     date: '2026-09-17',
     items: [
       'Added a "Mod install" section in Settings — install or uninstall the mod directly into your Anomaly folder in one click, with a native folder browser for GAMMA/Anomaly if auto-detection can\'t find them. Manual installs into GAMMA\\mods keep working too',
