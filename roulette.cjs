@@ -132,16 +132,16 @@ function randomSlotCount() {
 
 /*
  * Every subscription-family event (new sub, resub, single gift) rolls
- * one of loot / enemy squads / mutants / a perk with equal 1/4 odds, then
- * a random 1-3 count for loot/spawn — unless `forceTriple` (a multi-sub
- * gift bomb), which always rolls exactly 3. Perks have no count to scale
- * (one perk is one perk), so `forceTriple` only affects loot/spawn odds
- * of landing on this outcome in the first place, not what happens once it
- * does. Which outcome landed is only visible once the reels stop, same as
- * any other roll.
+ * one of loot / enemy squads / mutants / a perk / a negative effect with
+ * equal 1/5 odds, then a random 1-3 count for loot/spawn — unless
+ * `forceTriple` (a multi-sub gift bomb), which always rolls exactly 3.
+ * Perks and negative effects have no count to scale (one is one), so
+ * `forceTriple` only affects loot/spawn odds of landing on this outcome
+ * in the first place, not what happens once it does. Which outcome landed
+ * is only visible once the reels stop, same as any other roll.
  */
 function subEventOutcome(label, forceTriple) {
-  const category = pick(['loot', 'enemies', 'mutants', 'perk']);
+  const category = pick(['loot', 'enemies', 'mutants', 'perk', 'negative']);
   const rolls = forceTriple ? 3 : randomSlotCount();
 
   if (category === 'loot') {
@@ -150,6 +150,10 @@ function subEventOutcome(label, forceTriple) {
 
   if (category === 'perk') {
     return { mode: 'perk', label };
+  }
+
+  if (category === 'negative') {
+    return { mode: 'negative', label };
   }
 
   // forceTriple (a multi-sub gift bomb) also guarantees a spawn bonus
