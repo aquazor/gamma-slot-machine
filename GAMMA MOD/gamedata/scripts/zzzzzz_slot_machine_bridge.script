@@ -135,17 +135,10 @@ local pending_equips = {}
 local RETRY_INTERVAL = 200   -- ms between attempts
 local RETRY_LIMIT = 5        -- give up after this many failed attempts
 
--- slot -> item id of the last item WE gave for that slot, whether or not
--- it's actually been equipped yet. Equipping only happens later, via
--- process_pending_equips's move_to_slot — so if two WEAPON/OUTFIT/HELMET
--- lines land in the same check_bridge() batch (e.g. two loot rolls that
--- piled up in command.txt while the game was loading), the second one's
--- remove_in_slot() would otherwise only see the actor's still-unchanged
--- live slot, miss the first roll's freshly-created-but-not-yet-equipped
--- item entirely, and leave it sitting as a loose inventory item once
--- process_pending_equips tries to equip both into the same slot. This
--- table lets remove_in_slot clean up that not-yet-equipped item too.
-local last_given_in_slot = {}
+-- short pause between a weapon landing in its slot and actually being
+-- drawn into hand (actor:activate_slot) — same idea as Chaos Tricks'
+-- own equip_after_delay, which waits a beat after move_to_slot too
+local ACTIVATE_DELAY = 100   -- ms
 
 -- suppress the weapon draw / item-swap animation while items are being
 -- given & equipped (actor_effects.set_animations(false),
@@ -239,39 +232,24 @@ local function remove_in_slot(slot)
         return
     end
 
-    -- a not-yet-equipped item this same run already gave for this slot
-    -- (see last_given_in_slot above): re-target its still-pending request
-    -- to release instead of equip, rather than trying to alife_release it
-    -- here directly. A freshly alife_create_item'd object is often not
-    -- yet "online" (queryable via level.object_by_id) for a frame or
-    -- more — releasing it synchronously here just silently no-ops on a
-    -- nil object, and dropping its pending_equips entry regardless left
-    -- it stuck forever: never equipped, never released, just sitting in
-    -- inventory. Reusing process_pending_equips's existing retry-until-
-    -- found loop for the release instead avoids that race entirely.
-    local pending_id = last_given_in_slot[slot]
-    if pending_id then
-        local retargeted = false
-
-        for _, req in ipairs(pending_equips) do
-            if req.item_id == pending_id then
-                req.action = "release"
-                retargeted = true
-            end
+    -- Cancel any not-yet-equipped request already queued for this same
+    -- slot (e.g. two loot rolls landed in the same check_bridge() batch
+    -- before the first one's item was even equipped yet) — retarget it
+    -- to release instead of equip, rather than trying to alife_release a
+    -- freshly-created object here directly (it's often not yet "online"/
+    -- queryable via level.object_by_id for a frame or more).
+    -- pending_equips is inherently transient — entries disappear once
+    -- resolved — so this can never go stale the way remembering "the
+    -- last item id we gave this slot" in a separate table did.
+    for _, req in ipairs(pending_equips) do
+        if req.slot == slot and req.action == "equip" then
+            req.action = "release"
         end
-
-        if not retargeted then
-            -- nothing pending for it (shouldn't normally happen) — fall
-            -- back to a direct, best-effort release
-            local pending_obj = level.object_by_id(pending_id)
-            if pending_obj then
-                alife_release(pending_obj)
-            end
-        end
-
-        last_given_in_slot[slot] = nil
     end
 
+    -- whatever's actually sitting in the slot right now, however it got
+    -- there (equipped by us earlier, or moved there by the player by
+    -- hand) — same as Chaos Tricks' own trigger_change_weapon.
     local current = actor:item_in_slot(slot)
     if current then
         alife_release(current)
@@ -288,8 +266,6 @@ local function get_weapon_target_slot()
 end
 
 local function queue_equip(item_id, slot)
-    last_given_in_slot[slot] = item_id
-
     pending_equips[#pending_equips + 1] = {
         item_id = item_id,
         slot = slot,
@@ -322,6 +298,13 @@ function process_pending_equips()
         if now < req.next_try then
             -- not time to retry yet, keep waiting as-is
             still_pending[#still_pending + 1] = req
+        elseif req.action == "activate" then
+            -- short delay after a weapon landed in its slot, before
+            -- actually drawing it into hand — mirrors Chaos Tricks'
+            -- equip_after_delay, which does the same short wait before
+            -- its own actor:activate_slot() call
+            pcall(function() actor:activate_slot(req.slot) end)
+            -- resolved, don't requeue
         else
             local obj = level.object_by_id(req.item_id)
 
@@ -336,18 +319,21 @@ function process_pending_equips()
                     printf("GAMMA BRIDGE: equip attempt for item id " .. req.item_id .. " at " .. now)
                     pause_equip_anim()
                     actor:move_to_slot(obj, req.slot)
-                end
 
-                -- resolved, don't requeue. Also stop tracking it in
-                -- last_given_in_slot (unless something newer already
-                -- overwrote that slot's entry) — otherwise a much later,
-                -- unrelated roll targeting this same slot number would
-                -- find this stale id via remove_in_slot() and release it
-                -- even though the player may have long since moved it out
-                -- of the slot into their own inventory by hand.
-                if last_given_in_slot[req.slot] == req.item_id then
-                    last_given_in_slot[req.slot] = nil
+                    -- only weapon slots have an "active/drawn" concept —
+                    -- outfits/helmets are worn passively just by sitting
+                    -- in their slot
+                    if req.slot == ITEM_SLOTS.weapon2 or req.slot == ITEM_SLOTS.weapon3 then
+                        still_pending[#still_pending + 1] = {
+                            item_id = req.item_id,
+                            slot = req.slot,
+                            action = "activate",
+                            tries = 0,
+                            next_try = now + ACTIVATE_DELAY,
+                        }
+                    end
                 end
+                -- resolved, don't requeue
             else
                 req.tries = req.tries + 1
                 if req.tries < RETRY_LIMIT then
@@ -360,10 +346,6 @@ function process_pending_equips()
                             .. " item id "
                             .. req.item_id
                     )
-
-                    if last_given_in_slot[req.slot] == req.item_id then
-                        last_given_in_slot[req.slot] = nil
-                    end
                 end
             end
         end
