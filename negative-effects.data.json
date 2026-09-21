@@ -1,0 +1,184 @@
+{
+  "_comment": "Negative effect roll definitions - same dual-slot shape as positive-effects.data.json: slot 1 picks ONE effect (weighted by each effect's own `chance` among enabled ones - defaults to 1/equal weight if omitted). Slot 2 rolls that effect's own value, UNLESS `hasValueRoll` is false (Drop Weapon / Empty Pockets), in which case there's no second roll at all - the effect is single-shot. `min`/`max` roll a plain random value in that range; `bonuses` is the same at-most-one-applies array positive-effects.cjs uses (add/multiply), rolled on TOP of that base value. Time Factor is shaped like Immortality: `min`/`max` roll the DURATION in seconds - the actual speed multiplier isn't rolled/shown as slot 2 at all, `ranges` just picks one of the two disjoint speed bands (slower or faster, never in between) behind the scenes each time it fires. Alcohol has no min/max - `value` is the fixed base amount, only whether its bonus lands is random. Empty Pockets' `moneyItems` (id + ruble value, real GAMMA money-prop sections) mirrors the MONEY_PROP_ITEMS table in the Lua bridge, which greedily breaks the lost amount into these denominations and drops them on the ground near the actor - the JS side never sends the breakdown, EMPTY_POCKETS is still a bare command, the Lua handler works it out from actor:money() itself. Junk Item is a second effect whose slot 2 IS the item roll: `items` is a flat list of `{id, label, icon, count?}` (count defaults to 1) - picks one at random and gives that many via GIVE_JUNK. Real GAMMA/Anomaly item ids only where relevant - unknown sections are just skipped in-game rather than crashing anything.",
+  "drop-weapon": {
+    "label": "Drop Weapon",
+    "icon": "/negative-effects-icons/drop_weapon.png",
+    "hasValueRoll": false
+  },
+  "empty-pockets": {
+    "label": "Empty Pockets",
+    "icon": "/negative-effects-icons/empty_pockets.png",
+    "hasValueRoll": false,
+    "moneyItems": [
+      { "id": "money_10", "value": 10, "icon": "/money-icons/money_10.png" },
+      { "id": "money_50", "value": 50, "icon": "/money-icons/money_50.png" },
+      { "id": "money_100", "value": 100, "icon": "/money-icons/money_100.png" },
+      { "id": "money_500", "value": 500, "icon": "/money-icons/money_500.png" },
+      { "id": "money_1000", "value": 1000, "icon": "/money-icons/money_1000.png" },
+      { "id": "money_5000", "value": 5000, "icon": "/money-icons/money_5000.png" }
+    ]
+  },
+  "break-item": {
+    "label": "Break Item",
+    "icon": "/negative-effects-icons/break_item.png",
+    "min": 5,
+    "max": 20,
+    "fillerNumbers": [5, 10, 15, 20, 25, 30, 52, 67, 100, 99],
+    "bonuses": [
+      {
+        "key": "break-item-double",
+        "chance": 0.15,
+        "type": "multiply",
+        "value": 2,
+        "label": "x2"
+      },
+      {
+        "key": "break-item-plus5",
+        "chance": 0.15,
+        "type": "add",
+        "value": 5,
+        "label": "+5%"
+      },
+      {
+        "key": "break-item-plus10",
+        "chance": 0.1,
+        "type": "add",
+        "value": 10,
+        "label": "+10%"
+      }
+    ]
+  },
+  "time-factor": {
+    "label": "Time Factor",
+    "icon": "/negative-effects-icons/time_factor.png",
+    "min": 30,
+    "max": 60,
+    "fillerNumbers": [30, 40, 45, 52, 60, 67, 69, 90, 120, 600, 1337, 1000],
+    "ranges": [
+      { "min": 0.5, "max": 0.75 },
+      { "min": 1.25, "max": 1.5 }
+    ],
+    "bonuses": [
+      {
+        "key": "time-factor-plus15",
+        "chance": 0.15,
+        "type": "add",
+        "value": 15,
+        "label": "+15s"
+      },
+      {
+        "key": "time-factor-double",
+        "chance": 0.15,
+        "type": "multiply",
+        "value": 2,
+        "label": "x2"
+      },
+      {
+        "key": "time-factor-plus30",
+        "chance": 0.1,
+        "type": "add",
+        "value": 30,
+        "label": "+30s"
+      }
+    ]
+  },
+  "alcohol": {
+    "label": "Drink Vodka",
+    "icon": "/negative-effects-icons/vodka.png",
+    "value": 0.2,
+    "bonuses": [
+      {
+        "key": "alcohol-double",
+        "chance": 0.2,
+        "type": "multiply",
+        "value": 2,
+        "label": "x2"
+      }
+    ]
+  },
+  "hunger": {
+    "label": "Hunger",
+    "icon": "/negative-effects-icons/hunger.png",
+    "min": 0.05,
+    "max": 0.2
+  },
+  "junk-item": {
+    "label": "Junk Item",
+    "icon": "/negative-effects-icons/junk_item.png",
+    "items": [
+      {
+        "id": "prop_tv",
+        "label": "TV",
+        "icon": "/negative-effects-icons/junk/prop_tv.png"
+      },
+      {
+        "id": "explo_balon_gas",
+        "label": "Gas Balloon",
+        "icon": "/negative-effects-icons/junk/explo_balon_gas.png"
+      },
+      {
+        "id": "decor_trophie9",
+        "label": "Boar Trophy",
+        "icon": "/negative-effects-icons/junk/decor_trophie9.png"
+      },
+      {
+        "id": "prop_monitor",
+        "label": "Monitor",
+        "icon": "/negative-effects-icons/junk/prop_monitor.png"
+      },
+      {
+        "id": "kerosene",
+        "label": "Kerosene",
+        "icon": "/negative-effects-icons/junk/kerosene.png"
+      },
+      {
+        "id": "decor_trophie6",
+        "label": "Bloodsucker Trophy",
+        "icon": "/negative-effects-icons/junk/decor_trophie6.png"
+      },
+      {
+        "id": "prop_stove2",
+        "label": "Stove",
+        "icon": "/negative-effects-icons/junk/prop_stove2.png"
+      },
+      {
+        "id": "decor_toilet",
+        "label": "Toilet",
+        "icon": "/negative-effects-icons/junk/decor_toilet.png"
+      },
+      {
+        "id": "explo_jerrycan_fuel",
+        "label": "Jerrycan",
+        "icon": "/negative-effects-icons/junk/explo_jerrycan_fuel.png"
+      },
+      {
+        "id": "prt_i_scrap",
+        "label": "Metallic Scrap",
+        "icon": "/negative-effects-icons/junk/prt_i_scrap.png",
+        "count": 50
+      },
+      {
+        "id": "prt_i_wood",
+        "label": "Wooden Parts",
+        "icon": "/negative-effects-icons/junk/prt_i_wood.png",
+        "count": 40
+      },
+      {
+        "id": "prt_o_support_1",
+        "label": "Exoskeleton Frame",
+        "icon": "/negative-effects-icons/junk/prt_o_support_1.png"
+      },
+      {
+        "id": "prop_pccase",
+        "label": "PC Case",
+        "icon": "/negative-effects-icons/junk/prop_pccase.png"
+      },
+      {
+        "id": "rotten_meat",
+        "label": "Rotten Meat",
+        "icon": "/negative-effects-icons/junk/rotten_meat.png",
+        "count": 50
+      }
+    ]
+  }
+}
