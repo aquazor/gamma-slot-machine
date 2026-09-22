@@ -77,7 +77,7 @@ const CHANNEL_POINT_REWARDS = [
     cost: 3000,
     prompt: 'Spin the GAMMA loot roulette for 1-3 random items.',
     kind: 'loot',
-    maxPerUserPerStream: 2,
+    maxPerUserPerStream: 1,
     cooldownSeconds: 60,
     count: null,
   },
@@ -86,7 +86,8 @@ const CHANNEL_POINT_REWARDS = [
     title: '[SPIN] Positive Effects',
     previousTitle: '[SPIN] Perks',
     cost: 3000,
-    prompt: 'Roll a random positive effect: Immortality, Give Ammo, Give Money, or Medicine.',
+    prompt:
+      'Roll a random positive effect: Immortality, Give Ammo, Give Money, or Medicine.',
     kind: 'perk',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
@@ -95,8 +96,9 @@ const CHANNEL_POINT_REWARDS = [
     key: 'negative-effects',
     title: '[SPIN] Negative Effects',
     cost: 3000,
-    prompt: 'Roll a random negative effect on the streamer: dropped weapon, lost money, '
-      + 'broken gear, time warp, drunk, or a junk item.',
+    prompt:
+      'Roll a random negative effect on the streamer: dropped weapon, lost money, ' +
+      'broken gear, time warp, drunk, or a junk item.',
     kind: 'negative',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
