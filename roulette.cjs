@@ -533,6 +533,12 @@ class Roulette extends EventEmitter {
    * some effects (Drop Weapon, Empty Pockets) have no second roll at all
    * (negativeEffects.hasValueRoll === false): `results` then has just the
    * one entry and the overlay should render a single reel for those.
+   *
+   * Drop Weapon and Empty Pockets are the exception to the exception —
+   * each carries its own small `doubleBonus` chance of landing BOTH of
+   * them at once (see rollDoubleBonusEffect). A null return there is the
+   * normal, expected outcome (bonus just didn't land this time), unlike
+   * the hasValueRoll branch above it, where null means something's wrong.
    */
   _buildNegativeEffectJob(event, plan) {
     const effect = negativeEffects.rollNegativeEffect();
@@ -543,14 +549,18 @@ class Roulette extends EventEmitter {
       return null;
     }
 
-    const effectValue = effect.hasValueRoll
-      ? negativeEffects.rollEffectValue(effect.key, Boolean(plan.forceBonus))
-      : null;
+    let effectValue = null;
 
-    if (effect.hasValueRoll && !effectValue) {
-      console.error(`Roulette: negative effect "${effect.key}" has no rollable value`);
+    if (effect.hasValueRoll) {
+      effectValue = negativeEffects.rollEffectValue(effect.key, Boolean(plan.forceBonus));
 
-      return null;
+      if (!effectValue) {
+        console.error(`Roulette: negative effect "${effect.key}" has no rollable value`);
+
+        return null;
+      }
+    } else if (effect.def && effect.def.doubleBonus) {
+      effectValue = negativeEffects.rollDoubleBonusEffect(effect, Boolean(plan.forceBonus));
     }
 
     const results = [

@@ -7,7 +7,11 @@
  * (weighted by each effect's own `chance` among enabled ones), slot 2
  * rolls that effect's own value — UNLESS the effect has no second roll
  * at all (Drop Weapon, Empty Pockets), in which case it's single-shot.
- * Junk Item's slot 2 IS the item roll (which junk item gets given).
+ * Junk Item's slot 2 IS the item roll (which junk item gets given). Drop
+ * Weapon and Empty Pockets each additionally carry their own small
+ * `doubleBonus` chance (see rollDoubleBonusEffect) of landing BOTH of
+ * them at once — the only bonus shape in this module that isn't an
+ * add/multiply on a number.
  *
  * Definitions live in negative-effects.data.json, this module rolls
  * among them and turns the winner into gamma-bridge command lines — see
@@ -238,6 +242,53 @@ function rollNegativeEffect() {
 }
 
 /*
+ * Drop Weapon / Empty Pockets' own "double" bonus — shaped nothing like
+ * the numeric add/multiply bonuses the value-roll effects use: instead of
+ * modifying a rolled number, a small independent chance lands BOTH of
+ * them in one go. `effect.def.doubleBonus` names which other effect key
+ * to pair with (`with`); the slot-2 result is just that other effect's
+ * own label/icon, no value of its own. Returns null (the common case, no
+ * second roll at all) whenever there's no doubleBonus config or it didn't
+ * land. `forceGuaranteed` (bits power-ups) treats the chance as 100%,
+ * same as every other bonus in this module.
+ */
+function rollDoubleBonusEffect(effect, forceGuaranteed) {
+  const doubleBonus = effect && effect.def && effect.def.doubleBonus;
+
+  if (!doubleBonus) {
+    return null;
+  }
+
+  const chance = forceGuaranteed
+    ? 1
+    : Number.isFinite(doubleBonus.chance)
+      ? doubleBonus.chance
+      : 0;
+
+  if (Math.random() >= chance) {
+    return null;
+  }
+
+  const pairedKey = doubleBonus.with;
+  const pairedDef = effectDef(pairedKey);
+
+  if (!pairedDef) {
+    return null;
+  }
+
+  const label = pairedDef.label || pairedKey;
+
+  return {
+    value: pairedKey,
+    label,
+    icon: pairedDef.icon || null,
+    fullLabel: label,
+    bonus: { key: `${effect.key}-double`, label: '', type: 'double-effect' },
+    pairedEffectKey: pairedKey,
+  };
+}
+
+/*
  * Roll effect-type-specific "slot 2" — the actual value this particular
  * roll landed on. Returns null for effects with no value roll at all
  * (Drop Weapon, Empty Pockets) — callers should check hasValueRoll first.
@@ -370,11 +421,45 @@ function rollEffectValue(key, forceBonus) {
 function effectValuePool(key) {
   const def = effectDef(key);
 
-  if (!def || !hasValueRoll(def)) {
+  if (!def || !(hasValueRoll(def) || def.doubleBonus)) {
     return [];
   }
 
   switch (key) {
+    case 'drop-weapon':
+    case 'empty-pockets': {
+      // Only ever rolled when the doubleBonus lands, and can only ever
+      // LAND on itself or its paired effect (SpawnReel always forces the
+      // real winner into the strip regardless of what's in this pool) —
+      // but with just those 2 real icons as the pool, the spin would
+      // flicker between the same two images for 6 seconds straight and
+      // give the outcome away instantly. Every OTHER negative effect's
+      // icon rides along purely as decoy filler, never actually landed
+      // on, same idea as break-item/time-factor's own fillerNumbers.
+      const pairedKey = def.doubleBonus && def.doubleBonus.with;
+      const pairedDef = pairedKey && effectDef(pairedKey);
+
+      const pool = [{ label: def.label || key, icon: def.icon || null }];
+
+      if (pairedDef) {
+        pool.push({ label: pairedDef.label || pairedKey, icon: pairedDef.icon || null });
+      }
+
+      for (const otherKey of effectKeys()) {
+        if (otherKey === key || otherKey === pairedKey) {
+          continue;
+        }
+
+        const otherDef = effectDef(otherKey);
+
+        if (otherDef) {
+          pool.push({ label: otherDef.label || otherKey, icon: otherDef.icon || null });
+        }
+      }
+
+      return pool;
+    }
+
     case 'break-item': {
       const filler = Array.isArray(def.fillerNumbers) ? def.fillerNumbers : [];
       const numbers = [...new Set([def.min, def.max, ...filler])];
@@ -468,6 +553,15 @@ function negativeEffectCommandLines(effect, effectValue, user) {
       break;
   }
 
+  // Drop Weapon / Empty Pockets' double bonus landed — slot 2 names the
+  // OTHER one of the pair (see rollDoubleBonusEffect), so give it too.
+  // Both are single-shot commands with nothing else to pass along.
+  if (effectValue && effectValue.pairedEffectKey === 'drop-weapon') {
+    lines.push('DROP_WEAPON');
+  } else if (effectValue && effectValue.pairedEffectKey === 'empty-pockets') {
+    lines.push('EMPTY_POCKETS');
+  }
+
   return lines;
 }
 
@@ -478,6 +572,7 @@ module.exports = {
   setEffectChance,
   resetEffects,
   rollNegativeEffect,
+  rollDoubleBonusEffect,
   rollEffectValue,
   effectValuePool,
   negativeEffectCommandLines,
