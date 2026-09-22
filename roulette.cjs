@@ -135,10 +135,11 @@ function randomSlotCount() {
  * one of loot / enemy squads / mutants / a perk / a negative effect with
  * equal 1/5 odds, then a random 1-3 count for loot/spawn — unless
  * `forceTriple` (a multi-sub gift bomb), which always rolls exactly 3.
- * Perks and negative effects have no count to scale (one is one), so
- * `forceTriple` only affects loot/spawn odds of landing on this outcome
- * in the first place, not what happens once it does. Which outcome landed
- * is only visible once the reels stop, same as any other roll.
+ * Perks and negative effects have no count to scale (one is one — there's
+ * no such thing as "3 perks" from a single dual-slot roll), so for them
+ * `forceTriple` instead guarantees their own bonus lands, same "best
+ * case" treatment bits power-ups already get. Which outcome landed is
+ * only visible once the reels stop, same as any other roll.
  */
 function subEventOutcome(label, forceTriple) {
   const category = pick(['loot', 'enemies', 'mutants', 'perk', 'negative']);
@@ -148,17 +149,19 @@ function subEventOutcome(label, forceTriple) {
     return { label, count: rolls };
   }
 
+  // forceTriple (a multi-sub gift bomb) also guarantees a bonus wherever
+  // one exists — a spawn bonus in roll mode 2 (ignored entirely by mode 1,
+  // which has no concept of bonuses), a perk's own bonus, or a negative
+  // effect's own bonus — same "guaranteed best case" treatment bits
+  // power-ups already get.
   if (category === 'perk') {
-    return { mode: 'perk', label };
+    return { mode: 'perk', label, forceBonus: forceTriple };
   }
 
   if (category === 'negative') {
-    return { mode: 'negative', label };
+    return { mode: 'negative', label, forceBonus: forceTriple };
   }
 
-  // forceTriple (a multi-sub gift bomb) also guarantees a spawn bonus
-  // in roll mode 2 — ignored entirely by mode 1, which has no concept
-  // of bonuses and just uses `rolls` as before.
   return { mode: 'spawn', label, category, rolls, forceBonus: forceTriple };
 }
 
