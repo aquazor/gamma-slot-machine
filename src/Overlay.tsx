@@ -58,7 +58,9 @@ interface RollResult {
   itemId: string;
   name: string;
   ammo?: string;
-  icon?: string | null; // spawn results only
+  // spawn/perk results only. An array (e.g. Food & Water's food+drink
+  // pair) renders as an icon-only pair with no text — see IconOrPair.
+  icon?: string | string[] | null;
   label?: string; // spawn results only — plain group name, no "x<count>"
   value?: number; // count-roll's count reel only — presence marks a count entry
   baseValue?: number; // count-roll only — the roll before a multiply/add bonus
@@ -67,7 +69,7 @@ interface RollResult {
 
 interface SpawnOption {
   label: string;
-  icon: string | null;
+  icon: string | string[] | null;
 }
 
 interface JobBonus {
@@ -162,6 +164,30 @@ function shuffle<T>(array: T[]): T[] {
 
 function hideBrokenImage(event: React.SyntheticEvent<HTMLImageElement>): void {
   event.currentTarget.style.visibility = 'hidden';
+}
+
+// A `string[]` icon (e.g. Food & Water's food+drink pair) renders as the
+// icons side by side with a "+" between them and no text — a single
+// string/null renders exactly as before.
+function ReelIcon({ icon }: { icon: string | string[] | null | undefined }) {
+  if (!icon) {
+    return null;
+  }
+
+  if (Array.isArray(icon)) {
+    return (
+      <span className="ov-icon-pair">
+        {icon.map((src, index) => (
+          <span className="ov-icon-pair-item" key={index}>
+            {index > 0 && <span className="ov-icon-pair-plus">+</span>}
+            {src && <img src={src} alt="" onError={hideBrokenImage} />}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return <img src={icon} alt="" onError={hideBrokenImage} />;
 }
 
 function playSpinSound(): void {
@@ -371,7 +397,7 @@ interface SpawnReelProps {
   pool: SpawnOption[];
   label: string; // plain group name shown in the reel, e.g. "Boars"
   resultText: string; // label + count for the line below, e.g. "BOARS x2"
-  targetIcon?: string | null;
+  targetIcon?: string | string[] | null;
   spin: boolean;
   landed: boolean;
   hidden?: boolean; // mask the pool until this reel's own turn starts — see PendingMask
@@ -514,10 +540,8 @@ function SpawnReel({
           >
             {strip.map((option, index) => (
               <div className="reel-item ov-spawn-item" key={index}>
-                {option.icon && (
-                  <img src={option.icon} alt="" onError={hideBrokenImage} />
-                )}
-                <span>{option.label}</span>
+                <ReelIcon icon={option.icon} />
+                {option.label && <span>{option.label}</span>}
               </div>
             ))}
           </div>
@@ -531,8 +555,8 @@ function SpawnReel({
       </div>
 
       <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        {targetIcon && <img src={targetIcon} alt="" onError={hideBrokenImage} />}
-        <span>{resultText}</span>
+        <ReelIcon icon={targetIcon} />
+        {resultText && <span>{resultText}</span>}
       </div>
     </div>
   );
