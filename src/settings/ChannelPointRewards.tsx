@@ -19,6 +19,7 @@ function ChannelPointRewards({ twitchConnected }: Props) {
   const [rewardsBusy, setRewardsBusy] = useState<boolean>(false);
   const [autoActivate, setAutoActivateState] = useState<boolean>(false);
   const [autoActivateBusy, setAutoActivateBusy] = useState<boolean>(false);
+  const [resetting, setResetting] = useState<boolean>(false);
 
   // collapsed by default — editable list, hidden so nothing gets bumped by
   // accident; expand with the arrow next to the heading
@@ -244,6 +245,36 @@ function ChannelPointRewards({ twitchConnected }: Props) {
     }
   };
 
+  const restoreDefaults = async (): Promise<void> => {
+    if (
+      !window.confirm(
+        'Restore every channel-point reward\'s cost, limits and cooldown to their defaults, ' +
+          'and re-enable any that were individually disabled?',
+      )
+    ) {
+      return;
+    }
+
+    const seq = bumpSeq();
+
+    setResetting(true);
+
+    try {
+      const res = await fetch(`${API}/twitch/rewards/reset`, { method: 'POST' }).then((r) =>
+        r.json(),
+      );
+
+      if (Array.isArray(res.rewards) && !isStaleSeq(seq)) {
+        setRewardList(res.rewards);
+        setRewardDrafts({});
+        seedDrafts(res.rewards);
+        setRewardErrors({});
+      }
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!loaded) {
     return null;
   }
@@ -392,6 +423,14 @@ function ChannelPointRewards({ twitchConnected }: Props) {
                 />
                 Auto-activate on startup/connect
               </label>
+
+              <button
+                className="set-btn set-section-reset"
+                onClick={restoreDefaults}
+                disabled={resetting}
+              >
+                {resetting ? 'Restoring…' : 'Restore defaults'}
+              </button>
             </div>
           </>
         ) : (

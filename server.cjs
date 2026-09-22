@@ -935,6 +935,29 @@ app.post('/twitch/rewards/config', async (req, res) => {
   }
 });
 
+/*
+ * "Restore defaults" for the whole Channel Point Rewards section: wipes
+ * every streamer-set override (cost/limits/cooldown/enabled) for every
+ * reward, then re-syncs all of them to Twitch so the live rewards match
+ * CHANNEL_POINT_REWARDS again — same pattern as the Positive/Negative
+ * Effects "Restore defaults" buttons.
+ */
+app.post('/twitch/rewards/reset', async (req, res) => {
+  try {
+    rewards.resetRewardOverrides();
+
+    const map = await rewards.ensureRewards();
+
+    roulette.setRewardMap(map);
+
+    console.log('Channel-point rewards -> restored to defaults');
+
+    res.json({ rewards: await rewards.listRewards() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/twitch/disconnect', async (req, res) => {
   eventSub.stop();
   roulette.setRewardMap(null);

@@ -208,6 +208,18 @@ function clearIndividualDisables() {
   }
 }
 
+/*
+ * "Restore defaults" for the whole section: wipes every streamer-set
+ * override (cost/maxPerUserPerStream/cooldownSeconds/enabled) for every
+ * reward, so effectiveRewards() falls straight back to whatever's baked
+ * into CHANNEL_POINT_REWARDS — same pattern as positive-effects.cjs's
+ * resetPerks()/negative-effects.cjs's resetEffects(). Doesn't touch
+ * Twitch itself; the caller (server.cjs) re-syncs afterward.
+ */
+function resetRewardOverrides() {
+  saveOverrides({});
+}
+
 async function helix(method, url, body) {
   const tokens = await twitchAuth.ensureValidToken();
 
@@ -545,6 +557,7 @@ module.exports = {
   listRewards,
   setRewardOverride,
   clearIndividualDisables,
+  resetRewardOverrides,
   getAutoActivate,
   setAutoActivate,
 };
