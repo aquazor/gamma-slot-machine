@@ -15,6 +15,8 @@ const CHANGELOG: { date: string; items: string[] }[] = [
       'Empty Pockets always leaves you with at least 2000 rubles instead of taking everything, and drops the lost cash on the ground near you as spendable props',
       'Added a Negative Effects section to the Tweaking page, same as Positive Effects — enable/disable each one and edit its roll chance as a percentage',
       'The Bits Power-ups list and setup guide now include "[SPIN] Negative Effects"',
+      'Added a new Positive Effect, Food & Water — rolls a random meal plus a random drink together (20 possible pairs), shown as icons on the reel. Has its own chance of a bonus that guarantees a premium pair (Chimera Goulash or Lurker Chops, with Tea, Coffee, or an Energy Drink)',
+      'Drop Weapon and Empty Pockets now have a small chance of landing together instead of just one at a time',
     ],
   },
   {
