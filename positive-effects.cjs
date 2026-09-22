@@ -1,14 +1,17 @@
 /*
  * ---------------------------------------------------------
- * PERKS  (Immortality / Give Ammo / Give Money / Medicine)
+ * PERKS  (Immortality / Give Ammo / Give Money / Medicine / Food & Water)
  * ---------------------------------------------------------
  * A fourth roll outcome alongside loot/squads/mutants — dual-slot, same
  * shape as Count Roll's count+species mechanic:
  *
  *   slot 1: WHICH perk (equal odds among enabled ones)
  *   slot 2: that perk's own VALUE — a duration/pack-count rolled from
- *           a min/max range, a fixed money amount picked from a list, or
- *           a random medical item. See rollPerkValue() / perkValuePool().
+ *           a min/max range, a fixed money amount picked from a list, a
+ *           random medical item, or a random food+drink pair (shown as
+ *           two icons, no text — see food-and-drinks.icon being a
+ *           string[] rather than the usual single string/null). See
+ *           rollPerkValue() / perkValuePool().
  *
  * Perks are flat and tier-less (no Basic/Advanced/Expert split) — the
  * definitions live in positive-effects.data.json, this module rolls
@@ -169,6 +172,7 @@ const PERK_DESCRIPTIONS = {
   'give-ammo': 'A few ammo packs for whatever\'s in hand',
   'give-money': 'A cash drop',
   medicine: 'A medical item plus a secondary supply item',
+  'food-and-drinks': 'A random meal plus a random drink',
 };
 
 /*
@@ -295,6 +299,44 @@ function rollMedicineBonus(def, forceGuaranteed) {
   const item = bonusItems[Math.floor(Math.random() * bonusItems.length)];
 
   return { id: item.id, label: item.label || item.id };
+}
+
+/*
+ * Food & Water's own bonus is shaped differently from every other perk's:
+ * instead of adding/multiplying a number or tacking on an extra item, it
+ * just restricts BOTH rolls to a smaller "premium" subset of the same
+ * food/drinks lists (`def.bonus.foodIds`/`drinkIds`) when it lands.
+ * Returns { foods, drinks } — the pools to actually roll from — falling
+ * back to the full lists whenever the bonus doesn't land or the def is
+ * missing/empty. `forceGuaranteed` (bits power-ups) treats the chance as
+ * 100% instead of `def.bonus.chance`.
+ */
+function foodDrinksPools(def, forceGuaranteed) {
+  const foods = Array.isArray(def.food) ? def.food : [];
+  const drinks = Array.isArray(def.drinks) ? def.drinks : [];
+
+  const bonusDef = def.bonus;
+  const chance = forceGuaranteed
+    ? 1
+    : bonusDef && Number.isFinite(bonusDef.chance)
+      ? bonusDef.chance
+      : 0;
+
+  if (!bonusDef || Math.random() >= chance) {
+    return { foods, drinks, bonusLanded: false };
+  }
+
+  const foodIds = new Set(Array.isArray(bonusDef.foodIds) ? bonusDef.foodIds : []);
+  const drinkIds = new Set(Array.isArray(bonusDef.drinkIds) ? bonusDef.drinkIds : []);
+
+  const premiumFoods = foods.filter((f) => foodIds.has(f.id));
+  const premiumDrinks = drinks.filter((d) => drinkIds.has(d.id));
+
+  return {
+    foods: premiumFoods.length > 0 ? premiumFoods : foods,
+    drinks: premiumDrinks.length > 0 ? premiumDrinks : drinks,
+    bonusLanded: true,
+  };
 }
 
 /*
@@ -436,6 +478,31 @@ function rollPerkValue(key, tier, forceBonus) {
       };
     }
 
+    case 'food-and-drinks': {
+      const { foods, drinks, bonusLanded } = foodDrinksPools(def, forceBonus);
+
+      if (foods.length === 0 || drinks.length === 0) {
+        return null;
+      }
+
+      const food = pickRandom(foods);
+      const drink = pickRandom(drinks);
+
+      return {
+        value: `${food.id}|${drink.id}`,
+        // no text label — the reel shows just the two icons side by side,
+        // see Overlay.tsx's icon-pair rendering for a string[] `icon`
+        label: '',
+        icon: [food.icon || null, drink.icon || null],
+        fullLabel: `${food.label || food.id} + ${drink.label || drink.id}`,
+        giveIds: [food.id, drink.id],
+        // plain "BONUS" badge like every other perk's — the specific
+        // premium pair is already spelled out above, nothing extra to
+        // call out in the badge label itself
+        bonus: bonusLanded ? { key: 'food-and-drinks-premium', label: '', type: 'premium-pool' } : null,
+      };
+    }
+
     default:
       return null;
   }
@@ -484,6 +551,20 @@ function perkValuePool(key, tier) {
       return items.map((item) => ({ label: item.label || item.id, icon: item.icon || null }));
     }
 
+    case 'food-and-drinks': {
+      const foods = Array.isArray(def.food) ? def.food : [];
+      const drinks = Array.isArray(def.drinks) ? def.drinks : [];
+      const combos = [];
+
+      for (const food of foods) {
+        for (const drink of drinks) {
+          combos.push({ label: '', icon: [food.icon || null, drink.icon || null] });
+        }
+      }
+
+      return combos;
+    }
+
     default:
       return [];
   }
@@ -517,6 +598,16 @@ function perkCommandLines(perk, perkValue, user) {
 
     case 'medicine':
       for (const id of perkValue.giveIds || [perkValue.value]) {
+        lines.push(`MEDKIT|${id}|1`);
+      }
+
+      break;
+
+    case 'food-and-drinks':
+      // MEDKIT's Lua handler just does alife_create_item(item_id, actor) —
+      // works for any item section, not just medical ones, so it's reused
+      // here rather than adding a dedicated command.
+      for (const id of perkValue.giveIds || []) {
         lines.push(`MEDKIT|${id}|1`);
       }
 

@@ -692,6 +692,28 @@ body {
   white-space: nowrap;
 }
 
+/* Icon-only pair (Food & Water's food+drink roll) — no text, just the
+   two icons with a "+" between them. Sizing comes from the existing
+   `.reel-item img` / `.ov-spawn-item img` / `.ov-result img` rules,
+   which are descendant selectors and still reach these nested imgs. */
+.ov-icon-pair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ov-icon-pair-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ov-icon-pair-plus {
+  font-size: 18px;
+  font-weight: 800;
+  opacity: 0.55;
+}
+
 .ov-spawn--landed {
   border-width: 2px;
   border-style: solid;

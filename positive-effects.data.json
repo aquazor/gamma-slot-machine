@@ -1,5 +1,5 @@
 {
-  "_comment": "Perk roll definitions. Dual-slot, like Count Roll: slot 1 picks ONE perk (weighted by each perk's own `chance` among enabled ones - doesn't need to add up to 1, it's relative weight, e.g. immortality 0.1 vs the others' 0.3 makes it roll about a third as often), slot 2 rolls that perk's own value - a duration/pack-count range (with extra `fillerNumbers` purely to pad the reel, never actually landed on), a fixed list of money amounts, or medical items. Medicine's `items` is keyed by spawn tier (Basic/Advanced/Expert, same tier the streamer picks for squads/mutants); each tier picks ONE random `primary` item (the reel lands on this) PLUS ONE random `secondary` item (always given alongside it - a `secondary` list with just one entry means that item is guaranteed every time, a list with more means it's rolled same as primary). `bonus` is a separate small chance of one extra item on top of primary+secondary, tier-independent. immortality/give-ammo/give-money instead have `bonuses`: an array of at-most-one-applies effects (same shape/rules as Count Roll's own spawn bonuses - each has its own `chance`, and once the enabled ones add up to 100%+ a bonus is guaranteed, split proportionally). `type` is 'add' (adds `value`), 'multiply' (multiplies by `value`), or (give-money only) 'add-random-amount' (adds ANOTHER random draw from this same perk's own `amounts` list - no `value` needed). Real GAMMA/Anomaly item ids only - edit/add freely, unknown sections are just skipped in-game rather than crashing anything.",
+  "_comment": "Perk roll definitions. Dual-slot, like Count Roll: slot 1 picks ONE perk (weighted by each perk's own `chance` among enabled ones - doesn't need to add up to 1, it's relative weight, e.g. immortality 0.1 vs the others' 0.3 makes it roll about a third as often), slot 2 rolls that perk's own value - a duration/pack-count range (with extra `fillerNumbers` purely to pad the reel, never actually landed on), a fixed list of money amounts, or medical items. Medicine's `items` is keyed by spawn tier (Basic/Advanced/Expert, same tier the streamer picks for squads/mutants); each tier picks ONE random `primary` item (the reel lands on this) PLUS ONE random `secondary` item (always given alongside it - a `secondary` list with just one entry means that item is guaranteed every time, a list with more means it's rolled same as primary). `bonus` is a separate small chance of one extra item on top of primary+secondary, tier-independent. immortality/give-ammo/give-money instead have `bonuses`: an array of at-most-one-applies effects (same shape/rules as Count Roll's own spawn bonuses - each has its own `chance`, and once the enabled ones add up to 100%+ a bonus is guaranteed, split proportionally). `type` is 'add' (adds `value`), 'multiply' (multiplies by `value`), or (give-money only) 'add-random-amount' (adds ANOTHER random draw from this same perk's own `amounts` list - no `value` needed). Food & Water rolls ONE random `food` item plus ONE random `drink` item (all 5x4=20 combinations possible) and shows BOTH icons side by side on the reel with no text labels - `rollPerkValue`'s `icon` field is an array of 2 paths for this perk instead of the usual single string/null, which Overlay.tsx renders as an icon pair. Its own `bonus` is shaped differently from the other perks' add/multiply bonuses: `foodIds`/`drinkIds` name a smaller premium subset of the ids already listed in `food`/`drinks` above - when the bonus lands, both rolls are restricted to just those ids instead of the full list, rather than adding an extra item or modifying a number. Real GAMMA/Anomaly item ids only - edit/add freely, unknown sections are just skipped in-game rather than crashing anything.",
   "immortality": {
     "label": "Immortality",
     "icon": "/positive-effects-icons/immortality.png",
@@ -106,6 +106,65 @@
         { "id": "drug_sleepingpills", "label": "Sleeping Pills" },
         { "id": "drug_booster", "label": "Hercules" }
       ]
+    }
+  },
+  "food-and-drinks": {
+    "label": "Food & Water",
+    "icon": "/positive-effects-icons/food-and-drinks/food-and-drinks.png",
+    "chance": 0.3,
+    "food": [
+      {
+        "id": "meat_chimera_a",
+        "label": "Chimera Goulash",
+        "icon": "/positive-effects-icons/food-and-drinks/meat_chimera_a.png"
+      },
+      {
+        "id": "meat_lurker_a",
+        "label": "Lurker Chops",
+        "icon": "/positive-effects-icons/food-and-drinks/meat_lurker_a.png"
+      },
+      {
+        "id": "kolbasa",
+        "label": "Doctor's Sausage",
+        "icon": "/positive-effects-icons/food-and-drinks/kolbasa.png"
+      },
+      {
+        "id": "bread",
+        "label": "Bread Loaf",
+        "icon": "/positive-effects-icons/food-and-drinks/bread.png"
+      },
+      {
+        "id": "beer",
+        "label": "Beer",
+        "icon": "/positive-effects-icons/food-and-drinks/beer.png"
+      }
+    ],
+    "drinks": [
+      {
+        "id": "flask",
+        "label": "Clean Water",
+        "icon": "/positive-effects-icons/food-and-drinks/flask.png"
+      },
+      {
+        "id": "coffee_drink",
+        "label": "UCC Cold Brew Coffee",
+        "icon": "/positive-effects-icons/food-and-drinks/coffee_drink.png"
+      },
+      {
+        "id": "energy_drink",
+        "label": "Energy Drink",
+        "icon": "/positive-effects-icons/food-and-drinks/energy_drink.png"
+      },
+      {
+        "id": "tea",
+        "label": "Beard's Tea",
+        "icon": "/positive-effects-icons/food-and-drinks/tea.png"
+      }
+    ],
+    "bonus": {
+      "chance": 0.2,
+      "foodIds": ["meat_chimera_a", "meat_lurker_a"],
+      "drinkIds": ["coffee_drink", "energy_drink", "tea"]
     }
   }
 }
