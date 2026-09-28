@@ -6,6 +6,15 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-09-28',
+    items: [
+      'Added a "Roll guns with attachments" bonus — a loot roll that includes a weapon has a flat 25% chance of giving it with a compatible scope and/or silencer already attached, worked out from that weapon\'s own in-game data. Toggle it from a checkbox next to the Manual roll buttons in Settings; off entries in a fresh install now default to on',
+      'Like every other bonus, gift-sub bombs and bits power-ups always guarantee it lands when a weapon is rolled, instead of the normal 25% chance',
+      'Fixed the positive effects\' roll chances not summing to 100% (Immortality 14%, the other four 21.5% each) — the underlying weighting always worked correctly, but the displayed percentages now add up cleanly',
+      'The Bits Power-ups list and setup guide now include "[SPIN] Negative Effects", which had been missing since that reward was added',
+    ],
+  },
+  {
     date: '2026-09-22',
     items: [
       'Added a new roll outcome, "Negative Effects" — Drop Weapon, Empty Pockets, Break Item, Time Factor, Drink Vodka, or Junk Item, picked at random (weighted odds among whichever are enabled in Settings). Triggered by its own channel-point reward and bits power-up ("[SPIN] Negative Effects")',

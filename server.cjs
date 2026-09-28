@@ -13,6 +13,7 @@ const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
 const perks = require('./positive-effects.cjs');
 const negativeEffects = require('./negative-effects.cjs');
+const gunAttachments = require('./gun-attachments.cjs');
 
 const { getGammaPath, MOD_NAME } = bridge;
 
@@ -558,6 +559,26 @@ app.post('/roulette/bonuses/reset', (req, res) => {
   console.log('Roulette spawn bonuses -> restored to defaults');
 
   res.json({ bonuses: enemiesMode2.listBonuses() });
+});
+
+/*
+ * "Roll guns with attachments" bonus — a plain on/off toggle, fixed
+ * chance (see gun-attachments.cjs). Applies to any loot roll that
+ * includes a weapon; always guaranteed for gift-sub bombs and bits
+ * power-ups regardless of this chance.
+ */
+app.get('/roulette/gun-attachments', (req, res) => {
+  res.json({ enabled: gunAttachments.isEnabled(), chance: gunAttachments.CHANCE });
+});
+
+app.post('/roulette/gun-attachments/toggle', (req, res) => {
+  const { enabled } = req.body || {};
+
+  gunAttachments.setEnabled(Boolean(enabled));
+
+  console.log(`Roulette gun attachments bonus -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ enabled: gunAttachments.isEnabled(), chance: gunAttachments.CHANCE });
 });
 
 app.get('/roulette/perks', (req, res) => {

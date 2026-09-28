@@ -1,5 +1,6 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 
+import { API } from './types';
 import type { RouletteStatus } from './types';
 
 interface Props {
@@ -25,6 +26,39 @@ function RouletteControls({
   manualPerk,
   manualNegativeEffect,
 }: Props) {
+  const [gunAttachments, setGunAttachments] = useState<boolean>(false);
+  const [gunAttachmentsBusy, setGunAttachmentsBusy] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch(`${API}/roulette/gun-attachments`)
+      .then((res) => res.json())
+      .then((data) => setGunAttachments(Boolean(data.enabled)))
+      .catch(() => {
+        // leave the default (on)
+      });
+  }, []);
+
+  const toggleGunAttachments = async (): Promise<void> => {
+    const next = !gunAttachments;
+
+    setGunAttachmentsBusy(true);
+    setGunAttachments(next);
+
+    try {
+      const res = await fetch(`${API}/roulette/gun-attachments/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next }),
+      }).then((r) => r.json());
+
+      setGunAttachments(Boolean(res.enabled));
+    } catch {
+      setGunAttachments(!next);
+    } finally {
+      setGunAttachmentsBusy(false);
+    }
+  };
+
   return (
     <section className="set-section">
       <h2 className="set-heading">Roulette</h2>
@@ -95,6 +129,17 @@ function RouletteControls({
             {n} item{n > 1 ? 's' : ''}
           </button>
         ))}
+
+        <label className="set-auto-activate">
+          <input
+            className="set-checkbox"
+            type="checkbox"
+            checked={gunAttachments}
+            onChange={toggleGunAttachments}
+            disabled={gunAttachmentsBusy}
+          />
+          Roll guns with attachments (bonus)
+        </label>
       </div>
 
       <div className="set-trigger">
@@ -134,7 +179,11 @@ function RouletteControls({
 
       <div className="set-trigger">
         <span className="set-muted">Manual negative effect</span>
-        <button className="set-btn" onClick={() => manualNegativeEffect()} disabled={triggerBusy}>
+        <button
+          className="set-btn"
+          onClick={() => manualNegativeEffect()}
+          disabled={triggerBusy}
+        >
           Negative Effects
         </button>
       </div>

@@ -11,7 +11,7 @@ const { isSea, getAsset } = require('node:sea');
  * command.txt inside the mod folder. The in-game Lua side
  * (slot_machine_bridge.script) polls that file every ~2s.
  *
- *   WEAPON|<item_id>|<ammo_ids>
+ *   WEAPON|<item_id>|<ammo_ids>|<attach: 1 or empty>
  *   OUTFIT|<item_id>
  *   HELMET|<item_id>
  */
@@ -253,7 +253,7 @@ function buildCommandLines({ weapons, outfits, helmets, message } = {}) {
         continue;
       }
 
-      lines.push(`WEAPON|${weapon.itemId}|${weapon.ammo || ''}`);
+      lines.push(`WEAPON|${weapon.itemId}|${weapon.ammo || ''}|${weapon.attach ? '1' : ''}`);
     }
   }
 

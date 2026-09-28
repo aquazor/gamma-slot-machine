@@ -111,7 +111,13 @@
       },
       "flesh": {
         "label": "Flesh",
-        "sections": ["flesh_weak", "flesh_01a_weak", "flesh_02a_weak"],
+        "sections": [
+          "flesh_weak",
+          "flesh_01a_weak",
+          "flesh_02a_weak",
+          "flesh_bolot",
+          "flesh_bolot1"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_flesh.png"
       },

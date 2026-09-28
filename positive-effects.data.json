@@ -3,7 +3,7 @@
   "immortality": {
     "label": "Immortality",
     "icon": "/positive-effects-icons/immortality.png",
-    "chance": 0.1,
+    "chance": 0.14,
     "min": 30,
     "max": 90,
     "fillerNumbers": [10, 15, 45, 52, 67, 90, 180, 300, 600, 900, 1337],
@@ -27,7 +27,7 @@
   "give-ammo": {
     "label": "Give Ammunition",
     "icon": "/positive-effects-icons/give_ammo.png",
-    "chance": 0.3,
+    "chance": 0.215,
     "min": 1,
     "max": 3,
     "fillerNumbers": [1, 2, 3, 6, 8, 10, 52, 67, 600, 1000, 1337],
@@ -39,7 +39,7 @@
   "give-money": {
     "label": "Give Money",
     "icon": "/positive-effects-icons/give_money.png",
-    "chance": 0.3,
+    "chance": 0.215,
     "amounts": [1, 52, 67, 520, 670, 1337, 2500, 5252, 6767, 10000, 13370, 15000],
     "fillerNumbers": [0, 500, 50000, 67000, 100000, 133700, 150000],
     "bonuses": [
@@ -61,7 +61,7 @@
   "medicine": {
     "label": "Medicine",
     "icon": "/positive-effects-icons/medicine.png",
-    "chance": 0.3,
+    "chance": 0.215,
     "items": {
       "Basic": {
         "primary": [
@@ -111,7 +111,7 @@
   "food-and-drinks": {
     "label": "Food & Water",
     "icon": "/positive-effects-icons/food-and-drinks/food-and-drinks.png",
-    "chance": 0.3,
+    "chance": 0.215,
     "food": [
       {
         "id": "meat_chimera_a",

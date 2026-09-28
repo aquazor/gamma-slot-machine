@@ -3,7 +3,11 @@
 -- ==========================================================
 -- Reads gamedata\scripts\bridge\command.txt every CHECK_INTERVAL ms.
 -- Line formats:
---   WEAPON|<id>|<ammo_id;ammo_id;...>
+--   WEAPON|<id>|<ammo_id;ammo_id;...>|<attach: 1 or empty>
+--                              -- attach=1: give with a compatible scope
+--                              -- and/or silencer already attached, per
+--                              -- the weapon's own ini (scopes /
+--                              -- silencer_name+silencer_status).
 --   OUTFIT|<id>
 --   HELMET|<id>
 --   SPAWN|<section;section;...>|<count>
@@ -637,13 +641,296 @@ local function on_level_change()
 end
 
 -- ========================================
+-- WEAPON ATTACHMENTS (scope + silencer)
+-- ========================================
+-- "Roll guns with attachments" bonus: reads the weapon's own ini fields
+-- (scopes, silencer_name + silencer_status) to find what actually fits
+-- the rolled weapon, then attaches it. Each attempt goes through two
+-- phases, each with its own RETRY_LIMIT/RETRY_INTERVAL budget:
+--   "attach"  - wait for the weapon AND the freshly created addon item
+--               to both exist as live objects, then attach.
+--   "resolve" - attaching a scope swaps the weapon to a combined
+--               weapon+addon section, recreating it under a NEW id, and
+--               not instantly - the very next lookup can still come up
+--               empty for a beat even though the attach just succeeded.
+--               This phase just waits for the weapon to become
+--               queryable again before moving on, instead of resolving
+--               synchronously right after the attach call.
+-- Every lookup goes through find_weapon_object's id-then-inventory-scan
+-- fallback (never a bare captured id) for the same reason: a pre-attach
+-- id goes stale exactly when the next step needs it.
+--
+-- The weapon is only equipped once the whole queue is drained (see
+-- on_complete below), never mid-chain - equipping between attach steps
+-- is exactly what let an attach knock an already-equipped weapon back
+-- out of its slot. And since attaching can take a couple of seconds,
+-- weapon_generation (below handle_weapon) lets a newer WEAPON| roll for
+-- the same slot supersede an older one still mid-chain - the loser
+-- releases itself instead of equipping into a slot someone else already
+-- claimed, or leaking into inventory forever.
+
+local pending_attachments = {}
+
+local function read_weapon_addons(section)
+    local queue = {}
+
+    local ok1, scopes_raw = pcall(function() return parse_list(ini_sys, section, "scopes") end)
+    if ok1 and scopes_raw then
+        local options = {}
+        for i = 1, #scopes_raw do
+            local s = scopes_raw[i]
+            if s and s ~= "none" and ini_sys:section_exist(s) then
+                options[#options + 1] = s
+            end
+        end
+        if #options > 0 then
+            queue[#queue + 1] = { kind = "scope", section = options[math.random(#options)] }
+        end
+    end
+
+    local ok2, silencer = pcall(function() return ini_sys:r_string_ex(section, "silencer_name") end)
+    local ok3, sil_status = pcall(function() return ini_sys:r_float_ex(section, "silencer_status") end)
+    if ok2 and ok3 and silencer and silencer ~= "" and sil_status == 2 and ini_sys:section_exist(silencer) then
+        queue[#queue + 1] = { kind = "silencer", section = silencer }
+    end
+
+    return queue
+end
+
+local function try_attach_addon(weapon, addon_object, step)
+    if step.kind == "scope" then
+        if not IsItem("scope", step.section) then
+            return false
+        end
+        return pcall(function() utils_item.attach_addon(weapon, addon_object, "scope", true) end)
+    end
+
+    if step.kind == "silencer" then
+        if weapon:weapon_silencer_status() ~= 2 or not IsItem("sil", step.section) then
+            return false
+        end
+        return pcall(function() weapon:weapon_addon_attach(addon_object) end)
+    end
+
+    return false
+end
+
+-- Resolves the live weapon object for an attachment chain even after an
+-- earlier step recreated it under a new id: level.object_by_id(weapon_id)
+-- first (cheap, correct whenever the id didn't change), falling back to
+-- an inventory scan for an item whose section starts with the weapon's
+-- ORIGINAL (pre-attach) section - combined weapon+addon sections are
+-- named as a suffix on the base one (e.g. "wpn_ak101" -> "wpn_ak101_okp").
+local function find_weapon_object(weapon_id, base_section)
+    local weapon = level.object_by_id(weapon_id)
+    if weapon then
+        return weapon
+    end
+
+    local actor = db.actor
+    if not actor then
+        return nil
+    end
+
+    local found = nil
+
+    actor:iterate_inventory(function(npc, item)
+        if found then
+            return
+        end
+
+        local ok, section = pcall(function() return item:section() end)
+
+        if ok and section and section:find(base_section, 1, true) == 1 then
+            found = item
+        end
+    end, actor)
+
+    return found
+end
+
+-- creates the next addon item in the queue and queues it for attaching
+-- once it and the weapon both exist as live objects (see
+-- process_pending_attachments below). `on_complete(weapon_id)`, if given,
+-- runs once the whole queue is drained - whether every step succeeded or
+-- not - so the caller can equip the weapon exactly once, after every
+-- attach attempt has already happened.
+local function begin_attach_step(weapon_id, base_section, queue, on_complete)
+    local step = table.remove(queue, 1)
+    if not step then
+        if on_complete then
+            on_complete(weapon_id)
+        end
+        return
+    end
+
+    local addon = alife_create_item(step.section, db.actor)
+    if not addon then
+        printf("GAMMA BRIDGE: ATTACH - could not create " .. step.kind .. " (" .. step.section .. ")")
+        begin_attach_step(weapon_id, base_section, queue, on_complete)
+        return
+    end
+
+    pending_attachments[#pending_attachments + 1] = {
+        phase = "attach",
+        weapon_id = weapon_id,
+        base_section = base_section,
+        addon_id = addon.id,
+        step = step,
+        queue = queue,
+        on_complete = on_complete,
+        tries = 0,
+        next_try = time_global(),
+    }
+end
+
+-- Queued right after a successful/failed attach, instead of moving on
+-- immediately: the attach recreating the weapon under a new id isn't
+-- instant, so the very next find_weapon_object() call can still come up
+-- empty for a beat even though the attach itself already succeeded. This
+-- gives it the same RETRY_LIMIT/RETRY_INTERVAL budget the "wait for
+-- weapon+addon to exist" phase gets, instead of one synchronous check.
+local function begin_resolve(weapon_id, base_section, queue, on_complete)
+    pending_attachments[#pending_attachments + 1] = {
+        phase = "resolve",
+        weapon_id = weapon_id,
+        base_section = base_section,
+        queue = queue,
+        on_complete = on_complete,
+        tries = 0,
+        next_try = time_global(),
+    }
+end
+
+local function queue_weapon_attachments(weapon_id, section, on_complete)
+    local queue = read_weapon_addons(section)
+
+    if #queue == 0 then
+        printf("GAMMA BRIDGE: ATTACH - no compatible scope/silencer for " .. section)
+        if on_complete then
+            on_complete(weapon_id)
+        end
+        return
+    end
+
+    begin_attach_step(weapon_id, section, queue, on_complete)
+end
+
+-- runs every frame via actor_on_update, same retry cadence as
+-- process_pending_equips (RETRY_INTERVAL/RETRY_LIMIT)
+function process_pending_attachments()
+    if #pending_attachments == 0 then
+        return
+    end
+
+    local now = time_global()
+    local still_pending = {}
+
+    for _, req in ipairs(pending_attachments) do
+        if now < req.next_try then
+            still_pending[#still_pending + 1] = req
+        elseif req.phase == "resolve" then
+            local weapon = find_weapon_object(req.weapon_id, req.base_section)
+
+            if weapon then
+                begin_attach_step(weapon:id(), req.base_section, req.queue, req.on_complete)
+                -- resolved, don't requeue
+            else
+                req.tries = req.tries + 1
+                if req.tries < RETRY_LIMIT then
+                    req.next_try = now + RETRY_INTERVAL
+                    still_pending[#still_pending + 1] = req
+                else
+                    printf("GAMMA BRIDGE: ATTACH - lost track of the weapon after attaching, continuing best-effort")
+                    -- best effort with the last id we actually knew -
+                    -- still tries the rest of the queue / on_complete
+                    -- rather than dropping them entirely
+                    begin_attach_step(req.weapon_id, req.base_section, req.queue, req.on_complete)
+                end
+            end
+        else -- phase == "attach"
+            local weapon = find_weapon_object(req.weapon_id, req.base_section)
+            local addon_object = level.object_by_id(req.addon_id)
+
+            if weapon and addon_object then
+                if try_attach_addon(weapon, addon_object, req.step) then
+                    printf("GAMMA BRIDGE: ATTACH - attached " .. req.step.kind .. " (" .. req.step.section .. ")")
+                else
+                    printf(
+                        "GAMMA BRIDGE: ATTACH - "
+                            .. req.step.kind
+                            .. " ("
+                            .. req.step.section
+                            .. ") not compatible, releasing"
+                    )
+                    if alife_object(req.addon_id) then
+                        alife_release_id(req.addon_id)
+                    end
+                end
+
+                -- don't trust the recreated weapon to be queryable on
+                -- this same tick - go through the resolve phase instead
+                -- of resolving synchronously right here
+                begin_resolve(req.weapon_id, req.base_section, req.queue, req.on_complete)
+                -- resolved, don't requeue
+            else
+                req.tries = req.tries + 1
+                if req.tries < RETRY_LIMIT then
+                    req.next_try = now + RETRY_INTERVAL
+                    still_pending[#still_pending + 1] = req
+                else
+                    printf(
+                        "GAMMA BRIDGE: ATTACH - gave up waiting for "
+                            .. req.step.kind
+                            .. " ("
+                            .. req.step.section
+                            .. ")"
+                    )
+                    if alife_object(req.addon_id) then
+                        alife_release_id(req.addon_id)
+                    end
+
+                    -- one missing addon shouldn't block the rest of the
+                    -- queue or leave the weapon never equipped
+                    begin_attach_step(req.weapon_id, req.base_section, req.queue, req.on_complete)
+                end
+            end
+        end
+    end
+
+    pending_attachments = still_pending
+end
+
+-- Lets a newer WEAPON| roll for the same slot supersede an older one
+-- that's still mid-attachment (queue_weapon_attachments can take several
+-- seconds - two attach steps, each with its own attach+resolve retry
+-- budget). remove_in_slot()/pending_equips cancellation can't reach that
+-- older weapon: it isn't in the slot and isn't in pending_equips yet,
+-- since its own equip is deferred until its attachments finish. Every
+-- handle_weapon() call for a slot bumps that slot's generation; the
+-- deferred equip only actually runs if its generation is still current -
+-- otherwise the weapon that lost the race releases itself instead of
+-- equipping into a slot a newer roll already claimed.
+local weapon_generation = {}
+
+local function next_weapon_generation(slot)
+    weapon_generation[slot] = (weapon_generation[slot] or 0) + 1
+    return weapon_generation[slot]
+end
+
+local function is_current_weapon_generation(slot, generation)
+    return weapon_generation[slot] == generation
+end
+
+-- ========================================
 -- LOOT LINE HANDLERS
 -- ========================================
 
-local function handle_weapon(item_id, ammo_string)
+local function handle_weapon(item_id, ammo_string, with_attachments)
     printf("GAMMA BRIDGE: Giving weapon: " .. item_id)
 
     local target_slot = get_weapon_target_slot()
+    local generation = next_weapon_generation(target_slot)
 
     if REPLACE_CURRENT_ITEM then
         remove_in_slot(target_slot)
@@ -653,7 +940,33 @@ local function handle_weapon(item_id, ammo_string)
 
     printf("GAMMA BRIDGE: Weapon created: " .. item_id)
 
-    if REPLACE_CURRENT_ITEM and new_weapon then
+    if with_attachments and new_weapon then
+        -- equip only AFTER every attach attempt has resolved - see
+        -- queue_weapon_attachments/find_weapon_object above for why
+        -- equipping first can knock the weapon back out of its slot
+        queue_weapon_attachments(new_weapon.id, item_id, function(final_weapon_id)
+            if not REPLACE_CURRENT_ITEM then
+                return
+            end
+
+            if not is_current_weapon_generation(target_slot, generation) then
+                printf(
+                    "GAMMA BRIDGE: ATTACH - superseded by a newer weapon roll, releasing "
+                        .. final_weapon_id
+                        .. " instead of equipping"
+                )
+                local obj = level.object_by_id(final_weapon_id)
+                if obj then
+                    alife_release(obj)
+                elseif alife_object(final_weapon_id) then
+                    alife_release_id(final_weapon_id)
+                end
+                return
+            end
+
+            queue_equip(final_weapon_id, target_slot)
+        end)
+    elseif REPLACE_CURRENT_ITEM and new_weapon then
         queue_equip(new_weapon.id, target_slot)
     end
 
@@ -1210,9 +1523,12 @@ local function handle_line(line)
         return
     end
 
-    local item_id, ammo_string = line:match("^WEAPON|([^|]+)|?(.*)$")
+    local item_id, ammo_string, attach_flag = line:match("^WEAPON|([^|]+)|([^|]*)|([^|]*)$")
+    if not item_id then
+        item_id, ammo_string = line:match("^WEAPON|([^|]+)|?(.*)$")
+    end
     if item_id then
-        handle_weapon(item_id, ammo_string)
+        handle_weapon(item_id, ammo_string, attach_flag == "1")
         return
     end
 
@@ -1401,6 +1717,7 @@ local function register_update_callbacks()
 
     RegisterScriptCallback("actor_on_update", check_bridge)
     RegisterScriptCallback("actor_on_update", process_pending_equips)
+    RegisterScriptCallback("actor_on_update", process_pending_attachments)
     RegisterScriptCallback("actor_on_update", process_pending_spawns)
     RegisterScriptCallback("actor_on_update", process_godmode)
     RegisterScriptCallback("actor_on_update", process_time_factor)
