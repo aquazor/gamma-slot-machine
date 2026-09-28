@@ -6,6 +6,7 @@ const enemies = require('./enemies.cjs');
 const enemiesMode2 = require('./enemies-mode2.cjs');
 const perks = require('./positive-effects.cjs');
 const negativeEffects = require('./negative-effects.cjs');
+const gunAttachments = require('./gun-attachments.cjs');
 const {
   PRESETS,
   DEFAULT_PRESET,
@@ -146,7 +147,7 @@ function subEventOutcome(label, forceTriple) {
   const rolls = forceTriple ? 3 : randomSlotCount();
 
   if (category === 'loot') {
-    return { label, count: rolls };
+    return { label, count: rolls, forceBonus: forceTriple };
   }
 
   // forceTriple (a multi-sub gift bomb) also guarantees a bonus wherever
@@ -274,7 +275,7 @@ function planForEvent(event, rewardMap) {
         return { mode: 'negative', label, forceBonus: true };
       }
 
-      return { mode: 'loot', label, count: 3 };
+      return { mode: 'loot', label, count: 3, forceBonus: true };
     }
 
     default:
@@ -292,7 +293,7 @@ function resultsToLoadout(results) {
   return {
     weapons: results
       .filter((r) => r.slot === 'weapon')
-      .map((r) => ({ itemId: r.itemId, ammo: r.ammo || '' })),
+      .map((r) => ({ itemId: r.itemId, ammo: r.ammo || '', attach: Boolean(r.attach) })),
     helmets: results
       .filter((r) => r.slot === 'helmet')
       .map((r) => ({ itemId: r.itemId })),
@@ -442,8 +443,27 @@ class Roulette extends EventEmitter {
     return job;
   }
 
+  /*
+   * "Roll guns with attachments" bonus (see gun-attachments.cjs) — if this
+   * roll included a weapon slot, it has a flat CHANCE of landing with a
+   * scope/silencer already attached (the game side works out what
+   * actually fits). `plan.forceBonus` (a multi-sub gift bomb or a bits
+   * power-up) guarantees it lands instead, same "best case" treatment
+   * every other bonus in this app gets.
+   */
   _buildLootJob(event, plan) {
     const grades = PRESETS[this.preset];
+    const results = rollItems(plan.count, grades);
+
+    const weaponResult = results.find((r) => r.slot === 'weapon');
+    const attachmentsLanded =
+      Boolean(weaponResult) &&
+      gunAttachments.isEnabled() &&
+      (Boolean(plan.forceBonus) || Math.random() < gunAttachments.CHANCE);
+
+    if (attachmentsLanded) {
+      weaponResult.attach = true;
+    }
 
     return {
       id: `roll_${Date.now()}_${++this._seq}`,
@@ -453,7 +473,10 @@ class Roulette extends EventEmitter {
       kind: event.kind,
       preset: this.preset,
       grades, // { weapon: [...], helmet: [...], armor: [...] } — for the overlay reel
-      results: rollItems(plan.count, grades),
+      results,
+      bonus: attachmentsLanded
+        ? { key: 'gun-attachments', label: '', type: 'attachments' }
+        : null,
       createdAt: Date.now(),
     };
   }
