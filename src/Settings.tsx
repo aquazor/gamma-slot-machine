@@ -216,14 +216,14 @@ export default function Settings() {
   );
 
   const manualSpawn = useCallback(
-    async (category: 'mutants' | 'enemies', rolls: number): Promise<void> => {
+    async (category: 'mutants' | 'enemies'): Promise<void> => {
       setTriggerBusy(true);
 
       try {
         await fetch(`${API}/roulette/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'spawn', category, rolls, user: 'Streamer' }),
+          body: JSON.stringify({ kind: 'spawn', category, user: 'Streamer' }),
         });
       } finally {
         setTriggerBusy(false);
@@ -313,31 +313,6 @@ export default function Settings() {
     [bumpSeq, isStaleSeq],
   );
 
-  const selectRollMode = useCallback(
-    async (mode: 'random' | 'count-roll'): Promise<void> => {
-      setRoulette((prev) => {
-        if (!prev || prev.rollMode === mode) {
-          return prev;
-        }
-
-        return { ...prev, rollMode: mode };
-      });
-
-      const s = bumpSeq();
-
-      const updated = await fetch(`${API}/roulette/roll-mode`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode }),
-      }).then((res) => res.json());
-
-      if (!isStaleSeq(s) && !updated.error) {
-        setRoulette(updated);
-      }
-    },
-    [bumpSeq, isStaleSeq],
-  );
-
   const [copied, setCopied] = useState<boolean>(false);
 
   const copyOverlayUrl = useCallback(async (): Promise<void> => {
@@ -390,7 +365,6 @@ export default function Settings() {
                 triggerBusy={triggerBusy}
                 selectPreset={selectPreset}
                 selectSpawnTier={selectSpawnTier}
-                selectRollMode={selectRollMode}
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
                 manualPerk={manualPerk}

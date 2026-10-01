@@ -28,7 +28,7 @@ const REWARDS_URL = `${HELIX_URL}/channel_points/custom_rewards`;
  * ---------------------------------------------------------
  * The streamer can tune cost / per-user limit / cooldown per reward
  * from /settings. Only those three fields are ever overridable — title
- * (and kind/category/count/rolls, which drive the roll logic) stay
+ * (and kind/category/count, which drive the roll logic) stay
  * exactly as defined in CHANNEL_POINT_REWARDS, so the title-based
  * matching above never drifts out from under a saved override, and a
  * reward the roulette knows how to roll never silently changes shape.
@@ -540,7 +540,6 @@ async function listRewards() {
       kind: def.kind || 'loot',
       category: def.category || null,
       count: def.count || null,
-      rolls: def.rolls || null,
       maxPerUserPerStream: perUser.is_enabled ? perUser.max_per_user_per_stream : null,
       cooldownSeconds: cooldown.is_enabled ? cooldown.global_cooldown_seconds : null,
     });

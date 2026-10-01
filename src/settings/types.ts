@@ -17,7 +17,6 @@ export interface RouletteStatus {
   presets: string[];
   spawnTier: string;
   spawnTiers: string[];
-  rollMode: 'random' | 'count-roll';
   queued: number;
 }
 
@@ -38,7 +37,6 @@ export interface Reward {
   kind: 'loot' | 'spawn' | 'perk' | 'negative';
   category: 'mutants' | 'enemies' | null;
   count: number | null;
-  rolls: number | null;
   maxPerUserPerStream: number | null;
   cooldownSeconds: number | null;
 }

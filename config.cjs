@@ -40,35 +40,27 @@ const TWITCH_SCOPES = [
 //   count    — (loot) how many items the roll produces. null = randomized
 //              1-3 at redemption time (roulette.cjs).
 //   category — (spawn) 'mutants' | 'enemies'
-//   rolls    — (spawn) how many groups to roll at once. null = randomized
-//              1-3 at redemption time, same as `count` above. Picks are
-//              independent, so the same group can come up more than once;
-//              each group's creature count is auto-reduced when rolls > 1
-//              (enemies.cjs countForRoll) so rolling 3 spawns roughly as
-//              many total creatures as three separate single rolls, not 3x.
 const CHANNEL_POINT_REWARDS = [
   {
     key: 'spawn-squads',
     title: '[SPIN] Spawn Squads',
     previousTitle: '[SPIN] Spawn Enemies',
     cost: 3000,
-    prompt: 'Drop 1-3 hostile squads near the streamer (random).',
+    prompt: 'Drop a random hostile squad near the streamer.',
     kind: 'spawn',
     category: 'enemies',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
-    rolls: null,
   },
   {
     key: 'spawn-mutants',
     title: '[SPIN] Spawn Mutants',
     cost: 3000,
-    prompt: 'Drop 1-3 mutant packs near the streamer (random).',
+    prompt: 'Drop a random mutant pack near the streamer.',
     kind: 'spawn',
     category: 'mutants',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
-    rolls: null,
   },
   {
     key: 'loot-roll',
@@ -87,7 +79,7 @@ const CHANNEL_POINT_REWARDS = [
     previousTitle: '[SPIN] Perks',
     cost: 3000,
     prompt:
-      'Roll a random positive effect: Immortality, Give Ammo, Give Money, or Medicine.',
+      'Roll a random positive effect: Immortality, Give Ammo, Give Money, Medicine, or Food & Water.',
     kind: 'perk',
     maxPerUserPerStream: 2,
     cooldownSeconds: 60,
@@ -122,9 +114,11 @@ const OBSOLETE_REWARD_TITLES = [
 // creates them by hand in the Twitch dashboard (Viewer Rewards > Custom
 // Power-ups) and this app just matches them by `title` — same pattern as
 // CHANNEL_POINT_REWARDS, and the titles below match the equivalent
-// channel-point reward names 1:1. Each one always rolls a random 1-3,
-// same as its channel-point counterpart; there's no cost here to keep in
-// sync since there's no update API — set the Bits price on Twitch itself.
+// channel-point reward names 1:1. Each one always rolls the best case
+// (max loot count, a guaranteed bonus wherever one exists) instead of a
+// regular roll — see planForEvent's 'power_up' case in roulette.cjs;
+// there's no cost here to keep in sync since there's no update API —
+// set the Bits price on Twitch itself.
 const CUSTOM_POWER_UPS_ENABLED = true;
 const CUSTOM_POWER_UPS = [
   { title: '[SPIN] Spawn Squads', kind: 'spawn', category: 'enemies' },
@@ -148,7 +142,7 @@ const PRESETS = {
 const DEFAULT_PRESET = 'Basic';
 
 // Spawn roulette difficulty. The actual tier lists live in
-// enemies.data.json (keyed Basic / Advanced / Expert); this is
+// enemies.mode2.data.json (keyed Basic / Advanced / Expert); this is
 // only the default selection. Switched live in /settings, not persisted.
 const DEFAULT_SPAWN_TIER = 'Basic';
 

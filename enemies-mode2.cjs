@@ -1,13 +1,10 @@
 /*
  * ---------------------------------------------------------
- * MODE 2 — dual-slot spawn (count reel + species reel)
+ * DUAL-SLOT SPAWN (count reel + species reel)
  * ---------------------------------------------------------
- * Unlike mode 1's rollSpawn (N independent group picks, `rolls` = how
- * many), mode 2 always picks exactly ONE group, then rolls its count
- * once — `rolls` from the triggering event/reward is ignored entirely
- * here. Count uses its OWN range rule (see countRange below),
- * deliberately different from mode 1's rangeForGroup: no min/max at
- * all -> exact `count`, not an invented range.
+ * Always picks exactly ONE group, then rolls its count once. Count uses
+ * its own range rule (see countRange below): no min/max given at all ->
+ * exact `count`, not an invented range.
  *
  * On top of that, each roll has a chance of ONE bonus applying (defined
  * per category+tier in enemies.mode2.data.json's `_bonuses`, never
@@ -16,8 +13,7 @@
  *
  * Bonuses can be globally enabled/disabled from Settings (by `key`,
  * applies across every tier that defines that key) — state here mirrors
- * enemy-pool.cjs's per-instance faction toggles: runtime-only, resets
- * on restart.
+ * enemy-pool.cjs's own faction toggles: runtime-only, resets on restart.
  */
 
 const fs = require('fs');
@@ -211,11 +207,9 @@ function rollBonus(category, tier, forceGuaranteed) {
 }
 
 /*
- * Mode 2's own count-range rule — deliberately NOT mode 1's
- * rangeForGroup. No min/max given at all -> exact `count`, no invented
- * range. A range only exists here if the data explicitly sets min
- * and/or max (the missing bound then falls back to `count`, same
- * clamping mode 1 uses once a range is actually in play).
+ * No min/max given at all -> exact `count`, no invented range. A range
+ * only exists here if the data explicitly sets min and/or max (the
+ * missing bound then falls back to `count`).
  */
 function countRange(group, base) {
   const min = Number.isFinite(group.min) ? Math.max(1, Math.floor(group.min)) : null;
@@ -268,12 +262,9 @@ function isExpertOnlyFaction(key) {
  * ---------------------------------------------------------
  * THE ROLL
  * ---------------------------------------------------------
- * Returns the same per-result shape mode 1's rollSpawn entries use
- * (category/tier/group/label/icon/sections/count/text) plus a `bonus`
- * field (null, or {key,label,type}) — so spawnCommandLines() and the
- * overlay's existing rendering both work unchanged. `rolls` from the
- * caller is intentionally NOT used for the count here (see file header)
- * — only `forceBonus` (a multi-sub gift bomb) matters.
+ * Returns {category, tier, group, label, icon, sections, count, text}
+ * plus a `bonus` field (null, or {key,label,type}) — so
+ * spawnCommandLines() and the overlay's rendering both work unchanged.
  *
  * Returns null if the category/tier has no usable groups.
  */

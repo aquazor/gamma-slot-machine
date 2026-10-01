@@ -8,9 +8,8 @@ interface Props {
   triggerBusy: boolean;
   selectPreset: (name: string) => void;
   selectSpawnTier: (name: string) => void;
-  selectRollMode: (mode: 'random' | 'count-roll') => void;
   manualRoll: (count: number) => void;
-  manualSpawn: (category: 'mutants' | 'enemies', rolls: number) => void;
+  manualSpawn: (category: 'mutants' | 'enemies') => void;
   manualPerk: () => void;
   manualNegativeEffect: () => void;
 }
@@ -20,7 +19,6 @@ function RouletteControls({
   triggerBusy,
   selectPreset,
   selectSpawnTier,
-  selectRollMode,
   manualRoll,
   manualSpawn,
   manualPerk,
@@ -62,26 +60,6 @@ function RouletteControls({
   return (
     <section className="set-section">
       <h2 className="set-heading">Roulette</h2>
-
-      {roulette && (
-        <div className="set-presets">
-          <span className="set-muted">Spawn roll mode</span>
-          <div className="set-preset-group">
-            <button
-              className={`set-preset ${roulette.rollMode === 'random' ? 'is-active' : ''}`}
-              onClick={() => selectRollMode('random')}
-            >
-              Random
-            </button>
-            <button
-              className={`set-preset ${roulette.rollMode === 'count-roll' ? 'is-active' : ''}`}
-              onClick={() => selectRollMode('count-roll')}
-            >
-              Count Roll
-            </button>
-          </div>
-        </div>
-      )}
 
       {roulette && roulette.presets?.length > 0 && (
         <div className="set-presets">
@@ -144,30 +122,16 @@ function RouletteControls({
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Mutants</span>
-        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
-          <button
-            key={n}
-            className="set-btn"
-            onClick={() => manualSpawn('mutants', n)}
-            disabled={triggerBusy}
-          >
-            {n === 1 ? 'Mutants' : `Mutants ×${n}`}
-          </button>
-        ))}
+        <button className="set-btn" onClick={() => manualSpawn('mutants')} disabled={triggerBusy}>
+          Mutants
+        </button>
       </div>
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Squads</span>
-        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
-          <button
-            key={n}
-            className="set-btn"
-            onClick={() => manualSpawn('enemies', n)}
-            disabled={triggerBusy}
-          >
-            {n === 1 ? 'Squads' : `Squads ×${n}`}
-          </button>
-        ))}
+        <button className="set-btn" onClick={() => manualSpawn('enemies')} disabled={triggerBusy}>
+          Squads
+        </button>
       </div>
 
       <div className="set-trigger">

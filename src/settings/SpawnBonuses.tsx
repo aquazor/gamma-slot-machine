@@ -6,8 +6,6 @@ function percentFromChance(chance: number): string {
   return String(Math.round(chance * 1000) / 10); // one decimal, e.g. 3.3
 }
 
-// "Count Roll" mode only — these toggles/chances have no effect while
-// "Random" is active, since Random has no concept of bonuses at all.
 function SpawnBonuses() {
   const [bonuses, setBonuses] = useState<SpawnBonus[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -164,7 +162,7 @@ function SpawnBonuses() {
   return (
     <section className="set-section">
       <div className="set-section-header">
-        <h2 className="set-heading">Spawn bonuses (Count Roll)</h2>
+        <h2 className="set-heading">Spawn bonuses</h2>
 
         <button
           className="set-btn set-section-reset"
@@ -175,9 +173,7 @@ function SpawnBonuses() {
         </button>
       </div>
 
-      <p className="set-muted">
-        Chance of a bonus on a Count Roll spawn — has no effect while Random is active.
-      </p>
+      <p className="set-muted">Chance of a bonus on a spawn roll.</p>
 
       <div className="set-rewards">
         {bonuses.map((bonus) => {

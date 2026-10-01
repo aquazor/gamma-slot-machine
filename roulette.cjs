@@ -2,8 +2,7 @@ const { EventEmitter } = require('events');
 
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
-const enemies = require('./enemies.cjs');
-const enemiesMode2 = require('./enemies-mode2.cjs');
+const enemies = require('./enemies-mode2.cjs');
 const perks = require('./positive-effects.cjs');
 const negativeEffects = require('./negative-effects.cjs');
 const gunAttachments = require('./gun-attachments.cjs');
@@ -151,10 +150,9 @@ function subEventOutcome(label, forceTriple) {
   }
 
   // forceTriple (a multi-sub gift bomb) also guarantees a bonus wherever
-  // one exists — a spawn bonus in roll mode 2 (ignored entirely by mode 1,
-  // which has no concept of bonuses), a perk's own bonus, or a negative
-  // effect's own bonus — same "guaranteed best case" treatment bits
-  // power-ups already get.
+  // one exists — a spawn bonus, a perk's own bonus, or a negative effect's
+  // own bonus — same "guaranteed best case" treatment bits power-ups
+  // already get.
   if (category === 'perk') {
     return { mode: 'perk', label, forceBonus: forceTriple };
   }
@@ -163,7 +161,7 @@ function subEventOutcome(label, forceTriple) {
     return { mode: 'negative', label, forceBonus: forceTriple };
   }
 
-  return { mode: 'spawn', label, category, rolls, forceBonus: forceTriple };
+  return { mode: 'spawn', label, category, forceBonus: forceTriple };
 }
 
 /*
@@ -192,7 +190,6 @@ function planForEvent(event, rewardMap) {
           mode: 'spawn',
           label: name.toUpperCase(),
           category: def.category || 'mutants',
-          rolls: Number.isFinite(def.rolls) && def.rolls > 0 ? def.rolls : randomSlotCount(),
         };
       }
 
@@ -219,7 +216,6 @@ function planForEvent(event, rewardMap) {
         mode: 'spawn',
         label: 'MANUAL SPAWN',
         category: event.category === 'enemies' ? 'enemies' : 'mutants',
-        rolls: event.rolls || 1,
       };
 
     case 'manual-perk':
@@ -264,7 +260,7 @@ function planForEvent(event, rewardMap) {
       // one — bits cost real money, so a power-up redemption should feel
       // like a guaranteed best-case roll, not a regular one.
       if (def.kind === 'spawn') {
-        return { mode: 'spawn', label, category: def.category, rolls: 3, forceBonus: true };
+        return { mode: 'spawn', label, category: def.category, forceBonus: true };
       }
 
       if (def.kind === 'perk') {
@@ -332,7 +328,6 @@ class Roulette extends EventEmitter {
 
     this.overlayPresent = false;
     this.rewardMap = null;
-    this.rollMode = 'count-roll';
     this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
 
     const spawnTiers = enemies.spawnTiers();
@@ -369,16 +364,6 @@ class Roulette extends EventEmitter {
     return false;
   }
 
-  setRollMode(mode) {
-    if (mode === 'random' || mode === 'count-roll') {
-      this.rollMode = mode;
-
-      return true;
-    }
-
-    return false;
-  }
-
   setOverlayPresent(value) {
     const wasPresent = this.overlayPresent;
 
@@ -402,7 +387,6 @@ class Roulette extends EventEmitter {
       presets: Object.keys(PRESETS),
       spawnTier: this.spawnTier,
       spawnTiers: enemies.spawnTiers(),
-      rollMode: this.rollMode,
       queued: this.queue.length,
       current: this.current,
       history: this.history.slice(0, 10),
@@ -482,14 +466,13 @@ class Roulette extends EventEmitter {
   }
 
   /*
-   * A perk roll (Immortality / Give Ammo / Give Money / Medicine) —
-   * dual-slot, same shape as Count Roll's count+species mechanic: slot 1
-   * picks WHICH perk (weighted by each perk's own chance among enabled
-   * ones), slot 2 rolls that perk's own value (see
-   * positive-effects.cjs's rollPerkValue). `results` reuses the same
-   * single-text-reel shape mode 1's spawn results use for BOTH slots, so
-   * the overlay can render them with its existing reel component
-   * unchanged.
+   * A perk roll (Immortality / Give Ammo / Give Money / Medicine / Food &
+   * Water) — dual-slot, same shape as the spawn roll's count+species
+   * mechanic: slot 1 picks WHICH perk (weighted by each perk's own chance
+   * among enabled ones), slot 2 rolls that perk's own value (see
+   * positive-effects.cjs's rollPerkValue). `results` uses the same
+   * single-text-reel shape for both slots, so the overlay can render them
+   * with its existing reel component unchanged.
    */
   _buildPerkJob(event, plan) {
     const perk = perks.rollPerk();
@@ -625,57 +608,19 @@ class Roulette extends EventEmitter {
     };
   }
 
+  /*
+   * Exactly one dual-slot roll (species + its own count), never N
+   * independent picks. `plan.forceBonus` (a multi-sub gift bomb or a bits
+   * power-up) guarantees a bonus instead of the normal per-roll chance.
+   */
   _buildSpawnJob(event, plan) {
     const category = plan.category === 'enemies' ? 'enemies' : 'mutants';
     const tier = this.spawnTier;
 
-    if (this.rollMode === 'count-roll') {
-      return this._buildSpawnJobCountRoll(event, plan, category, tier);
-    }
-
-    const rolls = Math.min(3, Math.max(1, Number(plan.rolls) || 1));
-
-    const spawnResults = enemies.rollSpawn(category, tier, rolls);
-
-    if (spawnResults.length === 0) {
-      console.error(`Roulette: no spawn groups for ${category}/${tier}`);
-
-      return null;
-    }
-
-    return {
-      id: `spawn_${Date.now()}_${++this._seq}`,
-      user: event.user || 'Anonymous',
-      label: plan.label,
-      mode: 'spawn',
-      kind: event.kind,
-      category,
-      spawnTier: tier,
-      spawnResults,
-      // spinning filler for the overlay's spawn reels — {label, icon} pairs
-      spawnPool: enemies.groupOptions(category, tier),
-      results: spawnResults.map((r) => ({
-        slot: 'spawn',
-        name: r.text, // "BOARS x2" — shown in the small result line under the reel
-        label: r.label, // "Boars" — shown in the reel itself (no count)
-        group: r.group,
-        icon: r.icon,
-      })),
-      createdAt: Date.now(),
-    };
-  }
-
-  /*
-   * "Count roll" mode: exactly one dual-slot roll (species + its own
-   * count), never N independent picks — see enemies-mode2.cjs for why
-   * `plan.rolls` is not used here. `plan.forceBonus` (a multi-sub gift
-   * bomb) guarantees a bonus instead of the normal per-roll chance.
-   */
-  _buildSpawnJobCountRoll(event, plan, category, tier) {
-    const result = enemiesMode2.rollDualSlot(category, tier, Boolean(plan.forceBonus));
+    const result = enemies.rollDualSlot(category, tier, Boolean(plan.forceBonus));
 
     if (!result) {
-      console.error(`Roulette: no spawn groups for ${category}/${tier} (mode 2)`);
+      console.error(`Roulette: no spawn groups for ${category}/${tier}`);
 
       return null;
     }
@@ -694,7 +639,7 @@ class Roulette extends EventEmitter {
       // specifics). The count reel's own inline "(x2 bonus)" text reads
       // straight from `results[0].bonus` below, untouched.
       bonus: result.bonus ? { key: result.bonus.key, label: '', type: result.bonus.type } : null,
-      spawnPool: enemiesMode2.groupOptions(category, tier),
+      spawnPool: enemies.groupOptions(category, tier),
       // Count reel rolls first, species reel second — the dual-slot
       // mechanic this mode was built for ("1 слот роллит каунт, второй
       // слот роллит кого спавнить").
