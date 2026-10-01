@@ -6,7 +6,14 @@ function percentFromChance(chance: number): string {
   return String(Math.round(chance * 1000) / 10); // one decimal, e.g. 3.3
 }
 
-function SpawnBonuses() {
+interface Props {
+  // Count Roll (labs) has its own independent bonus chances/enable state
+  // (see enemies-labs.cjs) — same UI, different endpoints.
+  labs?: boolean;
+}
+
+function SpawnBonuses({ labs = false }: Props) {
+  const basePath = labs ? `${API}/roulette/labs/bonuses` : `${API}/roulette/bonuses`;
   const [bonuses, setBonuses] = useState<SpawnBonus[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -38,7 +45,7 @@ function SpawnBonuses() {
   useEffect(() => {
     const seq = bumpSeq();
 
-    fetch(`${API}/roulette/bonuses`)
+    fetch(basePath)
       .then((res) => res.json())
       .then((data) => {
         if (isStaleSeq(seq)) {
@@ -53,14 +60,14 @@ function SpawnBonuses() {
       .catch(() => {
         // leave the list empty — section just won't render
       });
-  }, [bumpSeq, isStaleSeq, seedDrafts]);
+  }, [basePath, bumpSeq, isStaleSeq, seedDrafts]);
 
   const toggleBonus = async (key: string, enabled: boolean): Promise<void> => {
     const seq = bumpSeq();
 
     setBonuses((prev) => prev.map((b) => (b.key === key ? { ...b, enabled } : b)));
 
-    const res = await fetch(`${API}/roulette/bonuses/toggle`, {
+    const res = await fetch(`${basePath}/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, enabled }),
@@ -91,7 +98,7 @@ function SpawnBonuses() {
     setErrors((prev) => ({ ...prev, [key]: '' }));
 
     try {
-      const res = await fetch(`${API}/roulette/bonuses/chance`, {
+      const res = await fetch(`${basePath}/chance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, chance: percent / 100 }),
@@ -136,9 +143,7 @@ function SpawnBonuses() {
     setResetting(true);
 
     try {
-      const res = await fetch(`${API}/roulette/bonuses/reset`, { method: 'POST' }).then((r) =>
-        r.json(),
-      );
+      const res = await fetch(`${basePath}/reset`, { method: 'POST' }).then((r) => r.json());
 
       if (Array.isArray(res.bonuses) && !isStaleSeq(seq)) {
         setBonuses(res.bonuses);
@@ -162,7 +167,7 @@ function SpawnBonuses() {
   return (
     <section className="set-section">
       <div className="set-section-header">
-        <h2 className="set-heading">Spawn bonuses</h2>
+        <h2 className="set-heading">Spawn bonuses{labs ? ' (Labs)' : ''}</h2>
 
         <button
           className="set-btn set-section-reset"

@@ -231,6 +231,14 @@ export default function About() {
               spawns per roll (never a mix), but the count can still be as small as 1 or
               fairly large, and every spawn roll has a chance at a bonus (below).
             </p>
+            <p>
+              The streamer can switch the squad/mutant roster itself between{' '}
+              <strong>Count Roll</strong> and <strong>Count Roll (LABS)</strong> in Settings
+              — same mechanic either way, just a different roster. The LABS roster makes
+              Monolith, Sin, and UNISG reachable at every difficulty tier instead of Expert
+              only, and can trim or rebalance which mutants/squads show up independently of
+              the normal roster. Its own spawn bonuses (below) are tuned separately too.
+            </p>
           </section>
 
           <section className="set-section">
@@ -245,6 +253,9 @@ export default function About() {
                 spawn
               </li>
               <li>
+                <strong>+1 Plus One</strong> — adds 1 more to the spawn count
+              </li>
+              <li>
                 <strong>+2 Plus Two</strong> — adds 2 more to the spawn count
               </li>
               <li>
@@ -252,12 +263,14 @@ export default function About() {
                 something from the NEXT tier up (e.g. a Basic roll can spawn something
                 that&apos;s normally only available at Advanced). Expert rolls upgrade
                 within Expert&apos;s own rarest options, since there&apos;s no tier above
-                Expert.
+                Expert. Mutant packs only — hostile squads don&apos;t use this one.
               </li>
             </ul>
             <p>
-              By default, each bonus has a 3.3% chance per roll (about a 1-in-10 chance of
-              ANY bonus landing). The streamer can turn any bonus on or off, fine-tune
+              By default, each bonus has a 2.5% chance per roll (about a 1-in-10 chance of
+              ANY bonus landing). Exactly which bonuses are active can vary by category and
+              tier — see the Tweaking page for what&apos;s actually enabled right now. The
+              streamer can turn any bonus on or off, fine-tune
               each one&apos;s exact chance as a percentage, and restore the defaults in
               one click — all from the Tweaking page, and the tweaks survive the app being
               closed and reopened. If the enabled bonuses&apos; chances add up to 100% or
@@ -273,8 +286,10 @@ export default function About() {
             </p>
             <p>
               Tier Upgrade specifically respects the same faction restrictions described
-              below — it can never pull in Monolith, Sin, or UNISG unless the roll is
-              already happening at the Expert tier.
+              below — on the normal roster, it can never pull in Monolith, Sin, or UNISG
+              unless the roll is already happening at the Expert tier. The LABS roster has
+              no such restriction, since those factions are available at every tier there
+              to begin with.
             </p>
           </section>
 
@@ -313,9 +328,11 @@ export default function About() {
               </li>
             </ul>
             <p>
-              Monolith, Sin, and UNISG are exclusive to the Expert tier — they can never
-              show up while the squad difficulty is set to Basic or Advanced, even via a
-              Tier Upgrade bonus.
+              On the normal roster, Monolith, Sin, and UNISG are exclusive to the Expert
+              tier — they can never show up while the squad difficulty is set to Basic or
+              Advanced, even via a Tier Upgrade bonus. Switching to the{' '}
+              <strong>Count Roll (LABS)</strong> roster (see Spawn Rolls above) makes all
+              three reachable at every tier instead.
             </p>
           </section>
 
@@ -348,7 +365,7 @@ export default function About() {
           <section className="set-section">
             <h2 className="set-heading">A Note On Odds</h2>
             <p>
-              &quot;Chance&quot; numbers above (3.3% per bonus, 1-in-4 category odds on
+              &quot;Chance&quot; numbers above (2.5% per bonus, 1-in-5 category odds on
               subs, etc.) reflect the defaults as of this guide. Bonus chances, positive
               effect odds, and which squads are enabled can all be changed by the streamer
               at any time from Settings and the Tweaking page, so the exact odds in effect

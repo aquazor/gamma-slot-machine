@@ -32,9 +32,13 @@ Twitch (EventSub)  →  server.cjs / roulette.cjs  →  command.txt  →  Lua br
    bits power-up redemption, or a channel-point redemption.
 2. `roulette.cjs` decides what the event should roll: a loot item, a
    mutant/enemy spawn, a positive effect, or a negative effect.
-   - Spawns (`enemies-mode2.cjs` + `enemies.mode2.data.json`) are a
-     dual-slot roll (how many + which group), with a chance of a bonus
-     (double count, +2, or a tier upgrade).
+   - Spawns are a dual-slot roll (how many + which group), with a chance
+     of a bonus (double count, +1, +2, or a tier upgrade). Two selectable
+     rosters share the same engine (`spawn-mode.cjs`): the normal one
+     (`enemies-mode2.cjs` + `enemies.mode2.data.json`) and "Count Roll
+     (labs)" (`enemies-labs.cjs` + `enemies.labs.data.json`, where
+     Monolith/UNISG/Sin are available at every tier instead of Expert
+     only) — each with its own independent bonus chances.
    - Positive effects (`positive-effects.cjs` + `positive-effects.data.json`)
      and negative effects (`negative-effects.cjs` + `negative-effects.data.json`)
      are each their own dual-slot roll: which effect, then that effect's own
@@ -94,7 +98,8 @@ node -e "const roulette = require('./roulette.cjs'); console.log(roulette.planFo
 ```
 
 `roulette.cjs`, `positive-effects.cjs`, `negative-effects.cjs`,
-`enemies-mode2.cjs`, `gun-attachments.cjs` and `config.cjs` are all safe to
+`enemies-mode2.cjs`, `enemies-labs.cjs`, `gun-attachments.cjs` and
+`config.cjs` are all safe to
 `require()` directly this way — pure logic, no ports, no network.
 
 ## Twitch setup
@@ -184,7 +189,9 @@ src/
 server.cjs             Express server — HTTP API + Twitch EventSub wiring
 roulette.cjs           picks what an event rolls (loot / spawn / positive / negative effect) and runs the delivery queue
 enemy-pool.cjs         shared spawn-pool factory (faction toggles, group rolling)
-enemies-mode2.cjs / enemies.mode2.data.json   spawn roll — dual-slot count+species roll, spawn bonuses
+spawn-mode.cjs         dual-slot spawn engine factory (count+species roll, bonuses) behind both rosters below
+enemies-mode2.cjs / enemies.mode2.data.json   normal spawn roster
+enemies-labs.cjs / enemies.labs.data.json     "Count Roll (labs)" roster — Monolith/UNISG/Sin at every tier
 positive-effects.cjs / positive-effects.data.json   Immortality / Give Ammo / Give Money / Medicine / Food & Water roll outcome
 negative-effects.cjs / negative-effects.data.json   Drop Weapon / Empty Pockets / Break Item / Time Factor / Drink Vodka / Junk Item roll outcome
 gun-attachments.cjs    "Roll guns with attachments" bonus — enable flag + chance

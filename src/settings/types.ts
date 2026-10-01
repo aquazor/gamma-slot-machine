@@ -17,6 +17,7 @@ export interface RouletteStatus {
   presets: string[];
   spawnTier: string;
   spawnTiers: string[];
+  labsMode: boolean;
   queued: number;
 }
 

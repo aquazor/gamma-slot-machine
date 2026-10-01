@@ -3,6 +3,7 @@ const { EventEmitter } = require('events');
 const items = require('./items.data.json');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies-mode2.cjs');
+const enemiesLabs = require('./enemies-labs.cjs');
 const perks = require('./positive-effects.cjs');
 const negativeEffects = require('./negative-effects.cjs');
 const gunAttachments = require('./gun-attachments.cjs');
@@ -209,20 +210,34 @@ function planForEvent(event, rewardMap) {
     }
 
     case 'manual':
-      return { mode: 'loot', label: 'MANUAL ROLL', count: event.manualCount || 1 };
+      return {
+        mode: 'loot',
+        label: 'MANUAL ROLL',
+        count: event.manualCount || 1,
+        forceBonus: Boolean(event.forceBonus),
+      };
 
     case 'manual-spawn':
       return {
         mode: 'spawn',
         label: 'MANUAL SPAWN',
         category: event.category === 'enemies' ? 'enemies' : 'mutants',
+        forceBonus: Boolean(event.forceBonus),
       };
 
     case 'manual-perk':
-      return { mode: 'perk', label: 'MANUAL POSITIVE EFFECT' };
+      return {
+        mode: 'perk',
+        label: 'MANUAL POSITIVE EFFECT',
+        forceBonus: Boolean(event.forceBonus),
+      };
 
     case 'manual-negative':
-      return { mode: 'negative', label: 'MANUAL NEGATIVE EFFECT' };
+      return {
+        mode: 'negative',
+        label: 'MANUAL NEGATIVE EFFECT',
+        forceBonus: Boolean(event.forceBonus),
+      };
 
     case 'subscribe':
       // Gifted-sub recipients arrive here with isGift=true; the
@@ -329,6 +344,7 @@ class Roulette extends EventEmitter {
     this.overlayPresent = false;
     this.rewardMap = null;
     this.preset = PRESETS[DEFAULT_PRESET] ? DEFAULT_PRESET : Object.keys(PRESETS)[0];
+    this.labsMode = false;
 
     const spawnTiers = enemies.spawnTiers();
     this.spawnTier = spawnTiers.includes(DEFAULT_SPAWN_TIER)
@@ -364,6 +380,23 @@ class Roulette extends EventEmitter {
     return false;
   }
 
+  /*
+   * "Count Roll (labs)" — same dual-slot engine, different roster
+   * (enemies.labs.data.json via enemies-labs.cjs): Monolith/UNISG/Sin at
+   * every tier, and a mutant roster that can be trimmed independently.
+   * The spawn tier selection (Basic/Advanced/Expert) is shared with the
+   * normal roster — this only swaps which data backs it.
+   */
+  setLabsMode(value) {
+    this.labsMode = Boolean(value);
+
+    return true;
+  }
+
+  _activeSpawnPool() {
+    return this.labsMode ? enemiesLabs : enemies;
+  }
+
   setOverlayPresent(value) {
     const wasPresent = this.overlayPresent;
 
@@ -387,6 +420,7 @@ class Roulette extends EventEmitter {
       presets: Object.keys(PRESETS),
       spawnTier: this.spawnTier,
       spawnTiers: enemies.spawnTiers(),
+      labsMode: this.labsMode,
       queued: this.queue.length,
       current: this.current,
       history: this.history.slice(0, 10),
@@ -616,8 +650,9 @@ class Roulette extends EventEmitter {
   _buildSpawnJob(event, plan) {
     const category = plan.category === 'enemies' ? 'enemies' : 'mutants';
     const tier = this.spawnTier;
+    const pool = this._activeSpawnPool();
 
-    const result = enemies.rollDualSlot(category, tier, Boolean(plan.forceBonus));
+    const result = pool.rollDualSlot(category, tier, Boolean(plan.forceBonus));
 
     if (!result) {
       console.error(`Roulette: no spawn groups for ${category}/${tier}`);
@@ -633,13 +668,14 @@ class Roulette extends EventEmitter {
       kind: event.kind,
       category,
       spawnTier: tier,
+      labsMode: this.labsMode,
       spawnResults: [result],
       // A fresh object, not `result.bonus` itself — this only drives the
       // top banner's badge/glow, which stays generic ("BONUS", no
       // specifics). The count reel's own inline "(x2 bonus)" text reads
       // straight from `results[0].bonus` below, untouched.
       bonus: result.bonus ? { key: result.bonus.key, label: '', type: result.bonus.type } : null,
-      spawnPool: enemies.groupOptions(category, tier),
+      spawnPool: pool.groupOptions(category, tier),
       // Count reel rolls first, species reel second — the dual-slot
       // mechanic this mode was built for ("1 слот роллит каунт, второй
       // слот роллит кого спавнить").
@@ -719,7 +755,9 @@ class Roulette extends EventEmitter {
     let give;
 
     if (job.mode === 'spawn') {
-      give = bridge.writeCommandLines(enemies.spawnCommandLines(job.spawnResults, job.user));
+      const pool = job.labsMode ? enemiesLabs : enemies;
+
+      give = bridge.writeCommandLines(pool.spawnCommandLines(job.spawnResults, job.user));
     } else if (job.mode === 'perk') {
       give = bridge.writeCommandLines(
         perks.perkCommandLines(job.perk, job.perkValue, job.user),

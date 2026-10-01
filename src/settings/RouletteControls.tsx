@@ -8,10 +8,11 @@ interface Props {
   triggerBusy: boolean;
   selectPreset: (name: string) => void;
   selectSpawnTier: (name: string) => void;
-  manualRoll: (count: number) => void;
-  manualSpawn: (category: 'mutants' | 'enemies') => void;
-  manualPerk: () => void;
-  manualNegativeEffect: () => void;
+  toggleLabsMode: (enabled: boolean) => void;
+  manualRoll: (count: number, forceBonus?: boolean) => void;
+  manualSpawn: (category: 'mutants' | 'enemies', forceBonus?: boolean) => void;
+  manualPerk: (forceBonus?: boolean) => void;
+  manualNegativeEffect: (forceBonus?: boolean) => void;
 }
 
 function RouletteControls({
@@ -19,6 +20,7 @@ function RouletteControls({
   triggerBusy,
   selectPreset,
   selectSpawnTier,
+  toggleLabsMode,
   manualRoll,
   manualSpawn,
   manualPerk,
@@ -60,6 +62,34 @@ function RouletteControls({
   return (
     <section className="set-section">
       <h2 className="set-heading">Roulette</h2>
+
+      {roulette && (
+        <div className="set-presets">
+          <span className="set-muted">Spawn roster</span>
+          <div className="set-preset-group">
+            <button
+              className={`set-preset ${!roulette.labsMode ? 'is-active' : ''}`}
+              onClick={() => toggleLabsMode(false)}
+            >
+              Count Roll
+            </button>
+            <button
+              className={`set-preset ${roulette.labsMode ? 'is-active' : ''}`}
+              onClick={() => toggleLabsMode(true)}
+            >
+              Count Roll (LABS)
+              <span
+                className="set-hint"
+                tabIndex={0}
+                data-tip="Monolith, ISG and Sin can spawn on all tiers. More balanced spawn roster for Labs."
+                onClick={(event) => event.stopPropagation()}
+              >
+                ?
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {roulette && roulette.presets?.length > 0 && (
         <div className="set-presets">
@@ -107,6 +137,13 @@ function RouletteControls({
             {n} item{n > 1 ? 's' : ''}
           </button>
         ))}
+        <button
+          className="set-btn"
+          onClick={() => manualRoll(3, true)}
+          disabled={triggerBusy}
+        >
+          3 items + bonus
+        </button>
 
         <label className="set-auto-activate">
           <input
@@ -122,15 +159,37 @@ function RouletteControls({
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Mutants</span>
-        <button className="set-btn" onClick={() => manualSpawn('mutants')} disabled={triggerBusy}>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('mutants')}
+          disabled={triggerBusy}
+        >
           Mutants
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('mutants', true)}
+          disabled={triggerBusy}
+        >
+          Mutants + bonus
         </button>
       </div>
 
       <div className="set-trigger">
         <span className="set-muted">Manual spawn Squads</span>
-        <button className="set-btn" onClick={() => manualSpawn('enemies')} disabled={triggerBusy}>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('enemies')}
+          disabled={triggerBusy}
+        >
           Squads
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('enemies', true)}
+          disabled={triggerBusy}
+        >
+          Squads + bonus
         </button>
       </div>
 
@@ -138,6 +197,13 @@ function RouletteControls({
         <span className="set-muted">Manual positive effect</span>
         <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
           Positive Effects
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualPerk(true)}
+          disabled={triggerBusy}
+        >
+          Positive Effects + bonus
         </button>
       </div>
 
@@ -149,6 +215,13 @@ function RouletteControls({
           disabled={triggerBusy}
         >
           Negative Effects
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualNegativeEffect(true)}
+          disabled={triggerBusy}
+        >
+          Negative Effects + bonus
         </button>
       </div>
 

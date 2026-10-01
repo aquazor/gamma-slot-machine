@@ -2,7 +2,14 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { API, type EnemyFaction } from './types';
 
-function EnemyFactions() {
+interface Props {
+  // Monolith/UNISG/Sin are Expert-only in the normal roster, but not in
+  // Count Roll (labs) — hide the "Expert tier only" caption while labs
+  // mode is active, since it isn't true there.
+  labsMode: boolean;
+}
+
+function EnemyFactions({ labsMode }: Props) {
   const [factions, setFactions] = useState<EnemyFaction[]>([]);
 
   // Guards against this component's own concurrent requests only — the
@@ -76,7 +83,7 @@ function EnemyFactions() {
 
       {expertOnlyFactions.length > 0 && (
         <>
-          <p className="set-muted set-factions-subheading">Expert tier only</p>
+          {!labsMode && <p className="set-muted set-factions-subheading">Expert tier only</p>}
           <div className="set-factions">{expertOnlyFactions.map(renderFaction)}</div>
         </>
       )}

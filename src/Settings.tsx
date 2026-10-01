@@ -198,14 +198,14 @@ export default function Settings() {
   }, [bumpSeq, isStaleSeq]);
 
   const manualRoll = useCallback(
-    async (count: number): Promise<void> => {
+    async (count: number, forceBonus = false): Promise<void> => {
       setTriggerBusy(true);
 
       try {
         await fetch(`${API}/roulette/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user: 'Streamer', count }),
+          body: JSON.stringify({ user: 'Streamer', count, forceBonus }),
         });
       } finally {
         setTriggerBusy(false);
@@ -216,14 +216,14 @@ export default function Settings() {
   );
 
   const manualSpawn = useCallback(
-    async (category: 'mutants' | 'enemies'): Promise<void> => {
+    async (category: 'mutants' | 'enemies', forceBonus = false): Promise<void> => {
       setTriggerBusy(true);
 
       try {
         await fetch(`${API}/roulette/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'spawn', category, user: 'Streamer' }),
+          body: JSON.stringify({ kind: 'spawn', category, user: 'Streamer', forceBonus }),
         });
       } finally {
         setTriggerBusy(false);
@@ -233,35 +233,41 @@ export default function Settings() {
     [refreshRouletteStatus],
   );
 
-  const manualPerk = useCallback(async (): Promise<void> => {
-    setTriggerBusy(true);
+  const manualPerk = useCallback(
+    async (forceBonus = false): Promise<void> => {
+      setTriggerBusy(true);
 
-    try {
-      await fetch(`${API}/roulette/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'perk', user: 'Streamer' }),
-      });
-    } finally {
-      setTriggerBusy(false);
-      refreshRouletteStatus();
-    }
-  }, [refreshRouletteStatus]);
+      try {
+        await fetch(`${API}/roulette/trigger`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'perk', user: 'Streamer', forceBonus }),
+        });
+      } finally {
+        setTriggerBusy(false);
+        refreshRouletteStatus();
+      }
+    },
+    [refreshRouletteStatus],
+  );
 
-  const manualNegativeEffect = useCallback(async (): Promise<void> => {
-    setTriggerBusy(true);
+  const manualNegativeEffect = useCallback(
+    async (forceBonus = false): Promise<void> => {
+      setTriggerBusy(true);
 
-    try {
-      await fetch(`${API}/roulette/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'negative', user: 'Streamer' }),
-      });
-    } finally {
-      setTriggerBusy(false);
-      refreshRouletteStatus();
-    }
-  }, [refreshRouletteStatus]);
+      try {
+        await fetch(`${API}/roulette/trigger`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'negative', user: 'Streamer', forceBonus }),
+        });
+      } finally {
+        setTriggerBusy(false);
+        refreshRouletteStatus();
+      }
+    },
+    [refreshRouletteStatus],
+  );
 
   const selectPreset = useCallback(
     async (name: string): Promise<void> => {
@@ -304,6 +310,31 @@ export default function Settings() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier: name }),
+      }).then((res) => res.json());
+
+      if (!isStaleSeq(s) && !updated.error) {
+        setRoulette(updated);
+      }
+    },
+    [bumpSeq, isStaleSeq],
+  );
+
+  const toggleLabsMode = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      setRoulette((prev) => {
+        if (!prev || prev.labsMode === enabled) {
+          return prev;
+        }
+
+        return { ...prev, labsMode: enabled };
+      });
+
+      const s = bumpSeq();
+
+      const updated = await fetch(`${API}/roulette/labs-mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
       }).then((res) => res.json());
 
       if (!isStaleSeq(s) && !updated.error) {
@@ -365,13 +396,14 @@ export default function Settings() {
                 triggerBusy={triggerBusy}
                 selectPreset={selectPreset}
                 selectSpawnTier={selectSpawnTier}
+                toggleLabsMode={toggleLabsMode}
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
                 manualPerk={manualPerk}
                 manualNegativeEffect={manualNegativeEffect}
               />
 
-              <EnemyFactions />
+              <EnemyFactions labsMode={Boolean(roulette?.labsMode)} />
 
               <section className="set-section">
                 <h2 className="set-heading">Tweaking</h2>

@@ -10,6 +10,7 @@ const { Roulette } = require('./roulette.cjs');
 const rewards = require('./twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
 const enemies = require('./enemies-mode2.cjs');
+const enemiesLabs = require('./enemies-labs.cjs');
 const perks = require('./positive-effects.cjs');
 const negativeEffects = require('./negative-effects.cjs');
 const gunAttachments = require('./gun-attachments.cjs');
@@ -464,8 +465,27 @@ app.post('/roulette/spawn-tier', (req, res) => {
 });
 
 /*
+ * "Count Roll (labs)" — same engine, different roster (enemies-labs.cjs):
+ * Monolith/UNISG/Sin at every tier, trimmable mutant roster. Toggled
+ * independently of spawn tier.
+ */
+app.post('/roulette/labs-mode', (req, res) => {
+  const enabled = Boolean((req.body || {}).enabled);
+
+  roulette.setLabsMode(enabled);
+
+  console.log(`Roulette labs mode -> ${enabled ? 'on' : 'off'}`);
+
+  res.json(roulette.getState());
+});
+
+/*
  * Which armed factions ('enemies' category) can currently be rolled —
- * a blanket on/off per faction, the same across every tier.
+ * a blanket on/off per faction, the same across every tier. Faction
+ * enable/disable state is shared between the normal and labs rosters
+ * (see enemy-pool.cjs's module-level disabledFactions) — disabling one
+ * here also disables it for Count Roll (labs), so there's just the one
+ * endpoint regardless of which mode is active.
  */
 app.get('/roulette/enemies', (req, res) => {
   res.json({ factions: enemies.listFactions() });
@@ -486,8 +506,11 @@ app.post('/roulette/enemies/toggle', (req, res) => {
 });
 
 /*
- * The 3 global spawn-bonus toggles (double count, +2, rare-upgrade).
- * Applies across every tier that defines that bonus key.
+ * The global spawn-bonus toggles (double count, +1, +2, rare-upgrade) for
+ * the normal roster. Applies across every tier that defines that bonus
+ * key. Count Roll (labs) has its own independent set — see the
+ * /roulette/labs/bonuses* endpoints below — so both can be tuned without
+ * needing labs mode switched on just to edit them.
  */
 app.get('/roulette/bonuses', (req, res) => {
   res.json({ bonuses: enemies.listBonuses() });
@@ -531,6 +554,55 @@ app.post('/roulette/bonuses/reset', (req, res) => {
   console.log('Roulette spawn bonuses -> restored to defaults');
 
   res.json({ bonuses: enemies.listBonuses() });
+});
+
+/*
+ * Same 3 bonus toggles, for the Count Roll (labs) roster — independent
+ * enable state/chances from the normal roster's own (see
+ * enemies-labs.cjs).
+ */
+app.get('/roulette/labs/bonuses', (req, res) => {
+  res.json({ bonuses: enemiesLabs.listBonuses() });
+});
+
+app.post('/roulette/labs/bonuses/toggle', (req, res) => {
+  const { key, enabled } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  enemiesLabs.setBonusEnabled(key, Boolean(enabled));
+
+  console.log(`Roulette labs bonus "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
+
+  res.json({ bonuses: enemiesLabs.listBonuses() });
+});
+
+app.post('/roulette/labs/bonuses/chance', (req, res) => {
+  const { key, chance } = req.body || {};
+
+  if (typeof key !== 'string' || !key) {
+    return res.status(400).json({ error: 'key is required' });
+  }
+
+  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
+    return res.status(400).json({ error: 'chance must be a number' });
+  }
+
+  enemiesLabs.setBonusChance(key, chance);
+
+  console.log(`Roulette labs bonus "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
+
+  res.json({ bonuses: enemiesLabs.listBonuses() });
+});
+
+app.post('/roulette/labs/bonuses/reset', (req, res) => {
+  enemiesLabs.resetBonuses();
+
+  console.log('Roulette labs spawn bonuses -> restored to defaults');
+
+  res.json({ bonuses: enemiesLabs.listBonuses() });
 });
 
 /*
@@ -649,9 +721,10 @@ app.post('/roulette/negative-effects/reset', (req, res) => {
  *   { user, kind: "negative" }
  */
 app.post('/roulette/trigger', (req, res) => {
-  const { user, count, kind, category } = req.body || {};
+  const { user, count, kind, category, forceBonus } = req.body || {};
 
   const who = (typeof user === 'string' && user.trim()) || 'Streamer';
+  const wantsBonus = Boolean(forceBonus);
 
   let event;
 
@@ -660,16 +733,18 @@ app.post('/roulette/trigger', (req, res) => {
       kind: 'manual-spawn',
       user: who,
       category: category === 'enemies' ? 'enemies' : 'mutants',
+      forceBonus: wantsBonus,
     };
   } else if (kind === 'perk') {
-    event = { kind: 'manual-perk', user: who };
+    event = { kind: 'manual-perk', user: who, forceBonus: wantsBonus };
   } else if (kind === 'negative') {
-    event = { kind: 'manual-negative', user: who };
+    event = { kind: 'manual-negative', user: who, forceBonus: wantsBonus };
   } else {
     event = {
       kind: 'manual',
       user: who,
       manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
+      forceBonus: wantsBonus,
     };
   }
 
