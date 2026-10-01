@@ -1,5 +1,5 @@
 {
-  "_comment": "Spawn pools for the roulette. Tier-first: category -> tier -> group -> { sections, count, min, max, icon }. A single-group reward (rolls=1) picks ONE random group from the tier and spawns exactly `count` creatures. A multi-group reward (rolls>1, e.g. 'x3') picks that many groups (independently - the same group can come up more than once) and spawns a RANDOM count for each, in [min, max] - default (no min/max set) is [max(1,count-1), count], so it just works without touching this file; set min/max on a specific group to hand-tune it (min=max=1 pins a boss-type group to always roll exactly 1 even in a x3 draw). Each creature is a random pick from that group's `sections`. `label` overrides the group key shown on the overlay / in the in-game message. `icon` is a public/ path for the overlay reel (mutant-icons/, patch-icons/); omitted where no icon exists yet. Mutant sections verified against this GAMMA install's actual creature configs (temp/mutant-sections-full.txt); weak/normal/strong variants split Basic/Advanced/Expert, count 1/2/3. A few types have no natural weak/normal/strong split (zombies, chimeras, poltergeists) - flagged below. tushkano and poltergeist sections are best-guess, not fully verified - check in game. Edit freely - unknown sections are skipped by the Lua side.",
+  "_comment": "Spawn pools for the roulette. Tier-first: category -> tier -> group -> { sections, count, min, max, icon }. A single-group reward (rolls=1) picks ONE random group from the tier and spawns exactly `count` creatures. A multi-group reward (rolls>1, e.g. 'x3') picks that many groups (independently - the same group can come up more than once) and spawns a RANDOM count for each, in [min, max] - default (no min/max set) is [max(1,count-1), count], so it just works without touching this file; set min/max on a specific group to hand-tune it (min=max=1 pins a boss-type group to always roll exactly 1 even in a x3 draw). Each creature is a random pick from that group's `sections`. `label` overrides the group key shown on the overlay / in the in-game message. `icon` is a public/ path for the overlay reel (mutant-icons/, patch-icons/); omitted where no icon exists yet. Mutant sections verified against this GAMMA install's actual creature configs (temp/mutant-sections-full.txt). Weak/normal/strong (and similar) naming variants have no actual gameplay difference, so each mutant species uses the SAME unified `sections` pool across every tier it appears in - only `count`/`min`/`max` scale with tier, not which section names are reachable. Edit freely - unknown sections are skipped by the Lua side.",
   "mutants": {
     "Basic": {
       "_bonuses": [
@@ -40,20 +40,45 @@
           "dog_weak_bulterier",
           "dog_weak_red",
           "dog_weak_white",
-          "dog_cute"
+          "dog_cute",
+          "dog_normal",
+          "dog_normal_brown",
+          "dog_normal_bulterier",
+          "dog_normal_red",
+          "dog_normal_white",
+          "dog_strong",
+          "dog_strong_black",
+          "dog_strong_brown",
+          "dog_strong_bulterier",
+          "dog_strong_red",
+          "dog_strong_white"
         ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_dog_liver.png"
       },
       "pseudodogs": {
         "label": "Pseudodogs",
-        "sections": ["pseudodog_weak", "pseudodog_grey_weak"],
+        "sections": [
+          "pseudodog_weak",
+          "pseudodog_grey_weak",
+          "pseudodog_normal",
+          "pseudodog_strong",
+          "pseudodog_grey_strong"
+        ],
         "count": 2,
         "icon": "/mutant-icons/hide_pseudodog.png"
       },
       "boars": {
         "label": "Boars",
-        "sections": ["boar_01a_weak", "boar_02a_weak"],
+        "sections": [
+          "boar_01a_weak",
+          "boar_02a_weak",
+          "boar_normal",
+          "boar_strong",
+          "boar_01a_hard",
+          "boar_02a_hard",
+          "boar_02a_strong"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_boar.png"
       },
@@ -64,14 +89,31 @@
           "cat_weak_b",
           "cat_weak_c",
           "cat_weak_d",
-          "cat_weak_e"
+          "cat_weak_e",
+          "cat_normal_a",
+          "cat_normal_b",
+          "cat_normal_c",
+          "cat_normal_d",
+          "cat_normal_e",
+          "cat_strong_a",
+          "cat_strong_b",
+          "cat_strong_c",
+          "cat_strong_d",
+          "cat_strong_e",
+          "cat_strong_afro"
         ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_cat_claw.png"
       },
       "fractures": {
         "label": "Fractures",
-        "sections": ["fracture_weak"],
+        "sections": [
+          "fracture_weak",
+          "fracture_normal",
+          "fracture_2",
+          "fracture_strong",
+          "fracture_3"
+        ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_fracture_hand.png"
       },
@@ -104,7 +146,22 @@
           "snork_weak3",
           "snork_weak4",
           "snork_weak_no_mask",
-          "snork_indoor_weak"
+          "snork_indoor_weak",
+          "snork_normal",
+          "snork_normal2",
+          "snork_normal3",
+          "snork_normal4",
+          "snork_normal_no_mask",
+          "snork_indoor_normal",
+          "snork_indoor",
+          "snork_outdoor",
+          "snork_jumper",
+          "snork_strong",
+          "snork_strong2",
+          "snork_strong3",
+          "snork_strong4",
+          "snork_strong_no_mask",
+          "snork_indoor_strong"
         ],
         "count": 2,
         "icon": "/mutant-icons/mutant_part_snork_mask.png"
@@ -116,32 +173,58 @@
           "flesh_01a_weak",
           "flesh_02a_weak",
           "flesh_bolot",
-          "flesh_bolot1"
+          "flesh_bolot1",
+          "flesh_normal",
+          "flesh_01a_normal",
+          "flesh_02a_normal",
+          "flesh_03a_normal",
+          "flesh_strong",
+          "flesh_01a_strong",
+          "flesh_02a_strong",
+          "flesh_03a_strong"
         ],
         "count": 3,
         "icon": "/mutant-icons/hide_flesh.png"
       },
       "lurkers": {
         "label": "Lurkers",
-        "sections": ["lurker_1_weak", "lurker_2_weak", "lurker_3_weak"],
+        "sections": [
+          "lurker_1_weak",
+          "lurker_2_weak",
+          "lurker_3_weak",
+          "lurker_1_normal",
+          "lurker_2_normal",
+          "lurker_3_normal",
+          "lurker_1_strong",
+          "lurker_2_strong",
+          "lurker_3_strong"
+        ],
         "count": 2,
         "icon": "/mutant-icons/hide_lurker.png"
       },
       "poltergeists": {
         "label": "Poltergeist",
-        "sections": ["m_poltergeist_normal_tele", "m_poltergeist_normal_flame"],
+        "sections": [
+          "m_poltergeist_normal_tele",
+          "m_poltergeist_normal_flame"
+        ],
         "count": 2,
         "icon": "/mutant-icons/decor_grave2.png"
       },
       "tushkanos": {
         "label": "Tushkano",
-        "sections": ["tushkano_normal"],
+        "sections": [
+          "tushkano_normal",
+          "tushkano_strong"
+        ],
         "count": 4,
         "icon": "/mutant-icons/mutant_part_tushkano_head.png"
       },
       "karliks": {
         "label": "Karlik",
-        "sections": ["m_karlik_e"],
+        "sections": [
+          "m_karlik_e"
+        ],
         "count": 2,
         "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       }
@@ -175,6 +258,7 @@
             "psysuckers",
             "psy_dogs",
             "gigants",
+            "gigant_jumper",
             "controllers"
           ]
         }
@@ -182,42 +266,85 @@
       "dogs": {
         "label": "Dogs",
         "sections": [
+          "dog_weak",
+          "dog_weak_brown",
+          "dog_weak_bulterier",
+          "dog_weak_red",
+          "dog_weak_white",
+          "dog_cute",
           "dog_normal",
           "dog_normal_brown",
           "dog_normal_bulterier",
           "dog_normal_red",
-          "dog_normal_white"
+          "dog_normal_white",
+          "dog_strong",
+          "dog_strong_black",
+          "dog_strong_brown",
+          "dog_strong_bulterier",
+          "dog_strong_red",
+          "dog_strong_white"
         ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_dog_liver.png"
       },
       "pseudodogs": {
         "label": "Pseudodogs",
-        "sections": ["pseudodog_normal"],
+        "sections": [
+          "pseudodog_weak",
+          "pseudodog_grey_weak",
+          "pseudodog_normal",
+          "pseudodog_strong",
+          "pseudodog_grey_strong"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_pseudodog.png"
       },
       "boars": {
         "label": "Boars",
-        "sections": ["boar_normal"],
+        "sections": [
+          "boar_01a_weak",
+          "boar_02a_weak",
+          "boar_normal",
+          "boar_strong",
+          "boar_01a_hard",
+          "boar_02a_hard",
+          "boar_02a_strong"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_boar.png"
       },
       "cats": {
         "label": "Cats",
         "sections": [
+          "cat_weak_a",
+          "cat_weak_b",
+          "cat_weak_c",
+          "cat_weak_d",
+          "cat_weak_e",
           "cat_normal_a",
           "cat_normal_b",
           "cat_normal_c",
           "cat_normal_d",
-          "cat_normal_e"
+          "cat_normal_e",
+          "cat_strong_a",
+          "cat_strong_b",
+          "cat_strong_c",
+          "cat_strong_d",
+          "cat_strong_e",
+          "cat_strong_afro"
         ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_cat_claw.png"
       },
       "fractures": {
         "label": "Fractures",
-        "sections": ["fracture_normal", "fracture_2"],
+        "sections": [
+          "fracture_weak",
+          "fracture_normal",
+          "fracture_2",
+          "fracture_strong",
+          "fracture_3"
+        ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_fracture_hand.png"
       },
@@ -245,6 +372,12 @@
       "snorks": {
         "label": "Snorks",
         "sections": [
+          "snork_weak",
+          "snork_weak2",
+          "snork_weak3",
+          "snork_weak4",
+          "snork_weak_no_mask",
+          "snork_indoor_weak",
           "snork_normal",
           "snork_normal2",
           "snork_normal3",
@@ -253,7 +386,13 @@
           "snork_indoor_normal",
           "snork_indoor",
           "snork_outdoor",
-          "snork_jumper"
+          "snork_jumper",
+          "snork_strong",
+          "snork_strong2",
+          "snork_strong3",
+          "snork_strong4",
+          "snork_strong_no_mask",
+          "snork_indoor_strong"
         ],
         "count": 3,
         "icon": "/mutant-icons/mutant_part_snork_mask.png"
@@ -264,14 +403,25 @@
           "bloodsucker_normal",
           "bloodsucker_black_normal",
           "bloodsucker_green_normal",
-          "bloodsucker_red_normal"
+          "bloodsucker_red_normal",
+          "bloodsucker_strong",
+          "bloodsucker_strong_big",
+          "bloodsucker_black_strong",
+          "bloodsucker_green_strong",
+          "bloodsucker_red_strong"
         ],
         "count": 2,
         "icon": "/mutant-icons/hide_bloodsucker.png"
       },
       "burers": {
         "label": "Burers",
-        "sections": ["burer_normal", "burer_normal2"],
+        "sections": [
+          "burer_normal",
+          "burer_normal2",
+          "burer_electra",
+          "burer_fire",
+          "burer_blue_blue"
+        ],
         "count": 1,
         "icon": "/mutant-icons/hide_burer.png"
       },
@@ -292,25 +442,45 @@
       "flesh": {
         "label": "Flesh",
         "sections": [
+          "flesh_weak",
+          "flesh_01a_weak",
+          "flesh_02a_weak",
+          "flesh_bolot",
+          "flesh_bolot1",
           "flesh_normal",
           "flesh_01a_normal",
           "flesh_02a_normal",
           "flesh_03a_normal",
-          "flesh_bolot",
-          "flesh_bolot1"
+          "flesh_strong",
+          "flesh_01a_strong",
+          "flesh_02a_strong",
+          "flesh_03a_strong"
         ],
         "count": 3,
         "icon": "/mutant-icons/hide_flesh.png"
       },
       "lurkers": {
         "label": "Lurkers",
-        "sections": ["lurker_1_normal", "lurker_2_normal", "lurker_3_normal"],
+        "sections": [
+          "lurker_1_weak",
+          "lurker_2_weak",
+          "lurker_3_weak",
+          "lurker_1_normal",
+          "lurker_2_normal",
+          "lurker_3_normal",
+          "lurker_1_strong",
+          "lurker_2_strong",
+          "lurker_3_strong"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_lurker.png"
       },
       "poltergeists": {
         "label": "Poltergeist",
-        "sections": ["m_poltergeist_normal_tele", "m_poltergeist_normal_flame"],
+        "sections": [
+          "m_poltergeist_normal_tele",
+          "m_poltergeist_normal_flame"
+        ],
         "count": 2,
         "icon": "/mutant-icons/decor_grave2.png"
       },
@@ -321,26 +491,40 @@
           "psysucker_1_normal",
           "psysucker_2_normal",
           "psysucker_3_normal",
-          "psysucker_brown"
+          "psysucker_brown",
+          "psysucker_strong",
+          "psysucker_1_strong",
+          "psysucker_2_strong",
+          "psysucker_3_strong",
+          "psysucker_black",
+          "psysucker_white"
         ],
         "count": 1,
         "icon": "/mutant-icons/hide_psysucker.png"
       },
       "tushkanos": {
         "label": "Tushkano",
-        "sections": ["tushkano_normal"],
+        "sections": [
+          "tushkano_normal",
+          "tushkano_strong"
+        ],
         "count": 4,
         "icon": "/mutant-icons/mutant_part_tushkano_head.png"
       },
       "karliks": {
         "label": "Karlik",
-        "sections": ["m_karlik_e"],
+        "sections": [
+          "m_karlik_e"
+        ],
         "count": 2,
         "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       },
       "psy_dogs": {
         "label": "Psy Dog",
-        "sections": ["psy_dog_normal"],
+        "sections": [
+          "psy_dog_normal",
+          "psy_dog"
+        ],
         "count": 1,
         "icon": "/mutant-icons/hide_psy_dog.png"
       }
@@ -366,12 +550,30 @@
           "chance": 0.033,
           "type": "upgrade",
           "label": "RARE",
-          "pool": ["gigants", "controllers", "burers", "chimeras", "chimeras_strong"]
+          "pool": [
+            "gigants",
+            "gigant_jumper",
+            "controllers",
+            "burers",
+            "chimeras",
+            "chimeras_strong"
+          ]
         }
       ],
       "dogs": {
         "label": "Dogs",
         "sections": [
+          "dog_weak",
+          "dog_weak_brown",
+          "dog_weak_bulterier",
+          "dog_weak_red",
+          "dog_weak_white",
+          "dog_cute",
+          "dog_normal",
+          "dog_normal_brown",
+          "dog_normal_bulterier",
+          "dog_normal_red",
+          "dog_normal_white",
           "dog_strong",
           "dog_strong_black",
           "dog_strong_brown",
@@ -379,24 +581,48 @@
           "dog_strong_red",
           "dog_strong_white"
         ],
-        "count": 4,
+        "count": 3,
         "icon": "/mutant-icons/mutant_part_dog_liver.png"
       },
       "pseudodogs": {
         "label": "Pseudodogs",
-        "sections": ["pseudodog_strong", "pseudodog_grey_strong"],
-        "count": 3,
+        "sections": [
+          "pseudodog_weak",
+          "pseudodog_grey_weak",
+          "pseudodog_normal",
+          "pseudodog_strong",
+          "pseudodog_grey_strong"
+        ],
+        "count": 2,
         "icon": "/mutant-icons/hide_pseudodog.png"
       },
       "boars": {
         "label": "Boars",
-        "sections": ["boar_strong", "boar_01a_hard", "boar_02a_hard", "boar_02a_strong"],
-        "count": 4,
+        "sections": [
+          "boar_01a_weak",
+          "boar_02a_weak",
+          "boar_normal",
+          "boar_strong",
+          "boar_01a_hard",
+          "boar_02a_hard",
+          "boar_02a_strong"
+        ],
+        "count": 3,
         "icon": "/mutant-icons/hide_boar.png"
       },
       "cats": {
         "label": "Cats",
         "sections": [
+          "cat_weak_a",
+          "cat_weak_b",
+          "cat_weak_c",
+          "cat_weak_d",
+          "cat_weak_e",
+          "cat_normal_a",
+          "cat_normal_b",
+          "cat_normal_c",
+          "cat_normal_d",
+          "cat_normal_e",
           "cat_strong_a",
           "cat_strong_b",
           "cat_strong_c",
@@ -404,13 +630,19 @@
           "cat_strong_e",
           "cat_strong_afro"
         ],
-        "count": 4,
+        "count": 3,
         "icon": "/mutant-icons/mutant_part_cat_claw.png"
       },
       "fractures": {
         "label": "Fractures",
-        "sections": ["fracture_strong", "fracture_3"],
-        "count": 4,
+        "sections": [
+          "fracture_weak",
+          "fracture_normal",
+          "fracture_2",
+          "fracture_strong",
+          "fracture_3"
+        ],
+        "count": 3,
         "icon": "/mutant-icons/mutant_part_fracture_hand.png"
       },
       "zombies": {
@@ -437,6 +669,21 @@
       "snorks": {
         "label": "Snorks",
         "sections": [
+          "snork_weak",
+          "snork_weak2",
+          "snork_weak3",
+          "snork_weak4",
+          "snork_weak_no_mask",
+          "snork_indoor_weak",
+          "snork_normal",
+          "snork_normal2",
+          "snork_normal3",
+          "snork_normal4",
+          "snork_normal_no_mask",
+          "snork_indoor_normal",
+          "snork_indoor",
+          "snork_outdoor",
+          "snork_jumper",
           "snork_strong",
           "snork_strong2",
           "snork_strong3",
@@ -450,6 +697,10 @@
       "bloodsuckers": {
         "label": "Bloodsuckers",
         "sections": [
+          "bloodsucker_normal",
+          "bloodsucker_black_normal",
+          "bloodsucker_green_normal",
+          "bloodsucker_red_normal",
           "bloodsucker_strong",
           "bloodsucker_strong_big",
           "bloodsucker_black_strong",
@@ -461,7 +712,13 @@
       },
       "burers": {
         "label": "Burers",
-        "sections": ["burer_electra", "burer_fire", "burer_blue_blue"],
+        "sections": [
+          "burer_normal",
+          "burer_normal2",
+          "burer_electra",
+          "burer_fire",
+          "burer_blue_blue"
+        ],
         "count": 2,
         "icon": "/mutant-icons/hide_burer.png"
       },
@@ -476,18 +733,29 @@
           "chimera_strong3",
           "chimera_weak"
         ],
-        "count": 2,
+        "count": 1,
         "icon": "/mutant-icons/hide_chimera.png"
       },
       "chimeras_strong": {
         "label": "Strong Chimera",
-        "sections": ["chimera_strong4"],
+        "sections": [
+          "chimera_strong4"
+        ],
         "count": 1,
         "icon": "/mutant-icons/hide_chimera.png"
       },
       "flesh": {
         "label": "Flesh",
         "sections": [
+          "flesh_weak",
+          "flesh_01a_weak",
+          "flesh_02a_weak",
+          "flesh_bolot",
+          "flesh_bolot1",
+          "flesh_normal",
+          "flesh_01a_normal",
+          "flesh_02a_normal",
+          "flesh_03a_normal",
           "flesh_strong",
           "flesh_01a_strong",
           "flesh_02a_strong",
@@ -498,19 +766,37 @@
       },
       "lurkers": {
         "label": "Lurkers",
-        "sections": ["lurker_1_strong", "lurker_2_strong", "lurker_3_strong"],
+        "sections": [
+          "lurker_1_weak",
+          "lurker_2_weak",
+          "lurker_3_weak",
+          "lurker_1_normal",
+          "lurker_2_normal",
+          "lurker_3_normal",
+          "lurker_1_strong",
+          "lurker_2_strong",
+          "lurker_3_strong"
+        ],
         "count": 3,
         "icon": "/mutant-icons/hide_lurker.png"
       },
       "poltergeists": {
         "label": "Poltergeist",
-        "sections": ["m_poltergeist_normal_tele", "m_poltergeist_normal_flame"],
+        "sections": [
+          "m_poltergeist_normal_tele",
+          "m_poltergeist_normal_flame"
+        ],
         "count": 3,
         "icon": "/mutant-icons/decor_grave2.png"
       },
       "psysuckers": {
         "label": "Psysuckers",
         "sections": [
+          "psysucker_normal",
+          "psysucker_1_normal",
+          "psysucker_2_normal",
+          "psysucker_3_normal",
+          "psysucker_brown",
           "psysucker_strong",
           "psysucker_1_strong",
           "psysucker_2_strong",
@@ -523,25 +809,43 @@
       },
       "tushkanos": {
         "label": "Tushkano",
-        "sections": ["tushkano_strong"],
+        "sections": [
+          "tushkano_normal",
+          "tushkano_strong"
+        ],
         "count": 5,
         "icon": "/mutant-icons/mutant_part_tushkano_head.png"
       },
       "karliks": {
         "label": "Karlik",
-        "sections": ["m_karlik_e"],
-        "count": 3,
+        "sections": [
+          "m_karlik_e"
+        ],
+        "count": 2,
         "icon": "/mutant-icons/mutant_part_brain_karlik.png"
       },
       "psy_dogs": {
         "label": "Psy Dog",
-        "sections": ["psy_dog"],
+        "sections": [
+          "psy_dog_normal",
+          "psy_dog"
+        ],
         "count": 2,
         "icon": "/mutant-icons/hide_psy_dog.png"
       },
       "gigants": {
         "label": "Gigant",
-        "sections": ["gigant_strong", "gigant_jumper"],
+        "sections": [
+          "gigant_strong"
+        ],
+        "count": 1,
+        "icon": "/mutant-icons/hide_pseudogiant.png"
+      },
+      "gigant_jumper": {
+        "label": "Gigant Jumper",
+        "sections": [
+          "gigant_jumper"
+        ],
         "count": 1,
         "icon": "/mutant-icons/hide_pseudogiant.png"
       },
@@ -566,113 +870,115 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "add",
           "value": 2,
           "label": "+2"
-        },
-        {
-          "key": "rare-upgrade",
-          "chance": 0.033,
-          "type": "upgrade",
-          "label": "RARE",
-          "pool": [
-            "renegades",
-            "bandits",
-            "loners",
-            "mercs",
-            "military",
-            "duty",
-            "freedom",
-            "csky",
-            "ecolog",
-            "zombied"
-          ]
         }
       ],
       "renegades": {
         "label": "Renegades",
-        "sections": ["sim_default_renegade_0", "sim_default_renegade_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_renegade_0",
+          "sim_default_renegade_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/renegade_patch.png"
       },
       "bandits": {
         "label": "Bandits",
-        "sections": ["sim_default_bandit_0", "sim_default_bandit_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_bandit_0",
+          "sim_default_bandit_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/bandit_patch.png"
       },
       "loners": {
         "label": "Loners",
-        "sections": ["sim_default_stalker_0", "sim_default_stalker_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_stalker_0",
+          "sim_default_stalker_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/stalker_patch.png"
       },
       "mercs": {
         "label": "Mercs",
-        "sections": ["sim_default_killer_0", "sim_default_killer_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_killer_0",
+          "sim_default_killer_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/killer_patch.png"
       },
       "military": {
         "label": "Military",
-        "sections": ["sim_default_military_1", "sim_default_military_2"],
-        "count": 2,
+        "sections": [
+          "sim_default_military_1",
+          "sim_default_military_2"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/army_patch.png"
       },
       "duty": {
         "label": "Duty",
-        "sections": ["sim_default_duty_0", "sim_default_duty_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_duty_0",
+          "sim_default_duty_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/dolg_patch.png"
       },
       "freedom": {
         "label": "Freedom",
-        "sections": ["sim_default_freedom_0", "sim_default_freedom_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_freedom_0",
+          "sim_default_freedom_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/freedom_patch.png"
       },
       "csky": {
         "label": "Clear Sky",
-        "sections": ["sim_default_csky_0", "sim_default_csky_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_csky_0",
+          "sim_default_csky_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/csky_patch.png"
       },
       "ecolog": {
         "label": "Ecolog",
-        "sections": ["sim_default_ecolog_0", "sim_default_ecolog_1"],
-        "count": 2,
+        "sections": [
+          "sim_default_ecolog_0",
+          "sim_default_ecolog_1"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/ecolog_patch.png"
       },
       "zombied": {
         "label": "Zombied",
-        "sections": ["sim_default_zombied_1", "sim_default_zombied_2"],
-        "count": 2,
+        "sections": [
+          "sim_default_zombied_1",
+          "sim_default_zombied_2"
+        ],
         "min": 2,
         "max": 3,
         "icon": "/patch-icons/zombied_patch.png"
@@ -682,118 +988,117 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "add",
           "value": 2,
           "label": "+2"
-        },
-        {
-          "key": "rare-upgrade",
-          "chance": 0.033,
-          "type": "upgrade",
-          "label": "RARE",
-          "pool": [
-            "renegades",
-            "bandits",
-            "loners",
-            "mercs",
-            "military",
-            "duty",
-            "freedom",
-            "csky",
-            "ecolog",
-            "zombied",
-            "monolith",
-            "isg",
-            "greh"
-          ]
         }
       ],
       "renegades": {
         "label": "Renegades",
-        "sections": ["sim_default_renegade_1", "sim_default_renegade_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_renegade_1",
+          "sim_default_renegade_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/renegade_patch.png"
       },
       "bandits": {
         "label": "Bandits",
-        "sections": ["sim_default_bandit_1", "sim_default_bandit_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_bandit_1",
+          "sim_default_bandit_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/bandit_patch.png"
       },
       "loners": {
         "label": "Loners",
-        "sections": ["sim_default_stalker_1", "sim_default_stalker_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_stalker_1",
+          "sim_default_stalker_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/stalker_patch.png"
       },
       "mercs": {
         "label": "Mercs",
-        "sections": ["sim_default_killer_1", "sim_default_killer_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_killer_1",
+          "sim_default_killer_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/killer_patch.png"
       },
       "military": {
         "label": "Military",
-        "sections": ["sim_default_military_2", "sim_default_military_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_military_2",
+          "sim_default_military_3"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/army_patch.png"
       },
       "duty": {
         "label": "Duty",
-        "sections": ["sim_default_duty_1", "sim_default_duty_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_duty_1",
+          "sim_default_duty_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/dolg_patch.png"
       },
       "freedom": {
         "label": "Freedom",
-        "sections": ["sim_default_freedom_1", "sim_default_freedom_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_freedom_1",
+          "sim_default_freedom_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/freedom_patch.png"
       },
       "csky": {
         "label": "Clear Sky",
-        "sections": ["sim_default_csky_1", "sim_default_csky_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_csky_1",
+          "sim_default_csky_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/csky_patch.png"
       },
       "ecolog": {
         "label": "Ecolog",
-        "sections": ["sim_default_ecolog_1", "sim_default_ecolog_2"],
-        "count": 3,
+        "sections": [
+          "sim_default_ecolog_1",
+          "sim_default_ecolog_2"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/ecolog_patch.png"
       },
       "zombied": {
         "label": "Zombied",
-        "sections": ["sim_default_zombied_2", "sim_default_zombied_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_zombied_2",
+          "sim_default_zombied_3"
+        ],
         "min": 2,
-        "max": 4,
+        "max": 3,
         "icon": "/patch-icons/zombied_patch.png"
       }
     },
@@ -801,122 +1106,147 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "add",
           "value": 2,
           "label": "+2"
-        },
-        {
-          "key": "rare-upgrade",
-          "chance": 0.033,
-          "type": "upgrade",
-          "label": "RARE",
-          "pool": ["monolith", "greh", "isg"]
         }
       ],
       "renegades": {
         "label": "Renegades",
-        "sections": ["sim_default_renegade_2", "sim_default_renegade_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_renegade_2",
+          "sim_default_renegade_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/renegade_patch.png"
       },
       "bandits": {
         "label": "Bandits",
-        "sections": ["sim_default_bandit_2", "sim_default_bandit_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_bandit_2",
+          "sim_default_bandit_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/bandit_patch.png"
       },
       "loners": {
         "label": "Loners",
-        "sections": ["sim_default_stalker_2", "sim_default_stalker_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_stalker_2",
+          "sim_default_stalker_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/stalker_patch.png"
       },
       "mercs": {
         "label": "Mercs",
-        "sections": ["sim_default_killer_2", "sim_default_killer_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_killer_2",
+          "sim_default_killer_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/killer_patch.png"
       },
       "military": {
         "label": "Military",
-        "sections": ["sim_default_military_3", "sim_default_military_4"],
-        "count": 3,
+        "sections": [
+          "sim_default_military_3",
+          "sim_default_military_4"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/army_patch.png"
       },
       "duty": {
         "label": "Duty",
-        "sections": ["sim_default_duty_2", "sim_default_duty_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_duty_2",
+          "sim_default_duty_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/dolg_patch.png"
       },
       "freedom": {
         "label": "Freedom",
-        "sections": ["sim_default_freedom_2", "sim_default_freedom_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_freedom_2",
+          "sim_default_freedom_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/freedom_patch.png"
       },
       "csky": {
         "label": "Clear Sky",
-        "sections": ["sim_default_csky_2", "sim_default_csky_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_csky_2",
+          "sim_default_csky_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/csky_patch.png"
       },
       "ecolog": {
         "label": "Ecolog",
-        "sections": ["sim_default_ecolog_2", "sim_default_ecolog_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_ecolog_2",
+          "sim_default_ecolog_3"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/ecolog_patch.png"
       },
       "zombied": {
         "label": "Zombied",
-        "sections": ["sim_default_zombied_3", "sim_default_zombied_4"],
-        "count": 3,
+        "sections": [
+          "sim_default_zombied_3",
+          "sim_default_zombied_4"
+        ],
         "min": 3,
-        "max": 5,
+        "max": 4,
         "icon": "/patch-icons/zombied_patch.png"
       },
       "monolith": {
         "label": "Monolith",
-        "sections": ["sim_default_monolith_3", "sim_default_monolith_4"],
-        "count": 3,
+        "sections": [
+          "sim_default_monolith_3",
+          "sim_default_monolith_4"
+        ],
+        "min": 2,
+        "max": 3,
         "icon": "/patch-icons/monolith_patch.png"
       },
       "isg": {
         "label": "UNISG",
-        "sections": ["sim_default_isg_2", "sim_default_isg_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_isg_2",
+          "sim_default_isg_3"
+        ],
+        "min": 2,
+        "max": 3,
         "icon": "/patch-icons/isg_patch.png"
       },
       "greh": {
         "label": "Sin",
-        "sections": ["sim_default_greh_2", "sim_default_greh_3"],
-        "count": 3,
+        "sections": [
+          "sim_default_greh_2",
+          "sim_default_greh_3"
+        ],
+        "min": 2,
+        "max": 3,
         "icon": "/patch-icons/greh_patch.png"
       }
     }
