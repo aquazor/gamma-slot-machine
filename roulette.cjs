@@ -1,12 +1,13 @@
 const { EventEmitter } = require('events');
 
-const items = require('./items.data.json');
+const items = require('./loot/items.data.json');
 const bridge = require('./gamma-bridge.cjs');
-const enemies = require('./enemies-mode2.cjs');
-const enemiesLabs = require('./enemies-labs.cjs');
-const perks = require('./positive-effects.cjs');
-const negativeEffects = require('./negative-effects.cjs');
-const gunAttachments = require('./gun-attachments.cjs');
+const enemies = require('./spawn/enemies-mode2.cjs');
+const enemiesLabs = require('./spawn/enemies-labs.cjs');
+const perks = require('./effects/positive-effects.cjs');
+const negativeEffects = require('./effects/negative-effects.cjs');
+const gunAttachments = require('./loot/gun-attachments.cjs');
+const { randBelow, pick, shuffle } = require('./utils/random.cjs');
 const {
   PRESETS,
   DEFAULT_PRESET,
@@ -48,26 +49,6 @@ const NO_OVERLAY_DELAY_MS = 1500;
  * ROLLING
  * ---------------------------------------------------------
  */
-
-function randInt(max) {
-  return Math.floor(Math.random() * max);
-}
-
-function pick(arr) {
-  return arr[randInt(arr.length)];
-}
-
-function shuffle(arr) {
-  const copy = [...arr];
-
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = randInt(i + 1);
-
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-
-  return copy;
-}
 
 /*
  * Choose which slots to roll:
@@ -128,7 +109,7 @@ function rollItems(count, grades) {
  * falls back to this.
  */
 function randomSlotCount() {
-  return 1 + randInt(3);
+  return 1 + randBelow(3);
 }
 
 /*

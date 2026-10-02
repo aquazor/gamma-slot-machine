@@ -33,13 +33,13 @@ try {
   // 1. Bundle server
   // ========================================
 
-  run('node build-server.cjs');
+  run('node scripts/build-server.cjs');
 
   // ========================================
   // 2. Generate SEA config
   // ========================================
 
-  run('node generate-sea-config.cjs');
+  run('node scripts/generate-sea-config.cjs');
 
   // ========================================
   // 3. Generate SEA blob

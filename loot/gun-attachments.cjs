@@ -1,6 +1,4 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+const { createJsonStore } = require('../utils/json-store.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -15,28 +13,14 @@ const path = require('path');
 
 const CHANCE = 0.25;
 
-const SETTINGS_PATH = path.join(os.homedir(), '.gamma-slot-machine', 'gun-attachments.json');
+const store = createJsonStore('gun-attachments.json', { enabled: true });
 
 function isEnabled() {
-  try {
-    return Boolean(JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')).enabled);
-  } catch {
-    return true;
-  }
+  return Boolean(store.read().enabled);
 }
 
 function setEnabled(enabled) {
-  const dir = path.dirname(SETTINGS_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(
-    SETTINGS_PATH,
-    JSON.stringify({ enabled: Boolean(enabled) }, null, 2),
-    'utf8',
-  );
+  store.write({ enabled: Boolean(enabled) });
 }
 
 module.exports = { CHANCE, isEnabled, setEnabled };

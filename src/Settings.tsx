@@ -197,15 +197,16 @@ export default function Settings() {
     }
   }, [bumpSeq, isStaleSeq]);
 
-  const manualRoll = useCallback(
-    async (count: number, forceBonus = false): Promise<void> => {
+  // Every manual roll button posts the same body shape to /roulette/trigger.
+  const sendTrigger = useCallback(
+    async (payload: Record<string, unknown>): Promise<void> => {
       setTriggerBusy(true);
 
       try {
         await fetch(`${API}/roulette/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user: 'Streamer', count, forceBonus }),
+          body: JSON.stringify({ user: 'Streamer', ...payload }),
         });
       } finally {
         setTriggerBusy(false);
@@ -213,60 +214,27 @@ export default function Settings() {
       }
     },
     [refreshRouletteStatus],
+  );
+
+  const manualRoll = useCallback(
+    (count: number, forceBonus = false) => sendTrigger({ count, forceBonus }),
+    [sendTrigger],
   );
 
   const manualSpawn = useCallback(
-    async (category: 'mutants' | 'enemies', forceBonus = false): Promise<void> => {
-      setTriggerBusy(true);
-
-      try {
-        await fetch(`${API}/roulette/trigger`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'spawn', category, user: 'Streamer', forceBonus }),
-        });
-      } finally {
-        setTriggerBusy(false);
-        refreshRouletteStatus();
-      }
-    },
-    [refreshRouletteStatus],
+    (category: 'mutants' | 'enemies', forceBonus = false) =>
+      sendTrigger({ kind: 'spawn', category, forceBonus }),
+    [sendTrigger],
   );
 
   const manualPerk = useCallback(
-    async (forceBonus = false): Promise<void> => {
-      setTriggerBusy(true);
-
-      try {
-        await fetch(`${API}/roulette/trigger`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'perk', user: 'Streamer', forceBonus }),
-        });
-      } finally {
-        setTriggerBusy(false);
-        refreshRouletteStatus();
-      }
-    },
-    [refreshRouletteStatus],
+    (forceBonus = false) => sendTrigger({ kind: 'perk', forceBonus }),
+    [sendTrigger],
   );
 
   const manualNegativeEffect = useCallback(
-    async (forceBonus = false): Promise<void> => {
-      setTriggerBusy(true);
-
-      try {
-        await fetch(`${API}/roulette/trigger`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'negative', user: 'Streamer', forceBonus }),
-        });
-      } finally {
-        setTriggerBusy(false);
-        refreshRouletteStatus();
-      }
-    },
-    [refreshRouletteStatus],
+    (forceBonus = false) => sendTrigger({ kind: 'negative', forceBonus }),
+    [sendTrigger],
   );
 
   const selectPreset = useCallback(

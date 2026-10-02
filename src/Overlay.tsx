@@ -39,7 +39,7 @@ const SPIN_JITTER_ROWS = 6; // small random over/undershoot for variety
 const SPIN_VOLUME = 0.35;
 const WOW_VOLUME = 0.5;
 const EFFECT_COUNT = 101; // /gifs/effects/effect-0..100.gif
-const WINNING_EFFECTS_COUNT = 20;
+const WINNING_EFFECTS_COUNT = 16;
 const EFFECTS_MS = 5000;
 const EFFECT_STAGGER_S = 0.08; // delay between consecutive emotes in one burst
 
@@ -260,6 +260,157 @@ function playWowSound(): void {
 }
 
 /* ========================================
+   SHARED REEL PIECES
+======================================== */
+
+// Strip: random rows for a FIXED scroll distance (so every reel spins at
+// the same visual speed), the winning row at that distance, then a few
+// more rows so the window is never half-empty after it lands. Filler never
+// repeats an item within `clashRows` adjacent rows, and the winner's
+// neighbours are kept distinct from it.
+function buildStrip<T>(
+  fillPool: T[],
+  winner: T,
+  isSame: (a: T, b: T) => boolean,
+  clashRows: number,
+): { strip: T[]; targetIndex: number } {
+  const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
+  const target = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
+
+  const need = target + VISIBLE_ROWS + 2;
+
+  const randomItem = (): T => fillPool[Math.floor(Math.random() * fillPool.length)];
+
+  const rows: T[] = [];
+
+  for (let k = 0; k < need; k++) {
+    let candidate = randomItem();
+
+    for (let guard = 0; guard < 40; guard++) {
+      const clash = Array.from({ length: clashRows }, (_, i) => rows[k - 1 - i]).some(
+        (row) => row !== undefined && isSame(row, candidate),
+      );
+
+      if (!clash) {
+        break;
+      }
+
+      candidate = randomItem();
+    }
+
+    rows[k] = candidate;
+  }
+
+  rows[target] = winner;
+
+  for (const n of [target - 2, target - 1, target + 1, target + 2]) {
+    if (rows[n] && isSame(rows[n], winner)) {
+      for (let guard = 0; guard < 40; guard++) {
+        rows[n] = randomItem();
+
+        if (!isSame(rows[n], winner)) {
+          break;
+        }
+      }
+    }
+  }
+
+  return { strip: rows, targetIndex: target };
+}
+
+// Sparkles + emote burst over the reel once it has landed.
+function ReelEffects({ landed }: { landed: boolean }) {
+  const { effects, showEffects } = useWinningEffects(landed);
+
+  if (!showEffects) {
+    return null;
+  }
+
+  return (
+    <>
+      <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
+      <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
+
+      {effects.map((effect) => (
+        <img
+          key={effect.id}
+          className="winning-effect"
+          src={`/gifs/effects/effect-${effect.id}.gif`}
+          alt=""
+          style={{
+            left: `${effect.left}%`,
+            top: `${effect.top}%`,
+            transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
+            animationDelay: `${effect.delay}s`,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+interface ReelShellProps {
+  className: string;
+  title: string;
+  landed: boolean;
+  spin: boolean;
+  targetIndex: number;
+  withEffects?: boolean;
+  hidden?: boolean; // mask the pool until this reel's own turn starts — see PendingMask
+  result: React.ReactNode; // contents of the line under the reel
+  children: React.ReactNode; // the strip's rows
+}
+
+// The frame every reel shares: title, scrolling window (+ gradients and
+// marker), and the result line that fades in once it has landed.
+function ReelShell({
+  className,
+  title,
+  landed,
+  spin,
+  targetIndex,
+  withEffects = false,
+  hidden = false,
+  result,
+  children,
+}: ReelShellProps) {
+  // Land the target row in the middle band of the 3-row window.
+  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+
+  return (
+    <div className={`reel-container ov-reel ${className} ${landed ? 'ov-reel--landed' : ''}`}>
+      <h2 className="reel-title">{title}</h2>
+
+      <div className="reel-wrapper">
+        {withEffects && <ReelEffects landed={landed} />}
+
+        <div className="reel-window">
+          <div
+            className="reel"
+            style={{
+              transform: `translateY(-${offset}px)`,
+              transition: spin
+                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
+                : 'none',
+            }}
+          >
+            {children}
+          </div>
+
+          <div className="top-gradient" />
+          <div className="bottom-gradient" />
+          <div className="reel-indicator" />
+
+          {hidden && <PendingMask />}
+        </div>
+      </div>
+
+      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>{result}</div>
+    </div>
+  );
+}
+
+/* ========================================
    REEL
 ======================================== */
 
@@ -292,126 +443,40 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
   const targetName = real?.name ?? result.name;
   const repair = (real?.repair ?? '').toLowerCase();
 
-  const { effects, showEffects } = useWinningEffects(landed);
-
-  // Strip: random rows for a FIXED scroll distance (so every reel spins
-  // at the same visual speed), the winning row at that distance, then a
-  // few more rows so the window is never half-empty after it lands.
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const winner = real ?? { id: result.itemId, name: targetName };
-
-    const need = target + VISIBLE_ROWS + 2;
-
-    const randomItem = (): Item => fillPool[Math.floor(Math.random() * fillPool.length)];
-
-    // Fill with random items, never repeating an item within 3 adjacent
-    // rows — so the slowdown never shows the same item twice near the marker.
-    const rows: Item[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = randomItem();
-
-      for (let guard = 0; guard < 40; guard++) {
-        const clash =
-          rows[k - 1]?.id === candidate.id ||
-          rows[k - 2]?.id === candidate.id ||
-          rows[k - 3]?.id === candidate.id;
-
-        if (!clash) {
-          break;
-        }
-
-        candidate = randomItem();
-      }
-
-      rows[k] = candidate;
-    }
-
-    // Drop the winner in, then keep its neighbours distinct from it.
-    rows[target] = winner;
-
-    for (const n of [target - 2, target - 1, target + 1, target + 2]) {
-      if (rows[n] && rows[n].id === winner.id) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = randomItem();
-
-          if (rows[n].id !== winner.id) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target };
+  const { strip, targetIndex } = useMemo(
+    () =>
+      buildStrip<Item>(
+        fillPool,
+        real ?? { id: result.itemId, name: targetName },
+        (a, b) => a.id === b.id,
+        3,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Land the target row in the middle band of the 3-row window.
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div
-      className={`reel-container ov-reel ${
-        landed ? `ov-reel--landed repair-${repair || 'none'}` : ''
-      }`}
+    <ReelShell
+      className={landed ? `repair-${repair || 'none'}` : ''}
+      title={SLOT_LABEL[result.slot]}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      withEffects
+      result={
+        <>
+          <img src={`/${folder}/${result.itemId}.png`} alt="" onError={hideBrokenImage} />
+          <span>{targetName}</span>
+        </>
+      }
     >
-      <h2 className="reel-title">{SLOT_LABEL[result.slot]}</h2>
-
-      <div className="reel-wrapper">
-        {showEffects && (
-          <>
-            <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
-            <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
-
-            {effects.map((effect) => (
-              <img
-                key={effect.id}
-                className="winning-effect"
-                src={`/gifs/effects/effect-${effect.id}.gif`}
-                alt=""
-                style={{
-                  left: `${effect.left}%`,
-                  top: `${effect.top}%`,
-                  transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
-                  animationDelay: `${effect.delay}s`,
-                }}
-              />
-            ))}
-          </>
-        )}
-
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((item, index) => (
-              <div className="reel-item" key={index}>
-                <img src={`/${folder}/${item.id}.png`} alt="" onError={hideBrokenImage} />
-                <span>{item.name}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
+      {strip.map((item, index) => (
+        <div className="reel-item" key={index}>
+          <img src={`/${folder}/${item.id}.png`} alt="" onError={hideBrokenImage} />
+          <span>{item.name}</span>
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <img src={`/${folder}/${result.itemId}.png`} alt="" onError={hideBrokenImage} />
-        <span>{targetName}</span>
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 
@@ -449,121 +514,41 @@ function SpawnReel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { effects, showEffects } = useWinningEffects(landed);
-
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const need = target_ + VISIBLE_ROWS + 2;
-    const pickRandom = (): SpawnOption =>
-      fillPool[Math.floor(Math.random() * fillPool.length)];
-
-    const rows: SpawnOption[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = pickRandom();
-
-      for (let guard = 0; guard < 40; guard++) {
-        if (
-          rows[k - 1]?.label !== candidate.label &&
-          rows[k - 2]?.label !== candidate.label
-        ) {
-          break;
-        }
-
-        candidate = pickRandom();
-      }
-
-      rows[k] = candidate;
-    }
-
-    // Drop the winner in, then keep its neighbours distinct from it —
-    // the fill loop above only guarded against clashes among the filler
-    // rows themselves, so the winner's own label could still land right
-    // next to a filler row that already happened to say the same thing.
-    const winner = { label: label.toUpperCase(), icon: targetIcon ?? null };
-
-    rows[target_] = winner;
-
-    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
-      if (rows[n] && rows[n].label === winner.label) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = pickRandom();
-
-          if (rows[n].label !== winner.label) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target_ };
+  const { strip, targetIndex } = useMemo(
+    () =>
+      buildStrip<SpawnOption>(
+        fillPool,
+        { label: label.toUpperCase(), icon: targetIcon ?? null },
+        (a, b) => a.label === b.label,
+        2,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div
-      className={`reel-container ov-reel ov-spawn ${landed ? 'ov-reel--landed ov-spawn--landed' : ''}`}
+    <ReelShell
+      className={`ov-spawn ${landed ? 'ov-spawn--landed' : ''}`}
+      title={title}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      withEffects
+      hidden={hidden}
+      result={
+        <>
+          <ReelIcon icon={targetIcon} />
+          {resultText && <span>{resultText}</span>}
+        </>
+      }
     >
-      <h2 className="reel-title">{title}</h2>
-
-      <div className="reel-wrapper">
-        {showEffects && (
-          <>
-            <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
-            <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
-
-            {effects.map((effect) => (
-              <img
-                key={effect.id}
-                className="winning-effect"
-                src={`/gifs/effects/effect-${effect.id}.gif`}
-                alt=""
-                style={{
-                  left: `${effect.left}%`,
-                  top: `${effect.top}%`,
-                  transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
-                  animationDelay: `${effect.delay}s`,
-                }}
-              />
-            ))}
-          </>
-        )}
-
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((option, index) => (
-              <div className="reel-item ov-spawn-item" key={index}>
-                <ReelIcon icon={option.icon} />
-                {option.label && <span>{option.label}</span>}
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
-
-          {hidden && <PendingMask />}
+      {strip.map((option, index) => (
+        <div className="reel-item ov-spawn-item" key={index}>
+          <ReelIcon icon={option.icon} />
+          {option.label && <span>{option.label}</span>}
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <ReelIcon icon={targetIcon} />
-        {resultText && <span>{resultText}</span>}
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 
@@ -618,86 +603,28 @@ function CountReel({
     ? `x${baseTarget} (${bonusLabel} bonus)`
     : `x${baseTarget}`;
 
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const need = target_ + VISIBLE_ROWS + 2;
-    const pickRandom = (): string =>
-      COUNT_FILLER[Math.floor(Math.random() * COUNT_FILLER.length)];
-
-    const rows: string[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = pickRandom();
-
-      for (let guard = 0; guard < 40; guard++) {
-        if (rows[k - 1] !== candidate && rows[k - 2] !== candidate) {
-          break;
-        }
-
-        candidate = pickRandom();
-      }
-
-      rows[k] = candidate;
-    }
-
-    rows[target_] = winnerLabel;
-
-    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
-      if (rows[n] === winnerLabel) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = pickRandom();
-
-          if (rows[n] !== winnerLabel) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target_ };
+  const { strip, targetIndex } = useMemo(
+    () => buildStrip<string>(COUNT_FILLER, winnerLabel, (a, b) => a === b, 2),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div
-      className={`reel-container ov-reel ov-count ${landed ? 'ov-reel--landed ov-count--landed' : ''}`}
+    <ReelShell
+      className={`ov-count ${landed ? 'ov-count--landed' : ''}`}
+      title={title}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      hidden={hidden}
+      result={<span>x{target}</span>}
     >
-      <h2 className="reel-title">{title}</h2>
-
-      <div className="reel-wrapper">
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((label, index) => (
-              <div className="reel-item ov-count-item" key={index}>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
-
-          {hidden && <PendingMask />}
+      {strip.map((label, index) => (
+        <div className="reel-item ov-count-item" key={index}>
+          <span>{label}</span>
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <span>x{target}</span>
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 

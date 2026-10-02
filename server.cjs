@@ -4,16 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const { isSea, getAsset } = require('node:sea');
 const { exec, execFile } = require('child_process');
-const twitchAuth = require('./twitch-auth.cjs');
-const { TwitchEventSub } = require('./twitch-eventsub.cjs');
+const twitchAuth = require('./twitch/twitch-auth.cjs');
+const { TwitchEventSub } = require('./twitch/twitch-eventsub.cjs');
 const { Roulette } = require('./roulette.cjs');
-const rewards = require('./twitch-rewards.cjs');
+const rewards = require('./twitch/twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
-const enemies = require('./enemies-mode2.cjs');
-const enemiesLabs = require('./enemies-labs.cjs');
-const perks = require('./positive-effects.cjs');
-const negativeEffects = require('./negative-effects.cjs');
-const gunAttachments = require('./gun-attachments.cjs');
+const enemies = require('./spawn/enemies-mode2.cjs');
+const enemiesLabs = require('./spawn/enemies-labs.cjs');
+const perks = require('./effects/positive-effects.cjs');
+const negativeEffects = require('./effects/negative-effects.cjs');
+const { registerChanceRoutes } = require('./utils/chance-routes.cjs');
+const gunAttachments = require('./loot/gun-attachments.cjs');
 
 const { getGammaPath, MOD_NAME } = bridge;
 
@@ -512,48 +513,15 @@ app.post('/roulette/enemies/toggle', (req, res) => {
  * /roulette/labs/bonuses* endpoints below — so both can be tuned without
  * needing labs mode switched on just to edit them.
  */
-app.get('/roulette/bonuses', (req, res) => {
-  res.json({ bonuses: enemies.listBonuses() });
-});
-
-app.post('/roulette/bonuses/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  enemies.setBonusEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette bonus "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ bonuses: enemies.listBonuses() });
-});
-
-app.post('/roulette/bonuses/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  enemies.setBonusChance(key, chance);
-
-  console.log(`Roulette bonus "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ bonuses: enemies.listBonuses() });
-});
-
-app.post('/roulette/bonuses/reset', (req, res) => {
-  enemies.resetBonuses();
-
-  console.log('Roulette spawn bonuses -> restored to defaults');
-
-  res.json({ bonuses: enemies.listBonuses() });
+registerChanceRoutes(app, {
+  base: '/roulette/bonuses',
+  label: 'bonus',
+  resetLabel: 'spawn bonuses',
+  responseKey: 'bonuses',
+  list: enemies.listBonuses,
+  setEnabled: enemies.setBonusEnabled,
+  setChance: enemies.setBonusChance,
+  reset: enemies.resetBonuses,
 });
 
 /*
@@ -561,48 +529,15 @@ app.post('/roulette/bonuses/reset', (req, res) => {
  * enable state/chances from the normal roster's own (see
  * enemies-labs.cjs).
  */
-app.get('/roulette/labs/bonuses', (req, res) => {
-  res.json({ bonuses: enemiesLabs.listBonuses() });
-});
-
-app.post('/roulette/labs/bonuses/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  enemiesLabs.setBonusEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette labs bonus "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ bonuses: enemiesLabs.listBonuses() });
-});
-
-app.post('/roulette/labs/bonuses/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  enemiesLabs.setBonusChance(key, chance);
-
-  console.log(`Roulette labs bonus "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ bonuses: enemiesLabs.listBonuses() });
-});
-
-app.post('/roulette/labs/bonuses/reset', (req, res) => {
-  enemiesLabs.resetBonuses();
-
-  console.log('Roulette labs spawn bonuses -> restored to defaults');
-
-  res.json({ bonuses: enemiesLabs.listBonuses() });
+registerChanceRoutes(app, {
+  base: '/roulette/labs/bonuses',
+  label: 'labs bonus',
+  resetLabel: 'labs spawn bonuses',
+  responseKey: 'bonuses',
+  list: enemiesLabs.listBonuses,
+  setEnabled: enemiesLabs.setBonusEnabled,
+  setChance: enemiesLabs.setBonusChance,
+  reset: enemiesLabs.resetBonuses,
 });
 
 /*
@@ -625,92 +560,26 @@ app.post('/roulette/gun-attachments/toggle', (req, res) => {
   res.json({ enabled: gunAttachments.isEnabled(), chance: gunAttachments.CHANCE });
 });
 
-app.get('/roulette/perks', (req, res) => {
-  res.json({ perks: perks.listPerks() });
+registerChanceRoutes(app, {
+  base: '/roulette/perks',
+  label: 'perk',
+  resetLabel: 'positive effects',
+  responseKey: 'perks',
+  list: perks.listPerks,
+  setEnabled: perks.setPerkEnabled,
+  setChance: perks.setPerkChance,
+  reset: perks.resetPerks,
 });
 
-app.post('/roulette/perks/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  perks.setPerkEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette perk "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.post('/roulette/perks/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  perks.setPerkChance(key, chance);
-
-  console.log(`Roulette perk "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.post('/roulette/perks/reset', (req, res) => {
-  perks.resetPerks();
-
-  console.log('Roulette positive effects -> restored to defaults');
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.get('/roulette/negative-effects', (req, res) => {
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  negativeEffects.setEffectEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette negative effect "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  negativeEffects.setEffectChance(key, chance);
-
-  console.log(`Roulette negative effect "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/reset', (req, res) => {
-  negativeEffects.resetEffects();
-
-  console.log('Roulette negative effects -> restored to defaults');
-
-  res.json({ effects: negativeEffects.listEffects() });
+registerChanceRoutes(app, {
+  base: '/roulette/negative-effects',
+  label: 'negative effect',
+  resetLabel: 'negative effects',
+  responseKey: 'effects',
+  list: negativeEffects.listEffects,
+  setEnabled: negativeEffects.setEffectEnabled,
+  setChance: negativeEffects.setEffectChance,
+  reset: negativeEffects.resetEffects,
 });
 
 /*

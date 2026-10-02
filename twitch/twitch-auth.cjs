@@ -1,11 +1,9 @@
 const fs = require('fs');
-const os = require('os');
-const path = require('path');
 
-const { TWITCH_CLIENT_ID, TWITCH_SCOPES } = require('./config.cjs');
+const { createJsonStore } = require('../utils/json-store.cjs');
+const { TWITCH_CLIENT_ID, TWITCH_SCOPES } = require('../config.cjs');
 
-const TOKEN_DIR = path.join(os.homedir(), '.gamma-slot-machine');
-const TOKEN_PATH = path.join(TOKEN_DIR, 'twitch-tokens.json');
+const tokenStore = createJsonStore('twitch-tokens.json', null);
 
 const DEVICE_CODE_URL = 'https://id.twitch.tv/oauth2/device';
 const TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
@@ -17,27 +15,12 @@ const USERS_URL = 'https://api.twitch.tv/helix/users';
  * ---------------------------------------------------------
  */
 
-function loadTokens() {
-  try {
-    const raw = fs.readFileSync(TOKEN_PATH, 'utf8');
-
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function saveTokens(tokens) {
-  if (!fs.existsSync(TOKEN_DIR)) {
-    fs.mkdirSync(TOKEN_DIR, { recursive: true });
-  }
-
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2), 'utf8');
-}
+const loadTokens = tokenStore.read;
+const saveTokens = tokenStore.write;
 
 function clearTokens() {
   try {
-    fs.unlinkSync(TOKEN_PATH);
+    fs.unlinkSync(tokenStore.path);
   } catch {
     // nothing to clear
   }

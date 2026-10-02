@@ -1,7 +1,7 @@
 const { EventEmitter } = require('events');
 
 const twitchAuth = require('./twitch-auth.cjs');
-const { TWITCH_CLIENT_ID } = require('./config.cjs');
+const { TWITCH_CLIENT_ID } = require('../config.cjs');
 
 /*
  * ---------------------------------------------------------

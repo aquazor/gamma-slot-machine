@@ -2,7 +2,7 @@
  * Bundles the TypeScript item constants in src/constants/ into
  * a plain JSON file the CommonJS server can require.
  *
- *   node generate-items.cjs   ->   items.data.json
+ *   node scripts/generate-items.cjs   ->   loot/items.data.json
  *
  * Re-run whenever src/constants/*.ts changes. The output is
  * committed so `node server.cjs` works without a build step.
@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const OUT = path.resolve('items.data.json');
+const OUT = path.resolve('loot/items.data.json');
 
 const tmp = path.join(os.tmpdir(), `gamma-items-${Date.now()}.cjs`);
 

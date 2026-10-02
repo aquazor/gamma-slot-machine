@@ -26,11 +26,11 @@
  *                 instance's own persisted bonus-chance overrides
  */
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-const { createEnemyPool, randInt } = require('./enemy-pool.cjs');
+const { createEnemyPool } = require('./enemy-pool.cjs');
+const { randBelow } = require('../utils/random.cjs');
+const { rollWeightedBonus } = require('../utils/weighted.cjs');
+const { createKeyToggles } = require('../utils/key-toggles.cjs');
+const { createChanceOverrides } = require('../utils/chance-overrides.cjs');
 
 /*
  * Human-readable blurb per bonus key, for the Settings toggle list — the
@@ -62,19 +62,8 @@ function createSpawnMode({ data, overridesFile }) {
     return Array.isArray(tierData._bonuses) ? tierData._bonuses : [];
   }
 
-  const disabledBonusKeys = new Set();
-
-  function isBonusEnabled(key) {
-    return !disabledBonusKeys.has(key);
-  }
-
-  function setBonusEnabled(key, enabled) {
-    if (enabled) {
-      disabledBonusKeys.delete(key);
-    } else {
-      disabledBonusKeys.add(key);
-    }
-  }
+  const bonusToggles = createKeyToggles();
+  const { isEnabled: isBonusEnabled, setEnabled: setBonusEnabled } = bonusToggles;
 
   /*
    * Chance overrides, by key — editing a bonus's chance in Settings
@@ -84,41 +73,15 @@ function createSpawnMode({ data, overridesFile }) {
    * server restart — unlike the enable/disable toggle above, which is a
    * live on/off switch and deliberately stays runtime-only.
    */
-  const CHANCE_OVERRIDES_PATH = path.join(os.homedir(), '.gamma-slot-machine', overridesFile);
-
-  function loadChanceOverrides() {
-    try {
-      return JSON.parse(fs.readFileSync(CHANCE_OVERRIDES_PATH, 'utf8'));
-    } catch {
-      return {};
-    }
-  }
-
-  function saveChanceOverrides(overrides) {
-    const dir = path.dirname(CHANCE_OVERRIDES_PATH);
-
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    fs.writeFileSync(CHANCE_OVERRIDES_PATH, JSON.stringify(overrides, null, 2), 'utf8');
-  }
+  const chanceOverrides = createChanceOverrides(overridesFile);
 
   function effectiveChance(bonus) {
-    const overrides = loadChanceOverrides();
-    const override = overrides[bonus.key];
+    const override = chanceOverrides.get(bonus.key);
 
-    return typeof override === 'number' ? override : bonus.chance;
+    return override !== undefined ? override : bonus.chance;
   }
 
-  function setBonusChance(key, chance) {
-    const clamped = Math.max(0, Math.min(1, Number(chance) || 0));
-
-    const overrides = loadChanceOverrides();
-
-    overrides[key] = clamped;
-    saveChanceOverrides(overrides);
-  }
+  const setBonusChance = chanceOverrides.set;
 
   /*
    * "Restore defaults" for the whole section: re-enables every bonus and
@@ -126,8 +89,8 @@ function createSpawnMode({ data, overridesFile }) {
    * back to whatever's baked into this instance's data file.
    */
   function resetBonuses() {
-    disabledBonusKeys.clear();
-    saveChanceOverrides({});
+    bonusToggles.enableAll();
+    chanceOverrides.clear();
   }
 
   /*
@@ -174,44 +137,15 @@ function createSpawnMode({ data, overridesFile }) {
    *   of the total — so e.g. three bonuses all set to 100% still split
    *   evenly (~33% each) instead of the first one in the list winning
    *   every single time. Falls back to null only if every bonus is
-   *   disabled — nothing to guarantee or draw from.
+   *   disabled or set to 0% — nothing to guarantee or draw from. The
+   *   math itself lives in utils/weighted.cjs's rollWeightedBonus.
    */
   function rollBonus(category, tier, forceGuaranteed) {
     const enabled = bonusesFor(category, tier)
       .filter((b) => isBonusEnabled(b.key))
       .map((b) => ({ ...b, chance: effectiveChance(b) }));
 
-    if (enabled.length === 0) {
-      return null;
-    }
-
-    const total = enabled.reduce((sum, b) => sum + b.chance, 0);
-
-    if (forceGuaranteed || total >= 1) {
-      let roll = Math.random() * total;
-
-      for (const bonus of enabled) {
-        if (roll < bonus.chance) {
-          return bonus;
-        }
-
-        roll -= bonus.chance;
-      }
-
-      return enabled[enabled.length - 1]; // float-rounding fallback
-    }
-
-    let roll = Math.random();
-
-    for (const bonus of enabled) {
-      if (roll < bonus.chance) {
-        return bonus;
-      }
-
-      roll -= bonus.chance;
-    }
-
-    return null;
+    return rollWeightedBonus(enabled, forceGuaranteed);
   }
 
   /*
@@ -287,7 +221,7 @@ function createSpawnMode({ data, overridesFile }) {
       return null;
     }
 
-    let key = keys[randInt(keys.length)];
+    let key = keys[randBelow(keys.length)];
     let group = groups[key];
 
     const bonus = rollBonus(category, tier, forceBonus);
@@ -319,7 +253,7 @@ function createSpawnMode({ data, overridesFile }) {
       const upgradeKeys = Object.keys(sourceGroups);
 
       if (upgradeKeys.length > 0) {
-        key = upgradeKeys[randInt(upgradeKeys.length)];
+        key = upgradeKeys[randBelow(upgradeKeys.length)];
         group = sourceGroups[key];
       }
     }
@@ -335,7 +269,7 @@ function createSpawnMode({ data, overridesFile }) {
     const base = Math.max(1, Number(group.count) || 1);
     const range = countRange(group, base);
 
-    const baseCount = range.min + randInt(range.max - range.min + 1);
+    const baseCount = range.min + randBelow(range.max - range.min + 1);
     let count = baseCount;
     let bonusApplied = null;
 

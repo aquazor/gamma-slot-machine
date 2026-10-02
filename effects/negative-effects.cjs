@@ -20,162 +20,38 @@
  * GIVE_JUNK line handlers.
  */
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-function randInt(min, max) {
-  const lo = Math.min(min, max);
-  const hi = Math.max(min, max);
-
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
-
-function randFloat(min, max) {
-  const lo = Math.min(min, max);
-  const hi = Math.max(min, max);
-
-  return lo + Math.random() * (hi - lo);
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
-}
-
-/*
- * Pick at most one bonus from a `bonuses` list — same rules as
- * positive-effects.cjs's own rollWeightedBonus (duplicated here rather
- * than shared, matching how enemies-mode2.cjs/positive-effects.cjs each
- * keep their own copy): each entry claims its own slice of chance; under
- * 100% enabled, the leftover is "no bonus"; at/above 100%, a bonus is
- * always drawn, split proportionally by relative chance.
- */
-function rollWeightedBonus(bonuses, forceGuaranteed) {
-  const list = Array.isArray(bonuses) ? bonuses : [];
-  const total = list.reduce((sum, b) => sum + (Number.isFinite(b.chance) ? b.chance : 0), 0);
-
-  if (total <= 0) {
-    return null;
-  }
-
-  if (forceGuaranteed || total >= 1) {
-    let roll = Math.random() * total;
-
-    for (const bonus of list) {
-      if (roll < bonus.chance) {
-        return bonus;
-      }
-
-      roll -= bonus.chance;
-    }
-
-    return list[list.length - 1]; // float-rounding fallback
-  }
-
-  let roll = Math.random();
-
-  for (const bonus of list) {
-    if (roll < bonus.chance) {
-      return bonus;
-    }
-
-    roll -= bonus.chance;
-  }
-
-  return null;
-}
+const { randInt, randFloat, round2, pick } = require('../utils/random.cjs');
+const { rollWeightedBonus } = require('../utils/weighted.cjs');
+const { createEffectCatalog } = require('../utils/effect-catalog.cjs');
 
 const data = require('./negative-effects.data.json');
 
-function effectKeys() {
-  return Object.keys(data).filter((key) => !key.startsWith('_'));
-}
+// Roster, enable/disable toggles, chance overrides and the weighted pick
+// itself live in the shared catalog (utils/effect-catalog.cjs) — this
+// module only adds what's negative-effect-specific on top. Separate
+// overrides file from the perks' so the two never collide.
+const catalog = createEffectCatalog({
+  data,
+  overridesFile: 'negative-effect-chance-overrides.json',
+});
 
-function effectDef(key) {
-  return data[key] || null;
-}
+const {
+  keys: effectKeys,
+  def: effectDef,
+  isEnabled: isEffectEnabled,
+  setEnabled: setEffectEnabled,
+  setChance: setEffectChance,
+  reset: resetEffects,
+} = catalog;
 
 function hasValueRoll(def) {
   return !def || def.hasValueRoll !== false;
 }
 
-/*
- * Enable/disable toggles, same "global by key" runtime-only model as
- * positive-effects.cjs's own perk toggles — resets on restart.
- */
-const disabledEffectKeys = new Set();
-
-function isEffectEnabled(key) {
-  return !disabledEffectKeys.has(key);
-}
-
-function setEffectEnabled(key, enabled) {
-  if (enabled) {
-    disabledEffectKeys.delete(key);
-  } else {
-    disabledEffectKeys.add(key);
-  }
-}
-
-/*
- * Chance overrides, by key — same override-file pattern as
- * positive-effects.cjs's perk-chance-overrides.json, stored separately
- * so the two effect types never collide.
- */
-const CHANCE_OVERRIDES_PATH = path.join(
-  os.homedir(),
-  '.gamma-slot-machine',
-  'negative-effect-chance-overrides.json',
-);
-
-function loadChanceOverrides() {
-  try {
-    return JSON.parse(fs.readFileSync(CHANCE_OVERRIDES_PATH, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveChanceOverrides(overrides) {
-  const dir = path.dirname(CHANCE_OVERRIDES_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(CHANCE_OVERRIDES_PATH, JSON.stringify(overrides, null, 2), 'utf8');
-}
-
-function effectiveChance(key, def) {
-  const overrides = loadChanceOverrides();
-  const override = overrides[key];
-  const fallback = def && Number.isFinite(def.chance) ? def.chance : 1;
-
-  return typeof override === 'number' ? override : fallback;
-}
-
-function setEffectChance(key, chance) {
-  const clamped = Math.max(0, Math.min(1, Number(chance) || 0));
-
-  const overrides = loadChanceOverrides();
-
-  overrides[key] = clamped;
-  saveChanceOverrides(overrides);
-}
-
-/*
- * "Restore defaults" for the whole section: re-enables every effect and
- * wipes every persisted chance override.
- */
-function resetEffects() {
-  disabledEffectKeys.clear();
-  saveChanceOverrides({});
-}
-
 const EFFECT_DESCRIPTIONS = {
   'drop-weapon': "Drops whatever's currently in hand",
-  'empty-pockets': 'Takes almost all the streamer\'s money (keeps a small floor) and drops it on the ground',
-  'break-item': 'Damages the streamer\'s equipped armor or helmet',
+  'empty-pockets': "Takes almost all the streamer's money (keeps a small floor) and drops it on the ground",
+  'break-item': "Damages the streamer's equipped armor or helmet",
   'time-factor': 'Speeds up or slows down in-game time for a while',
   alcohol: 'Instant drunk effect, no vodka required',
   'junk-item': 'Dead weight - a useless item takes up inventory space',
@@ -193,7 +69,7 @@ function listEffects() {
       label: (def && def.label) || key,
       description: EFFECT_DESCRIPTIONS[key] || '',
       icon: (def && def.icon) || null,
-      chance: effectiveChance(key, def),
+      chance: catalog.chanceOf(key),
       enabled: isEffectEnabled(key),
       hasValueRoll: hasValueRoll(def),
     };
@@ -206,33 +82,10 @@ function listEffects() {
  * Returns null if every effect is disabled.
  */
 function rollNegativeEffect() {
-  const enabledKeys = effectKeys().filter((key) => isEffectEnabled(key));
+  const key = catalog.rollKey();
 
-  if (enabledKeys.length === 0) {
+  if (!key) {
     return null;
-  }
-
-  const weights = enabledKeys.map((key) => Math.max(0, effectiveChance(key, effectDef(key))));
-
-  const total = weights.reduce((sum, w) => sum + w, 0);
-
-  let key;
-
-  if (total <= 0) {
-    key = enabledKeys[Math.floor(Math.random() * enabledKeys.length)];
-  } else {
-    let roll = Math.random() * total;
-
-    key = enabledKeys[enabledKeys.length - 1]; // float-rounding fallback
-
-    for (let i = 0; i < enabledKeys.length; i++) {
-      if (roll < weights[i]) {
-        key = enabledKeys[i];
-        break;
-      }
-
-      roll -= weights[i];
-    }
   }
 
   const def = effectDef(key);
@@ -345,7 +198,7 @@ function rollEffectValue(key, forceBonus) {
         return null;
       }
 
-      const range = ranges[Math.floor(Math.random() * ranges.length)];
+      const range = pick(ranges);
       const speedValue = round2(randFloat(range.min, range.max));
 
       const seconds = randInt(def.min, def.max);
@@ -397,7 +250,7 @@ function rollEffectValue(key, forceBonus) {
         return null;
       }
 
-      const item = items[Math.floor(Math.random() * items.length)];
+      const item = pick(items);
       const count = Number.isFinite(item.count) ? item.count : 1;
 
       return {

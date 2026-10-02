@@ -18,158 +18,33 @@
  * among them and turns the winner into gamma-bridge command lines.
  */
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-function randInt(min, max) {
-  const lo = Math.min(min, max);
-  const hi = Math.max(min, max);
-
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
+const { randInt, pick } = require('../utils/random.cjs');
+const { rollWeightedBonus } = require('../utils/weighted.cjs');
+const { createEffectCatalog } = require('../utils/effect-catalog.cjs');
 
 function formatMoney(amount) {
   return String(Number(amount));
 }
 
-/*
- * Pick at most one bonus from a `bonuses` list — same rules as Count
- * Roll's own spawn bonuses (enemies-mode2.cjs's rollBonus): each entry
- * claims its own slice of chance; if the enabled ones add up to under
- * 100%, the leftover is "no bonus"; at/above 100%, a bonus is always
- * drawn, split proportionally by relative chance rather than the first
- * one in the list always winning. Returns the winning bonus def, or null.
- *
- * `forceGuaranteed` (bits power-ups) skips the "no bonus" slice entirely,
- * same as enemies-mode2.cjs's own forceGuaranteed — a bonus always lands,
- * still drawn proportionally by relative chance among the list.
- */
-function rollWeightedBonus(bonuses, forceGuaranteed) {
-  const list = Array.isArray(bonuses) ? bonuses : [];
-  const total = list.reduce((sum, b) => sum + (Number.isFinite(b.chance) ? b.chance : 0), 0);
-
-  if (total <= 0) {
-    return null;
-  }
-
-  if (forceGuaranteed || total >= 1) {
-    let roll = Math.random() * total;
-
-    for (const bonus of list) {
-      if (roll < bonus.chance) {
-        return bonus;
-      }
-
-      roll -= bonus.chance;
-    }
-
-    return list[list.length - 1]; // float-rounding fallback
-  }
-
-  let roll = Math.random();
-
-  for (const bonus of list) {
-    if (roll < bonus.chance) {
-      return bonus;
-    }
-
-    roll -= bonus.chance;
-  }
-
-  return null;
-}
-
 const data = require('./positive-effects.data.json');
 
-function perkKeys() {
-  return Object.keys(data).filter((key) => !key.startsWith('_'));
-}
+// Roster, enable/disable toggles, chance overrides and the weighted pick
+// itself live in the shared catalog (utils/effect-catalog.cjs) — this
+// module only adds what's perk-specific on top.
+const catalog = createEffectCatalog({ data, overridesFile: 'perk-chance-overrides.json' });
 
-function perkDef(key) {
-  return data[key] || null;
-}
-
-/*
- * Enable/disable toggles, same "global by key" runtime-only model as
- * enemy-pool.cjs's faction toggles and enemies-mode2.cjs's bonus toggles —
- * resets on restart.
- */
-const disabledPerkKeys = new Set();
-
-function isPerkEnabled(key) {
-  return !disabledPerkKeys.has(key);
-}
-
-function setPerkEnabled(key, enabled) {
-  if (enabled) {
-    disabledPerkKeys.delete(key);
-  } else {
-    disabledPerkKeys.add(key);
-  }
-}
-
-/*
- * Chance overrides, by key — same "global by key" model as the enable
- * toggle above, and the same override-file pattern enemies-mode2.cjs uses
- * for its own spawn-bonus chances: editing a perk's roll weight in
- * Settings persists to disk so it survives a server restart, without
- * ever touching positive-effects.data.json itself.
- */
-const CHANCE_OVERRIDES_PATH = path.join(
-  os.homedir(),
-  '.gamma-slot-machine',
-  'perk-chance-overrides.json',
-);
-
-function loadChanceOverrides() {
-  try {
-    return JSON.parse(fs.readFileSync(CHANCE_OVERRIDES_PATH, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveChanceOverrides(overrides) {
-  const dir = path.dirname(CHANCE_OVERRIDES_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(CHANCE_OVERRIDES_PATH, JSON.stringify(overrides, null, 2), 'utf8');
-}
-
-function effectivePerkChance(key, def) {
-  const overrides = loadChanceOverrides();
-  const override = overrides[key];
-  const fallback = def && Number.isFinite(def.chance) ? def.chance : 1;
-
-  return typeof override === 'number' ? override : fallback;
-}
-
-function setPerkChance(key, chance) {
-  const clamped = Math.max(0, Math.min(1, Number(chance) || 0));
-
-  const overrides = loadChanceOverrides();
-
-  overrides[key] = clamped;
-  saveChanceOverrides(overrides);
-}
-
-/*
- * "Restore defaults" for the whole section: re-enables every perk and
- * wipes every persisted chance override, so listPerks() falls straight
- * back to whatever's baked into positive-effects.data.json.
- */
-function resetPerks() {
-  disabledPerkKeys.clear();
-  saveChanceOverrides({});
-}
+const {
+  keys: perkKeys,
+  def: perkDef,
+  isEnabled: isPerkEnabled,
+  setEnabled: setPerkEnabled,
+  setChance: setPerkChance,
+  reset: resetPerks,
+} = catalog;
 
 const PERK_DESCRIPTIONS = {
   immortality: 'Temporary invulnerability',
-  'give-ammo': 'A few ammo packs for whatever\'s in hand',
+  'give-ammo': "A few ammo packs for whatever's in hand",
   'give-money': 'A cash drop',
   medicine: 'A medical item plus a secondary supply item',
   'food-and-drinks': 'A random meal plus a random drink',
@@ -188,7 +63,7 @@ function listPerks() {
       label: (def && def.label) || key,
       description: PERK_DESCRIPTIONS[key] || '',
       icon: (def && def.icon) || null,
-      chance: effectivePerkChance(key, def),
+      chance: catalog.chanceOf(key),
       enabled: isPerkEnabled(key),
     };
   });
@@ -196,52 +71,21 @@ function listPerks() {
 
 /*
  * Pick one enabled perk — weighted by each perk's own `chance` (relative
- * weight, not required to add up to 1; a perk with no `chance` set just
- * weighs 1, same as everyone else). Disabling a perk removes it entirely
- * and its share is redistributed proportionally among what's left, same
- * mechanism as the count-roll spawn bonuses' guaranteed-draw. Returns
- * null if every perk is disabled.
+ * weight, not required to add up to 1). Disabling a perk removes it
+ * entirely and its share is redistributed proportionally among what's
+ * left. Returns null if every perk is disabled.
  */
 function rollPerk() {
-  const enabledKeys = perkKeys().filter((key) => isPerkEnabled(key));
+  const key = catalog.rollKey();
 
-  if (enabledKeys.length === 0) {
+  if (!key) {
     return null;
-  }
-
-  const weights = enabledKeys.map((key) => Math.max(0, effectivePerkChance(key, perkDef(key))));
-
-  const total = weights.reduce((sum, w) => sum + w, 0);
-
-  let key;
-
-  if (total <= 0) {
-    // every weight zero/invalid — fall back to a plain uniform pick
-    // rather than never rolling anything
-    key = enabledKeys[Math.floor(Math.random() * enabledKeys.length)];
-  } else {
-    let roll = Math.random() * total;
-
-    key = enabledKeys[enabledKeys.length - 1]; // float-rounding fallback
-
-    for (let i = 0; i < enabledKeys.length; i++) {
-      if (roll < weights[i]) {
-        key = enabledKeys[i];
-        break;
-      }
-
-      roll -= weights[i];
-    }
   }
 
   const def = perkDef(key);
   const label = (def && def.label) || key;
 
   return { key, label, icon: (def && def.icon) || null, def };
-}
-
-function pickRandom(list) {
-  return list[Math.floor(Math.random() * list.length)];
 }
 
 function isValidCombo(combo) {
@@ -296,7 +140,7 @@ function rollMedicineBonus(def, forceGuaranteed) {
     return null;
   }
 
-  const item = bonusItems[Math.floor(Math.random() * bonusItems.length)];
+  const item = pick(bonusItems);
 
   return { id: item.id, label: item.label || item.id };
 }
@@ -419,7 +263,7 @@ function rollPerkValue(key, tier, forceBonus) {
         return null;
       }
 
-      const amount = amounts[Math.floor(Math.random() * amounts.length)];
+      const amount = pick(amounts);
       const bonus = rollWeightedBonus(def.bonuses, forceBonus);
 
       let finalAmount = amount;
@@ -430,7 +274,7 @@ function rollPerkValue(key, tier, forceBonus) {
       } else if (bonus && bonus.type === 'add') {
         finalAmount = amount + bonus.value;
       } else if (bonus && bonus.type === 'add-random-amount') {
-        const extra = amounts[Math.floor(Math.random() * amounts.length)];
+        const extra = pick(amounts);
 
         finalAmount = amount + extra;
         bonusLabel = `+${formatMoney(extra)}`;
@@ -452,8 +296,8 @@ function rollPerkValue(key, tier, forceBonus) {
         return null;
       }
 
-      const primaryItem = pickRandom(combo.primary);
-      const secondaryItem = pickRandom(combo.secondary);
+      const primaryItem = pick(combo.primary);
+      const secondaryItem = pick(combo.secondary);
       const label = primaryItem.label || primaryItem.id; // what the reel lands on
       const secondary = { id: secondaryItem.id, label: secondaryItem.label || secondaryItem.id };
       const bonus = rollMedicineBonus(def, forceBonus);
@@ -485,8 +329,8 @@ function rollPerkValue(key, tier, forceBonus) {
         return null;
       }
 
-      const food = pickRandom(foods);
-      const drink = pickRandom(drinks);
+      const food = pick(foods);
+      const drink = pick(drinks);
 
       return {
         value: `${food.id}|${drink.id}`,

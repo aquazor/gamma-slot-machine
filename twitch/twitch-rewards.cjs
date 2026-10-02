@@ -1,9 +1,6 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
+const { createJsonStore } = require('../utils/json-store.cjs');
 const twitchAuth = require('./twitch-auth.cjs');
-const { TWITCH_CLIENT_ID, CHANNEL_POINT_REWARDS, OBSOLETE_REWARD_TITLES } = require('./config.cjs');
+const { TWITCH_CLIENT_ID, CHANNEL_POINT_REWARDS, OBSOLETE_REWARD_TITLES } = require('../config.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -36,25 +33,10 @@ const REWARDS_URL = `${HELIX_URL}/channel_points/custom_rewards`;
  * Stored next to twitch-tokens.json — user data, not source.
  */
 
-const OVERRIDES_PATH = path.join(os.homedir(), '.gamma-slot-machine', 'reward-overrides.json');
+const overridesStore = createJsonStore('reward-overrides.json');
 
-function loadOverrides() {
-  try {
-    return JSON.parse(fs.readFileSync(OVERRIDES_PATH, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveOverrides(overrides) {
-  const dir = path.dirname(OVERRIDES_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(OVERRIDES_PATH, JSON.stringify(overrides, null, 2), 'utf8');
-}
+const loadOverrides = overridesStore.read;
+const saveOverrides = overridesStore.write;
 
 /*
  * ---------------------------------------------------------
@@ -69,24 +51,14 @@ function saveOverrides(overrides) {
  * that work regardless of this setting.
  */
 
-const SETTINGS_PATH = path.join(os.homedir(), '.gamma-slot-machine', 'reward-settings.json');
+const settingsStore = createJsonStore('reward-settings.json', { autoActivate: false });
 
 function getAutoActivate() {
-  try {
-    return Boolean(JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')).autoActivate);
-  } catch {
-    return false;
-  }
+  return Boolean(settingsStore.read().autoActivate);
 }
 
 function setAutoActivate(autoActivate) {
-  const dir = path.dirname(SETTINGS_PATH);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify({ autoActivate: Boolean(autoActivate) }, null, 2), 'utf8');
+  settingsStore.write({ autoActivate: Boolean(autoActivate) });
 }
 
 /*

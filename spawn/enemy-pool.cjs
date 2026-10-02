@@ -12,6 +12,8 @@
  * everywhere groups are enumerated.
  */
 
+const { createKeyToggles } = require('../utils/key-toggles.cjs');
+
 const CATEGORIES = ['mutants', 'enemies'];
 const TIER_ORDER = ['Basic', 'Advanced', 'Expert'];
 
@@ -19,11 +21,7 @@ const TIER_ORDER = ['Basic', 'Advanced', 'Expert'];
  * Which squads (enemies-category factions) are turned off — runtime-only,
  * like preset/spawnTier, resets on server restart.
  */
-const disabledFactions = new Set();
-
-function randInt(max) {
-  return Math.floor(Math.random() * max);
-}
+const factionToggles = createKeyToggles();
 
 function createEnemyPool(data) {
   function isCategory(name) {
@@ -117,15 +115,11 @@ function createEnemyPool(data) {
   }
 
   function isFactionEnabled(key) {
-    return !disabledFactions.has(key);
+    return factionToggles.isEnabled(key);
   }
 
   function setFactionEnabled(key, enabled) {
-    if (enabled) {
-      disabledFactions.delete(key);
-    } else {
-      disabledFactions.add(key);
-    }
+    factionToggles.setEnabled(key, enabled);
   }
 
   /*
@@ -232,4 +226,4 @@ function createEnemyPool(data) {
   };
 }
 
-module.exports = { createEnemyPool, randInt, CATEGORIES, TIER_ORDER };
+module.exports = { createEnemyPool, CATEGORIES, TIER_ORDER };
