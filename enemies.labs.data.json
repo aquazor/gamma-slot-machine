@@ -5,28 +5,28 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-one",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 1,
           "label": "+1"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 2,
           "label": "+2"
         },
         {
           "key": "rare-upgrade",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "upgrade",
           "label": "RARE",
           "pool": ["boars", "bloodsuckers", "burers", "chimeras"]
@@ -223,28 +223,28 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-one",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 1,
           "label": "+1"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 2,
           "label": "+2"
         },
         {
           "key": "rare-upgrade",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "upgrade",
           "label": "RARE",
           "pool": [
@@ -491,28 +491,28 @@
       "_bonuses": [
         {
           "key": "double-count",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "multiply",
           "value": 2,
           "label": "x2"
         },
         {
           "key": "plus-one",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 1,
           "label": "+1"
         },
         {
           "key": "plus-two",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "add",
           "value": 2,
           "label": "+2"
         },
         {
           "key": "rare-upgrade",
-          "chance": 0.033,
+          "chance": 0.025,
           "type": "upgrade",
           "label": "RARE",
           "pool": ["gigants", "gigant_jumper", "burers", "chimeras", "chimeras_strong"]
@@ -774,15 +774,15 @@
     "Basic": {
       "_bonuses": [
         {
-          "key": "double-count",
-          "chance": 0.033,
-          "type": "multiply",
+          "key": "plus-two",
+          "chance": 0.05,
+          "type": "add",
           "value": 2,
-          "label": "x2"
+          "label": "+2"
         },
         {
           "key": "plus-one",
-          "chance": 0.033,
+          "chance": 0.05,
           "type": "add",
           "value": 1,
           "label": "+1"

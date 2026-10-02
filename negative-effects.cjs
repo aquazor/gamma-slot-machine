@@ -475,13 +475,14 @@ function effectValuePool(key) {
     }
 
     case 'alcohol': {
+      // min/max are fractions (0.2 = 20%); fillerNumbers are whole
+      // percents, purely decoy reel values that never actually land.
       const min = Number.isFinite(def.min) ? def.min : 0.05;
       const max = Number.isFinite(def.max) ? def.max : 0.2;
+      const filler = Array.isArray(def.fillerNumbers) ? def.fillerNumbers : [];
+      const percents = [...new Set([Math.round(min * 100), Math.round(max * 100), ...filler])];
 
-      return [
-        { label: `${Math.round(min * 100)}%`, icon: null },
-        { label: `${Math.round(max * 100)}%`, icon: null },
-      ];
+      return percents.map((n) => ({ label: `${n}%`, icon: null }));
     }
 
     case 'junk-item': {

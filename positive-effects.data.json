@@ -17,7 +17,7 @@
       },
       {
         "key": "immortality-double",
-        "chance": 0.15,
+        "chance": 0.1,
         "type": "multiply",
         "value": 2,
         "label": "x2"
@@ -28,20 +28,20 @@
     "label": "Give Ammunition",
     "icon": "/positive-effects-icons/give_ammo.png",
     "chance": 0.215,
-    "min": 1,
+    "min": 2,
     "max": 3,
     "fillerNumbers": [1, 2, 3, 6, 8, 10, 52, 67, 600, 1000, 1337],
     "bonuses": [
       { "key": "ammo-plus1", "chance": 0.15, "type": "add", "value": 1, "label": "+1" },
-      { "key": "ammo-plus2", "chance": 0.15, "type": "add", "value": 2, "label": "+2" }
+      { "key": "ammo-plus2", "chance": 0.1, "type": "add", "value": 2, "label": "+2" }
     ]
   },
   "give-money": {
     "label": "Give Money",
     "icon": "/positive-effects-icons/give_money.png",
     "chance": 0.215,
-    "amounts": [1, 52, 67, 520, 670, 1337, 2500, 5252, 6767, 10000, 13370, 15000],
-    "fillerNumbers": [0, 500, 50000, 67000, 100000, 133700, 150000],
+    "amounts": [1, 52, 67, 1337, 2500, 5252, 6767, 10000, 13370],
+    "fillerNumbers": [0, 500, 50000, 75000, 100000, 133700, 150000],
     "bonuses": [
       {
         "key": "money-double",
