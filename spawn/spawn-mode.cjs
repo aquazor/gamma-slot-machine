@@ -17,7 +17,7 @@
  * chances tuned independently, even though the bonus keys (double-count,
  * plus-two, rare-upgrade) are the same names in both. Faction on/off
  * toggles are a different story: those live in enemy-pool.cjs's
- * module-level `disabledFactions`, shared across every instance on
+ * module-level `factionToggles`, shared across every instance on
  * purpose — a faction key means the same real-world squad everywhere.
  *
  * `createSpawnMode({ data, overridesFile })`:

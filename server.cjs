@@ -484,7 +484,7 @@ app.post('/roulette/labs-mode', (req, res) => {
  * Which armed factions ('enemies' category) can currently be rolled —
  * a blanket on/off per faction, the same across every tier. Faction
  * enable/disable state is shared between the normal and labs rosters
- * (see enemy-pool.cjs's module-level disabledFactions) — disabling one
+ * (see enemy-pool.cjs's module-level factionToggles) — disabling one
  * here also disables it for Count Roll (labs), so there's just the one
  * endpoint regardless of which mode is active.
  */
