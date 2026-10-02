@@ -37,9 +37,11 @@ const SPIN_DISTANCE_PX = 12000;
 const SPIN_JITTER_ROWS = 6; // small random over/undershoot for variety
 
 const SPIN_VOLUME = 0.35;
-const EFFECT_COUNT = 46; // /gifs/effects/effect-0..45.gif
-const WINNING_EFFECTS_COUNT = 12;
+const WOW_VOLUME = 0.5;
+const EFFECT_COUNT = 101; // /gifs/effects/effect-0..100.gif
+const WINNING_EFFECTS_COUNT = 20;
 const EFFECTS_MS = 5000;
+const EFFECT_STAGGER_S = 0.08; // delay between consecutive emotes in one burst
 
 /* ========================================
    TYPES
@@ -111,7 +113,13 @@ interface WinningEffect {
 const POOLS: Record<Slot, Item[]> = {
   weapon: [...pistols, ...shotguns, ...smgs, ...rifles, ...snipers],
   helmet: [...helmetsField, ...helmetsLight, ...helmetsMedium, ...helmetsHeavyExo],
-  armor: [...outfitsField, ...outfitsLight, ...outfitsMedium, ...outfitsHeavy, ...outfitsExo],
+  armor: [
+    ...outfitsField,
+    ...outfitsLight,
+    ...outfitsMedium,
+    ...outfitsHeavy,
+    ...outfitsExo,
+  ],
 };
 
 const ICON_FOLDER: Record<Slot, string> = {
@@ -162,6 +170,45 @@ function shuffle<T>(array: T[]): T[] {
   return copy;
 }
 
+// Sparkles + emote burst: starts when `landed` flips to true and clears
+// itself after EFFECTS_MS.
+function useWinningEffects(landed: boolean): {
+  effects: WinningEffect[];
+  showEffects: boolean;
+} {
+  const [effects, setEffects] = useState<WinningEffect[]>([]);
+
+  useEffect(() => {
+    if (!landed) {
+      return;
+    }
+
+    // State is set from timers, not synchronously in the effect body.
+    const startTimer = window.setTimeout(() => {
+      setEffects(
+        shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
+          .slice(0, WINNING_EFFECTS_COUNT)
+          .map((id, index) => ({
+            id,
+            left: 10 + Math.random() * 80,
+            top: 10 + Math.random() * 80,
+            rotation: -25 + Math.random() * 50,
+            delay: index * EFFECT_STAGGER_S,
+          })),
+      );
+    }, 0);
+
+    const endTimer = window.setTimeout(() => setEffects([]), EFFECTS_MS);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(endTimer);
+    };
+  }, [landed]);
+
+  return { effects, showEffects: effects.length > 0 };
+}
+
 function hideBrokenImage(event: React.SyntheticEvent<HTMLImageElement>): void {
   event.currentTarget.style.visibility = 'hidden';
 }
@@ -190,10 +237,10 @@ function ReelIcon({ icon }: { icon: string | string[] | null | undefined }) {
   return <img src={icon} alt="" onError={hideBrokenImage} />;
 }
 
-function playSpinSound(): void {
+function playSound(src: string, volume: number): void {
   try {
-    const audio = new Audio('/sounds/spin.mp3');
-    audio.volume = SPIN_VOLUME;
+    const audio = new Audio(src);
+    audio.volume = volume;
 
     void audio.play().catch(() => {
       // autoplay blocked outside OBS until a user gesture
@@ -201,6 +248,15 @@ function playSpinSound(): void {
   } catch {
     // no audio available
   }
+}
+
+function playSpinSound(): void {
+  playSound('/sounds/spin.mp3', SPIN_VOLUME);
+}
+
+// Plays once per roll, after the LAST reel has landed — not per reel.
+function playWowSound(): void {
+  playSound('/sounds/wow.mp3', WOW_VOLUME);
 }
 
 /* ========================================
@@ -236,35 +292,7 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
   const targetName = real?.name ?? result.name;
   const repair = (real?.repair ?? '').toLowerCase();
 
-  const [effects, setEffects] = useState<WinningEffect[]>([]);
-  const [showEffects, setShowEffects] = useState<boolean>(false);
-
-  // Sparkles + emote burst when this reel lands.
-  useEffect(() => {
-    if (!landed) {
-      return;
-    }
-
-    const burst = shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
-      .slice(0, WINNING_EFFECTS_COUNT)
-      .map((id, index) => ({
-        id,
-        left: 10 + Math.random() * 80,
-        top: 10 + Math.random() * 80,
-        rotation: -25 + Math.random() * 50,
-        delay: index * 0.12,
-      }));
-
-    setEffects(burst);
-    setShowEffects(true);
-
-    const timer = window.setTimeout(() => {
-      setShowEffects(false);
-      setEffects([]);
-    }, EFFECTS_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [landed]);
+  const { effects, showEffects } = useWinningEffects(landed);
 
   // Strip: random rows for a FIXED scroll distance (so every reel spins
   // at the same visual speed), the winning row at that distance, then a
@@ -277,8 +305,7 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
 
     const need = target + VISIBLE_ROWS + 2;
 
-    const randomItem = (): Item =>
-      fillPool[Math.floor(Math.random() * fillPool.length)];
+    const randomItem = (): Item => fillPool[Math.floor(Math.random() * fillPool.length)];
 
     // Fill with random items, never repeating an item within 3 adjacent
     // rows — so the slowdown never shows the same item twice near the marker.
@@ -414,42 +441,15 @@ function SpawnReel({
   hidden,
 }: SpawnReelProps) {
   const fillPool = useMemo(() => {
-    const options = (pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]).map(
-      (o) => ({ label: o.label.toUpperCase(), icon: o.icon }),
-    );
+    const options = (
+      pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]
+    ).map((o) => ({ label: o.label.toUpperCase(), icon: o.icon }));
 
     return options.length > 0 ? options : [{ label: '???', icon: null }];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [effects, setEffects] = useState<WinningEffect[]>([]);
-  const [showEffects, setShowEffects] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!landed) {
-      return;
-    }
-
-    const burst = shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
-      .slice(0, WINNING_EFFECTS_COUNT)
-      .map((id, index) => ({
-        id,
-        left: 10 + Math.random() * 80,
-        top: 10 + Math.random() * 80,
-        rotation: -25 + Math.random() * 50,
-        delay: index * 0.12,
-      }));
-
-    setEffects(burst);
-    setShowEffects(true);
-
-    const timer = window.setTimeout(() => {
-      setShowEffects(false);
-      setEffects([]);
-    }, EFFECTS_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [landed]);
+  const { effects, showEffects } = useWinningEffects(landed);
 
   const { strip, targetIndex } = useMemo(() => {
     const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
@@ -465,7 +465,10 @@ function SpawnReel({
       let candidate = pickRandom();
 
       for (let guard = 0; guard < 40; guard++) {
-        if (rows[k - 1]?.label !== candidate.label && rows[k - 2]?.label !== candidate.label) {
+        if (
+          rows[k - 1]?.label !== candidate.label &&
+          rows[k - 2]?.label !== candidate.label
+        ) {
           break;
         }
 
@@ -502,7 +505,9 @@ function SpawnReel({
   const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
 
   return (
-    <div className={`reel-container ov-reel ov-spawn ${landed ? 'ov-reel--landed ov-spawn--landed' : ''}`}>
+    <div
+      className={`reel-container ov-reel ov-spawn ${landed ? 'ov-reel--landed ov-spawn--landed' : ''}`}
+    >
       <h2 className="reel-title">{title}</h2>
 
       <div className="reel-wrapper">
@@ -609,7 +614,9 @@ function CountReel({
   // bonus called out — the actually-final number only shows in the
   // result line below (matches how the species reel already shows the
   // full "BOARS x4 (x2 bonus)" text only in its own result line).
-  const winnerLabel = bonusLabel ? `x${baseTarget} (${bonusLabel} bonus)` : `x${baseTarget}`;
+  const winnerLabel = bonusLabel
+    ? `x${baseTarget} (${bonusLabel} bonus)`
+    : `x${baseTarget}`;
 
   const { strip, targetIndex } = useMemo(() => {
     const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
@@ -656,7 +663,9 @@ function CountReel({
   const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
 
   return (
-    <div className={`reel-container ov-reel ov-count ${landed ? 'ov-reel--landed ov-count--landed' : ''}`}>
+    <div
+      className={`reel-container ov-reel ov-count ${landed ? 'ov-reel--landed ov-count--landed' : ''}`}
+    >
       <h2 className="reel-title">{title}</h2>
 
       <div className="reel-wrapper">
@@ -779,10 +788,13 @@ export default function Overlay() {
 
     const allLandedAt = cursor - GAP_MS;
 
-    // The moment every reel has stopped: tell the server to hand the
-    // loadout to the game now — don't make it wait for the fade-out.
+    // The moment every reel has stopped: celebrate once, and tell the
+    // server to hand the loadout to the game now — don't make it wait
+    // for the fade-out.
     timers.current.push(
       window.setTimeout(() => {
+        playWowSound();
+
         fetch(`${API}/overlay/rolled`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -800,18 +812,21 @@ export default function Overlay() {
     );
 
     timers.current.push(
-      window.setTimeout(() => {
-        setPhase('idle');
-        setJob(null);
+      window.setTimeout(
+        () => {
+          setPhase('idle');
+          setJob(null);
 
-        fetch(`${API}/overlay/done`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: nextJob.id }),
-        }).catch(() => {
-          // server may be gone; nothing to do
-        });
-      }, cursor + HOLD_MS + FADE_MS),
+          fetch(`${API}/overlay/done`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: nextJob.id }),
+          }).catch(() => {
+            // server may be gone; nothing to do
+          });
+        },
+        cursor + HOLD_MS + FADE_MS,
+      ),
     );
   };
 
@@ -854,99 +869,99 @@ export default function Overlay() {
         <span className="ov-banner-user">{job.user}</span>
         <span className="ov-banner-label">{job.label}</span>
         {job.bonus && (
-          <span className="ov-banner-bonus">BONUS{job.bonus.label ? ` ${job.bonus.label}` : ''}</span>
+          <span className="ov-banner-bonus">
+            BONUS{job.bonus.label ? ` ${job.bonus.label}` : ''}
+          </span>
         )}
       </div>
 
       <div className="ov-reels">
-        {job.mode === 'spawn' ? (
-          job.results.map((result, index) => {
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+        {job.mode === 'spawn'
+          ? job.results.map((result, index) => {
+              const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return typeof result.value === 'number' ? (
-              <CountReel
-                key={`${job.id}-${index}`}
-                title="Count"
-                target={result.value}
-                baseTarget={result.baseValue ?? result.value}
-                bonusLabel={result.bonus?.label ?? null}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            ) : (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
-                pool={job.spawnPool ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : job.mode === 'perk' ? (
-          // slot 0 = which perk, slot 1 = that perk's rolled value —
-          // fixed two-entry shape built by _buildPerkJob in roulette.cjs.
-          // Slot 1 stays masked until it's actually spinning/landed — its
-          // pool's format (dollars vs seconds vs item names) would
-          // otherwise give away slot 0's result before it even lands.
-          job.results.map((result, index) => {
-            const title = index === 1 ? 'Amount' : 'Positive Effect';
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+              return typeof result.value === 'number' ? (
+                <CountReel
+                  key={`${job.id}-${index}`}
+                  title="Count"
+                  target={result.value}
+                  baseTarget={result.baseValue ?? result.value}
+                  bonusLabel={result.bonus?.label ?? null}
+                  spin={spinning[index] ?? false}
+                  landed={landed[index] ?? false}
+                  hidden={!started}
+                />
+              ) : (
+                <SpawnReel
+                  key={`${job.id}-${index}`}
+                  title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
+                  pool={job.spawnPool ?? []}
+                  label={result.label ?? result.name ?? '???'}
+                  resultText={result.name ?? '???'}
+                  targetIcon={result.icon}
+                  spin={spinning[index] ?? false}
+                  landed={landed[index] ?? false}
+                  hidden={!started}
+                />
+              );
+            })
+          : job.mode === 'perk'
+            ? // slot 0 = which perk, slot 1 = that perk's rolled value —
+              // fixed two-entry shape built by _buildPerkJob in roulette.cjs.
+              // Slot 1 stays masked until it's actually spinning/landed — its
+              // pool's format (dollars vs seconds vs item names) would
+              // otherwise give away slot 0's result before it even lands.
+              job.results.map((result, index) => {
+                const title = index === 1 ? 'Amount' : 'Positive Effect';
+                const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={title}
-                pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : job.mode === 'negative' ? (
-          // slot 0 = which effect, slot 1 (if present) = that effect's
-          // rolled value — some effects (Drop Weapon, Empty Pockets) have
-          // no second roll at all, so `job.results` may be length 1; the
-          // spin/landed timing in runJob already keys off results.length,
-          // so a single-entry job just plays one reel.
-          job.results.map((result, index) => {
-            const title = index === 1 ? 'Amount' : 'Negative Effect';
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+                return (
+                  <SpawnReel
+                    key={`${job.id}-${index}`}
+                    title={title}
+                    pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
+                    label={result.label ?? result.name ?? '???'}
+                    resultText={result.name ?? '???'}
+                    targetIcon={result.icon}
+                    spin={spinning[index] ?? false}
+                    landed={landed[index] ?? false}
+                    hidden={!started}
+                  />
+                );
+              })
+            : job.mode === 'negative'
+              ? // slot 0 = which effect, slot 1 (if present) = that effect's
+                // rolled value — some effects (Drop Weapon, Empty Pockets) have
+                // no second roll at all, so `job.results` may be length 1; the
+                // spin/landed timing in runJob already keys off results.length,
+                // so a single-entry job just plays one reel.
+                job.results.map((result, index) => {
+                  const title = index === 1 ? 'Amount' : 'Negative Effect';
+                  const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={title}
-                pool={(index === 1 ? job.effectValuePool : job.effectPool) ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : (
-          job.results.map((result, index) => (
-            <Reel
-              key={`${job.id}-${index}`}
-              result={result}
-              grades={job.grades?.[result.slot]}
-              spin={spinning[index] ?? false}
-              landed={landed[index] ?? false}
-            />
-          ))
-        )}
+                  return (
+                    <SpawnReel
+                      key={`${job.id}-${index}`}
+                      title={title}
+                      pool={(index === 1 ? job.effectValuePool : job.effectPool) ?? []}
+                      label={result.label ?? result.name ?? '???'}
+                      resultText={result.name ?? '???'}
+                      targetIcon={result.icon}
+                      spin={spinning[index] ?? false}
+                      landed={landed[index] ?? false}
+                      hidden={!started}
+                    />
+                  );
+                })
+              : job.results.map((result, index) => (
+                  <Reel
+                    key={`${job.id}-${index}`}
+                    result={result}
+                    grades={job.grades?.[result.slot]}
+                    spin={spinning[index] ?? false}
+                    landed={landed[index] ?? false}
+                  />
+                ))}
       </div>
     </div>
   );
