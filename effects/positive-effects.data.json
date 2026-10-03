@@ -32,8 +32,8 @@
     "max": 3,
     "fillerNumbers": [1, 2, 3, 6, 8, 10, 52, 67, 600, 1000, 1337],
     "bonuses": [
-      { "key": "ammo-plus1", "chance": 0.15, "type": "add", "value": 1, "label": "+1" },
-      { "key": "ammo-plus2", "chance": 0.1, "type": "add", "value": 2, "label": "+2" }
+      { "key": "ammo-plus2", "chance": 0.1, "type": "add", "value": 2, "label": "+2" },
+      { "key": "ammo-plus3", "chance": 0.1, "type": "add", "value": 3, "label": "+3" }
     ]
   },
   "give-money": {
@@ -89,7 +89,7 @@
       }
     },
     "bonus": {
-      "chance": 0.2,
+      "chance": 0.25,
       "items": [
         { "id": "antibio_sulfad", "label": "Sulfadimethoxine" },
         { "id": "drug_antidot", "label": "Antidote" },
