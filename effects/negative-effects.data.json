@@ -130,8 +130,8 @@
         "icon": "/negative-effects-icons/junk/prop_tv.png"
       },
       {
-        "id": "explo_balon_gas",
-        "label": "Gas Balloon",
+        "id": "explo_balon_gas_empty",
+        "label": "Gas Balloon (Empty)",
         "icon": "/negative-effects-icons/junk/explo_balon_gas.png"
       },
       {
@@ -160,8 +160,8 @@
         "icon": "/negative-effects-icons/junk/decor_toilet.png"
       },
       {
-        "id": "explo_jerrycan_fuel",
-        "label": "Jerrycan",
+        "id": "explo_jerrycan_fuel_empty",
+        "label": "Jerrycan (Empty)",
         "icon": "/negative-effects-icons/junk/explo_jerrycan_fuel.png"
       },
       {
@@ -191,6 +191,43 @@
         "label": "Rotten Meat",
         "icon": "/negative-effects-icons/junk/rotten_meat.png",
         "count": 30
+      },
+      {
+        "id": "decor_trophie8",
+        "label": "Flesh Trophy",
+        "icon": "/negative-effects-icons/junk/decor_trophie8.png"
+      },
+      {
+        "id": "piano_item",
+        "label": "Portable Keyboard",
+        "icon": "/negative-effects-icons/junk/piano_item.png"
+      },
+      {
+        "id": "itm_tent",
+        "label": "Camping Tent",
+        "icon": "/negative-effects-icons/junk/itm_tent.png"
+      },
+      {
+        "id": "underwear",
+        "label": "Old Underwear",
+        "icon": "/negative-effects-icons/junk/underwear.png",
+        "count": 30
+      },
+      {
+        "id": "decor_trophie3",
+        "label": "Pseudodog Trophy",
+        "icon": "/negative-effects-icons/junk/decor_trophie3.png"
+      },
+      {
+        "id": "decor_trophie4",
+        "label": "Cat Trophy",
+        "icon": "/negative-effects-icons/junk/decor_trophie4.png"
+      },
+      {
+        "id": "ball_hammer",
+        "label": "Ball-peen Hammer",
+        "icon": "/negative-effects-icons/junk/ball_hammer.png",
+        "count": 20
       }
     ]
   }
