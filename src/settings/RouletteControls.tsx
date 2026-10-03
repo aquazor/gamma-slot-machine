@@ -126,7 +126,7 @@ function RouletteControls({
       )}
 
       <div className="set-trigger">
-        <span className="set-muted">Manual roll</span>
+        <span className="set-muted">Roll items</span>
         {[1, 2, 3].map((n) => (
           <button
             key={n}
@@ -142,7 +142,7 @@ function RouletteControls({
           onClick={() => manualRoll(3, true)}
           disabled={triggerBusy}
         >
-          3 items + bonus
+          3 items<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
 
         <label className="set-auto-activate">
@@ -158,7 +158,7 @@ function RouletteControls({
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual spawn Mutants</span>
+        <span className="set-muted">Spawn Mutants</span>
         <button
           className="set-btn"
           onClick={() => manualSpawn('mutants')}
@@ -171,12 +171,12 @@ function RouletteControls({
           onClick={() => manualSpawn('mutants', true)}
           disabled={triggerBusy}
         >
-          Mutants + bonus
+          Mutants<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual spawn Squads</span>
+        <span className="set-muted">Spawn Squads</span>
         <button
           className="set-btn"
           onClick={() => manualSpawn('enemies')}
@@ -189,12 +189,12 @@ function RouletteControls({
           onClick={() => manualSpawn('enemies', true)}
           disabled={triggerBusy}
         >
-          Squads + bonus
+          Squads<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual positive effect</span>
+        <span className="set-muted">Positive effect</span>
         <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
           Positive Effects
         </button>
@@ -203,12 +203,13 @@ function RouletteControls({
           onClick={() => manualPerk(true)}
           disabled={triggerBusy}
         >
-          Positive Effects + bonus
+          Positive Effects
+          <span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual negative effect</span>
+        <span className="set-muted">Negative effect</span>
         <button
           className="set-btn"
           onClick={() => manualNegativeEffect()}
@@ -221,7 +222,8 @@ function RouletteControls({
           onClick={() => manualNegativeEffect(true)}
           disabled={triggerBusy}
         >
-          Negative Effects + bonus
+          Negative Effects
+          <span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 

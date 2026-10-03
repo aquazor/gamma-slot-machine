@@ -21,7 +21,7 @@ const CHANGELOG: { date: string; items: string[] }[] = [
   {
     date: '2026-10-01',
     items: [
-      'Ammo effects now give 1–2 more magazines/packs than before',
+      'Give Ammunition now rolls 2–3 packs, and its bonus is +2 or +3 extra packs (up to 6 total) instead of +1 or +2',
     ],
   },
   {

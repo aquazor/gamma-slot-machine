@@ -888,3 +888,13 @@ body {
 .set-changelog-items li:last-child {
   margin-bottom: 0;
 }
+
+/* "bonus" tag inside a manual-roll button */
+.set-btn-badge {
+  margin-left: 4px;
+  padding: 1px 4px;
+
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  vertical-align: 1px;
+}
