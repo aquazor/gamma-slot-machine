@@ -6,6 +6,14 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-10-03',
+    items: [
+      'Reworked gift subs: gifting 1-4 subs is one ordinary random roll, and from 5 subs up every full 5 gifted subs is one roll with a guaranteed bonus (5 subs = 1 bonus roll, 10 = 2, 15 = 3…). Leftover 1-4 subs are dropped, so 7 subs = 1 bonus roll',
+      'The rolls of one gift batch never repeat an outcome (loot, squad, mutants, positive, negative) until all five have come up, then a fresh set of five starts — 30 gifted subs hit every outcome and then go around again, and the same outcome never lands twice in a row. Only the first 100 gifted subs of a batch count (at most 20 rolls)',
+      'Bonus rolls: loot uses the max count of 3 and always attaches a scope/silencer to a weapon, spawns land a bonus, and effects land their own bonus where they have one — same as bits power-ups',
+    ],
+  },
+  {
     date: '2026-10-02',
     items: [
       'Added a second spawn roster, "Count Roll (LABS)" — switch between it and the normal Count Roll next to the Spawn tier selector (the "?" explains the difference). In LABS, Monolith, UNISG and Sin can spawn on every tier instead of Expert only, with their own counts. It has its own independent bonus chances on the Tweaking page ("Spawn bonuses (Labs)"); faction on/off toggles stay shared between both',

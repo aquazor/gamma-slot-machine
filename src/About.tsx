@@ -143,30 +143,31 @@ export default function About() {
             <h3 className="set-subheading">3. Subs, Resubs &amp; Gift Subs</h3>
             <ul className="about-list">
               <li>
-                A brand-new sub, a resub, or a single gifted sub has EQUAL odds (1-in-5
-                each) of rolling: loot, a squad, a mutant pack, a positive effect, or a
-                negative effect — with a random 1-3 count for loot either way.
+                A brand-new sub, a resub, or a single gifted sub is one roll with EQUAL
+                odds (1-in-5 each) of landing on: loot, a squad, a mutant pack, a
+                positive effect, or a negative effect — with a random 1-3 count for loot.
               </li>
               <li>
-                Gifting MORE THAN ONE sub at once (a &quot;gift bomb&quot;) still has
-                those same 1-in-5 odds — it&apos;s not guaranteed to be a spawn or
-                anything else. What changes is the SIZE and the ODDS once it lands:
+                Gifting several subs at once scales up. Gifting 1-4 subs is still just one
+                ordinary random roll. From 5 subs up, every full 5 gifted subs is one roll
+                with a GUARANTEED bonus, and any 1-4 leftover subs are dropped:
                 <ul className="about-list">
-                  <li>Loot always uses the maximum count of 3 instead of a random 1-3.</li>
-                  <li>
-                    A squad or mutant spawn is also GUARANTEED to land a bonus instead of
-                    the normal per-roll chance.
-                  </li>
-                  <li>
-                    A positive or negative effect is also GUARANTEED to land its own
-                    bonus, wherever that effect has one — otherwise it rolls normally.
-                  </li>
+                  <li>5 subs: 1 bonus roll · 10 subs: 2 bonus rolls · 15 subs: 3 bonus rolls…</li>
+                  <li>7 subs: 1 bonus roll · 14 subs: 2 bonus rolls (the leftovers don&apos;t count)</li>
                 </ul>
               </li>
               <li>
-                The size of the gift bomb itself (2 subs, 5 subs, 50 subs…) doesn&apos;t
-                change any of this further — every gift bomb bigger than 1 gets exactly
-                the same treatment, however big it is.
+                The rolls of one gift batch never repeat an outcome until all five have
+                come up (loot, squad, mutants, positive, negative) — then a fresh set of
+                five starts, so 30 gifted subs (6 rolls) hit every outcome once and then
+                go around again. No outcome ever lands twice in a row.
+              </li>
+              <li>
+                What a bonus roll guarantees: loot always uses the maximum count of 3 (and
+                a weapon always comes with a scope and/or silencer attached), a squad or
+                mutant spawn lands a bonus, and a positive or negative effect lands its own
+                bonus wherever that effect has one. Only the first 100 gifted subs
+                count (20 rolls, a few minutes of reels), so a huge gift can&apos;t clog the queue.
               </li>
             </ul>
 

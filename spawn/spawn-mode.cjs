@@ -131,7 +131,7 @@ function createSpawnMode({ data, overridesFile }) {
    *   Walks the list in order, each bonus claiming its own slice of
    *   [0,1) — so at most one can match.
    *
-   *   forceGuaranteed = true (multi-sub gift bomb) OR the enabled chances
+   *   forceGuaranteed = true (gift-sub bonus roll, bits) OR the enabled chances
    *   already add up to 100%+ (no room left for "no bonus" anyway): a
    *   bonus ALWAYS applies, drawn proportionally to each one's own share
    *   of the total — so e.g. three bonuses all set to 100% still split

@@ -4,7 +4,7 @@ const { randBelow } = require('./random.cjs');
  * Pick at most one entry from a list of `{ chance }` bonuses. Each entry
  * claims its own slice of [0,1): under 100% enabled, the leftover is "no
  * bonus" (returns null); at/above 100%, or with `forceGuaranteed` (bits
- * power-ups, gift bombs), a bonus is always drawn, split proportionally by
+ * power-ups, gift-sub bonus rolls), a bonus is always drawn, split proportionally by
  * relative chance so the first entry doesn't win every time. An empty list
  * or one with no positive chance at all yields null.
  */

@@ -112,38 +112,92 @@ function randomSlotCount() {
   return 1 + randBelow(3);
 }
 
-/*
- * Every subscription-family event (new sub, resub, single gift) rolls
- * one of loot / enemy squads / mutants / a perk / a negative effect with
- * equal 1/5 odds, then a random 1-3 count for loot/spawn — unless
- * `forceTriple` (a multi-sub gift bomb), which always rolls exactly 3.
- * Perks and negative effects have no count to scale (one is one — there's
- * no such thing as "3 perks" from a single dual-slot roll), so for them
- * `forceTriple` instead guarantees their own bonus lands, same "best
- * case" treatment bits power-ups already get. Which outcome landed is
- * only visible once the reels stop, same as any other roll.
- */
-function subEventOutcome(label, forceTriple) {
-  const category = pick(['loot', 'enemies', 'mutants', 'perk', 'negative']);
-  const rolls = forceTriple ? 3 : randomSlotCount();
+const SUB_CATEGORIES = ['loot', 'enemies', 'mutants', 'perk', 'negative'];
 
+/*
+ * One roll's plan for a given outcome category. `forceBonus` is the
+ * "guaranteed best case" treatment (bits power-ups, gift-sub batches):
+ * loot always uses the maximum count of 3 (and always lands the
+ * gun-attachments bonus when a weapon is rolled), spawns land a spawn
+ * bonus, and perks / negative effects land their own bonus wherever that
+ * effect has one. Otherwise loot/spawn use a random 1-3 count and every
+ * bonus is left to its normal per-roll chance.
+ */
+function subPlanForCategory(label, category, forceBonus) {
   if (category === 'loot') {
-    return { label, count: rolls, forceBonus: forceTriple };
+    return { label, count: forceBonus ? 3 : randomSlotCount(), forceBonus };
   }
 
-  // forceTriple (a multi-sub gift bomb) also guarantees a bonus wherever
-  // one exists — a spawn bonus, a perk's own bonus, or a negative effect's
-  // own bonus — same "guaranteed best case" treatment bits power-ups
-  // already get.
   if (category === 'perk') {
-    return { mode: 'perk', label, forceBonus: forceTriple };
+    return { mode: 'perk', label, forceBonus };
   }
 
   if (category === 'negative') {
-    return { mode: 'negative', label, forceBonus: forceTriple };
+    return { mode: 'negative', label, forceBonus };
   }
 
-  return { mode: 'spawn', label, category, forceBonus: forceTriple };
+  return { mode: 'spawn', label, category, forceBonus };
+}
+
+/*
+ * Every single subscription-family event (new sub, resub, one gifted
+ * sub) is one roll of a random category with equal 1/5 odds — loot /
+ * enemy squads / mutants / a perk / a negative effect — and no forced
+ * bonus. Which outcome landed is only visible once the reels stop.
+ */
+function subEventOutcome(label) {
+  return subPlanForCategory(label, pick(SUB_CATEGORIES), false);
+}
+
+/*
+ * Gift-sub batches. Gifting 1-4 subs at once is one ordinary random
+ * roll; from 5 up, every full GIFT_BATCH_SIZE (5) subs is one roll with a
+ * guaranteed bonus — 5 subs = 1 bonus roll, 10 = 2, 15 = 3, ... — and
+ * the leftover 1-4 subs are simply dropped (7 subs = 1 bonus roll, 9 = 1,
+ * 14 = 2). Only the first MAX_GIFT_SUBS (100) subs count, so a huge bomb
+ * is at most 20 rolls and can't clog the overlay queue.
+ *
+ * Outcome categories within one batch are dealt like a shuffled deck:
+ * no category repeats until all five have come up, then a fresh shuffled
+ * deck starts (the first card of a new deck never equals the last card
+ * of the previous one, so there's no back-to-back repeat at the seam).
+ *
+ */
+const GIFT_BATCH_SIZE = 5;
+const MAX_GIFT_SUBS = 100;
+
+function dealCategories(count) {
+  const dealt = [];
+
+  while (dealt.length < count) {
+    let deck = shuffle(SUB_CATEGORIES);
+
+    if (dealt.length > 0 && deck[0] === dealt[dealt.length - 1]) {
+      const swapWith = 1 + randBelow(deck.length - 1);
+
+      [deck[0], deck[swapWith]] = [deck[swapWith], deck[0]];
+    }
+
+    dealt.push(...deck);
+  }
+
+  return dealt.slice(0, count);
+}
+
+function giftLabel(total) {
+  return `${total} GIFT SUB${total > 1 ? 'S' : ''}`;
+}
+
+function giftPlans(total, label) {
+  const subs = Number.isFinite(total) && total >= 1 ? Math.min(Math.floor(total), MAX_GIFT_SUBS) : 1;
+
+  // Under 5 subs: one ordinary roll. From 5 up: one bonus roll per full 5.
+  const bonusRolls = Math.floor(subs / GIFT_BATCH_SIZE);
+  const rolls = Math.max(bonusRolls, 1);
+
+  return dealCategories(rolls).map((category) =>
+    subPlanForCategory(label, category, bonusRolls > 0),
+  );
 }
 
 /*
@@ -227,15 +281,15 @@ function planForEvent(event, rewardMap) {
         return null;
       }
 
-      return subEventOutcome('NEW SUB', false);
+      return subEventOutcome('NEW SUB');
 
     case 'resub':
-      return subEventOutcome(event.months ? `RESUB x${event.months}` : 'RESUB', false);
+      return subEventOutcome(event.months ? `RESUB x${event.months}` : 'RESUB');
 
     case 'gift': {
       const total = event.total || 1;
 
-      return subEventOutcome(`${total} GIFT SUB${total > 1 ? 'S' : ''}`, total > 1);
+      return giftPlans(total, giftLabel(total))[0];
     }
 
     case 'power_up': {
@@ -273,6 +327,22 @@ function planForEvent(event, rewardMap) {
     default:
       return null;
   }
+}
+
+/*
+ * Every roll an event produces, in queue order. Almost every event is a
+ * single roll; a gift-sub batch can be several (see giftPlans).
+ */
+function plansForEvent(event, rewardMap) {
+  if (event.kind === 'gift') {
+    const total = event.total || 1;
+
+    return giftPlans(total, giftLabel(total));
+  }
+
+  const plan = planForEvent(event, rewardMap);
+
+  return plan ? [plan] : [];
 }
 
 /*
@@ -413,40 +483,53 @@ class Roulette extends EventEmitter {
    * or null if the event doesn't trigger a roll.
    */
   handleEvent(event) {
-    const plan = planForEvent(event, this.rewardMap);
+    const plans = plansForEvent(event, this.rewardMap);
 
-    if (!plan) {
+    // Build every job first so a batch is queued back-to-back; returns the
+    // first one (the rest are tagged `batch: { index, size }`).
+    const jobs = plans.map((plan) => this._buildJob(event, plan)).filter(Boolean);
+
+    if (jobs.length === 0) {
       return null;
     }
 
-    let job;
-
-    if (plan.mode === 'spawn') {
-      job = this._buildSpawnJob(event, plan);
-    } else if (plan.mode === 'perk') {
-      job = this._buildPerkJob(event, plan);
-    } else if (plan.mode === 'negative') {
-      job = this._buildNegativeEffectJob(event, plan);
-    } else {
-      job = this._buildLootJob(event, plan);
+    if (jobs.length > 1) {
+      jobs.forEach((job, index) => {
+        job.batch = { index: index + 1, size: jobs.length };
+      });
     }
 
-    if (!job) {
-      return null;
+    for (const job of jobs) {
+      this.queue.push(job);
+      this.emit('queued', job);
     }
 
-    this.queue.push(job);
-    this.emit('queued', job);
     this._processNext();
 
-    return job;
+    return jobs[0];
+  }
+
+  _buildJob(event, plan) {
+    if (plan.mode === 'spawn') {
+      return this._buildSpawnJob(event, plan);
+    }
+
+    if (plan.mode === 'perk') {
+      return this._buildPerkJob(event, plan);
+    }
+
+    if (plan.mode === 'negative') {
+      return this._buildNegativeEffectJob(event, plan);
+    }
+
+    return this._buildLootJob(event, plan);
   }
 
   /*
    * "Roll guns with attachments" bonus (see gun-attachments.cjs) — if this
    * roll included a weapon slot, it has a flat CHANCE of landing with a
    * scope/silencer already attached (the game side works out what
-   * actually fits). `plan.forceBonus` (a multi-sub gift bomb or a bits
+   * actually fits). `plan.forceBonus` (a gift-sub bonus roll or a bits
    * power-up) guarantees it lands instead, same "best case" treatment
    * every other bonus in this app gets.
    */
@@ -625,7 +708,7 @@ class Roulette extends EventEmitter {
 
   /*
    * Exactly one dual-slot roll (species + its own count), never N
-   * independent picks. `plan.forceBonus` (a multi-sub gift bomb or a bits
+   * independent picks. `plan.forceBonus` (a gift-sub bonus roll or a bits
    * power-up) guarantees a bonus instead of the normal per-roll chance.
    */
   _buildSpawnJob(event, plan) {
@@ -812,4 +895,4 @@ class Roulette extends EventEmitter {
   }
 }
 
-module.exports = { Roulette, planForEvent, rollItems, POOLS };
+module.exports = { Roulette, planForEvent, plansForEvent, rollItems, POOLS };

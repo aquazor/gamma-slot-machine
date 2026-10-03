@@ -357,7 +357,9 @@ eventSub.on('event', (event) => {
   const job = roulette.handleEvent(event);
 
   if (job) {
-    console.log(`Roulette: ${event.kind} from ${job.user} -> ${job.label}`);
+    const extra = job.batch ? ` (${job.batch.size} rolls queued)` : '';
+
+    console.log(`Roulette: ${event.kind} from ${job.user} -> ${job.label}${extra}`);
   }
 });
 
@@ -543,7 +545,7 @@ registerChanceRoutes(app, {
 /*
  * "Roll guns with attachments" bonus — a plain on/off toggle, fixed
  * chance (see gun-attachments.cjs). Applies to any loot roll that
- * includes a weapon; always guaranteed for gift-sub bombs and bits
+ * includes a weapon; always guaranteed for gift-sub bonus rolls (every 5th gifted sub) and bits
  * power-ups regardless of this chance.
  */
 app.get('/roulette/gun-attachments', (req, res) => {
