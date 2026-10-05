@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "package": "npm run build && node build-release.cjs"
+    "package": "npm run build && node scripts/build-release.cjs"
   },
   "dependencies": {
     "react": "^19.2.0",

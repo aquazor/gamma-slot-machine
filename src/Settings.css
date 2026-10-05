@@ -320,7 +320,7 @@ body {
 .set-btn {
   display: inline-block;
 
-  padding: 7px 16px;
+  padding: 5px 8px;
 
   background: rgba(255, 255, 255, 0.08);
   color: #f0e6d2;
@@ -612,10 +612,16 @@ body {
   border: 1px solid rgba(179, 128, 31, 0.5);
   border-radius: 8px;
 
-  overflow: hidden;
+  /* No overflow: hidden here (used to clip the first/last button's
+     corners to match) — a hint badge nested inside the last button needs
+     its hover tooltip to pop up OUTSIDE this box, which overflow: hidden
+     would clip. Corners are rounded directly on :first-child/:last-child
+     below instead. */
 }
 
 .set-preset {
+  display: inline-flex;
+  align-items: center;
   padding: 7px 16px;
 
   background: transparent;
@@ -636,6 +642,11 @@ body {
 
 .set-preset:first-child {
   border-left: 0;
+  border-radius: 7px 0 0 7px;
+}
+
+.set-preset:last-child {
+  border-radius: 0 7px 7px 0;
 }
 
 .set-preset:hover {
@@ -646,6 +657,115 @@ body {
 .set-preset.is-active {
   background: #e0a52e;
   color: #201200;
+}
+
+/* ---- hint tooltip (hover "?" badge) ---- */
+
+.set-hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0;
+
+  /* Deliberately dark+opaque, not a translucent amber tint — this sits
+     inside a button that can itself be solid amber when active
+     (.set-preset.is-active), and a translucent amber badge all but
+     vanishes on top of that. A dark circle stays legible against either
+     the active (amber) or inactive (dark/transparent) button state. */
+  background: #1c150c;
+  color: #ffd873;
+
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+
+  border: 1px solid rgba(240, 230, 210, 0.55);
+  border-radius: 50%;
+
+  cursor: help;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.set-hint:hover,
+.set-hint:focus-visible {
+  background: #2a1f10;
+  border-color: #ffd873;
+  outline: none;
+}
+
+.set-hint::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 12px;
+
+  background: #1c150c;
+  color: #f0e6d2;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+
+  border: 1px solid rgba(179, 128, 31, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+
+  z-index: 20;
+}
+
+.set-hint::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+
+  border: 5px solid transparent;
+  border-top-color: #1c150c;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+
+  z-index: 20;
+}
+
+.set-hint:hover::after,
+.set-hint:hover::before,
+.set-hint:focus-visible::after,
+.set-hint:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ---- manual trigger ---- */
@@ -666,7 +786,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 8px 14px;
 
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .set-factions-subheading {
@@ -767,4 +887,14 @@ body {
 
 .set-changelog-items li:last-child {
   margin-bottom: 0;
+}
+
+/* "bonus" tag inside a manual-roll button */
+.set-btn-badge {
+  margin-left: 4px;
+  padding: 1px 4px;
+
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  vertical-align: 1px;
 }

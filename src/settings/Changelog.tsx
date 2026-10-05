@@ -6,6 +6,33 @@ import { memo, useState } from 'react';
 // something worth mentioning ships.
 const CHANGELOG: { date: string; items: string[] }[] = [
   {
+    date: '2026-10-03',
+    items: [
+      'Reworked gift subs: gifting 1-4 subs is one ordinary random roll, and from 5 subs up every full 5 gifted subs is one roll with a guaranteed bonus (5 subs = 1 bonus roll, 10 = 2, 15 = 3…). Leftover 1-4 subs are dropped, so 7 subs = 1 bonus roll',
+      'The rolls of one gift batch never repeat an outcome (loot, squad, mutants, positive, negative) until all five have come up, then a fresh set of five starts — 30 gifted subs hit every outcome and then go around again, and the same outcome never lands twice in a row. Only the first 100 gifted subs of a batch count (at most 20 rolls)',
+      'Bonus rolls: loot uses the max count of 3 and always attaches a scope/silencer to a weapon, spawns land a bonus, and effects land their own bonus where they have one — same as bits power-ups',
+    ],
+  },
+  {
+    date: '2026-10-02',
+    items: [
+      'Added a second spawn roster, "Count Roll (LABS)" — switch between it and the normal Count Roll next to the Spawn tier selector (the "?" explains the difference). In LABS, Monolith, UNISG and Sin can spawn on every tier instead of Expert only, with their own counts. It has its own independent bonus chances on the Tweaking page ("Spawn bonuses (Labs)"); faction on/off toggles stay shared between both',
+      'Added "w/ bonus" buttons next to the manual roll buttons (3 items, Mutants, Squads, Positive and Negative) — they roll with the bonus guaranteed, the same way bits power-ups and gift-sub bombs do',
+      'The "wow" sound now plays once after every reel of a roll has landed, instead of after each reel',
+      'Added 25 more emote effects to the winning burst, and the burst now starts and clears the same way on every reel',
+      'Drink Vodka\'s reel now flies past a wider spread of percentages (including a few joke values); the actual rolled amount is unchanged',
+      'Mutant packs now use one unified pool per mutant instead of separate Normal/Strong lists, Gigant/Jumper is its own entry, and the Squad "Tier Upgrade" bonus was removed (it still applies to mutants)',
+      'The Random Roll spawn mode and its leftover options are gone — Count Roll is the only spawn mode',
+      'Internal cleanup: shared code for random picks, saved settings and the Tweaking cards was consolidated, and the project was split into folders. One edge case changed: if every spawn bonus is set to 0%, a guaranteed-bonus roll now simply gets no bonus instead of the last one in the list',
+    ],
+  },
+  {
+    date: '2026-10-01',
+    items: [
+      'Give Ammunition now rolls 2–3 packs, and its bonus is +2 or +3 extra packs (up to 6 total) instead of +1 or +2',
+    ],
+  },
+  {
     date: '2026-09-28',
     items: [
       'Added a "Roll guns with attachments" bonus — a loot roll that includes a weapon has a flat 25% chance of giving it with a compatible scope and/or silencer already attached, worked out from that weapon\'s own in-game data. Toggle it from a checkbox next to the Manual roll buttons in Settings; off entries in a fresh install now default to on',

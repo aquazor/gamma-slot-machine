@@ -94,7 +94,11 @@ export default function About() {
               </li>
               <li>
                 triggers a <strong>positive effect</strong> — temporary invulnerability, a
-                cash drop, free ammo, or a medical item.
+                cash drop, free ammo, a medical item, or food and water, or
+              </li>
+              <li>
+                triggers a <strong>negative effect</strong> — a dropped weapon, lost
+                money, broken gear, a time warp, getting drunk, or a junk item.
               </li>
             </ul>
 
@@ -108,7 +112,7 @@ export default function About() {
             <h2 className="set-heading">How To Trigger A Roll</h2>
 
             <h3 className="set-subheading">1. Channel Points</h3>
-            <p>Four redeemable rewards, each costing channel points:</p>
+            <p>Five redeemable rewards, each costing channel points:</p>
             <ul className="about-list">
               <li>
                 <code>[SPIN] Spawn Squads</code> — spawns a hostile squad
@@ -122,51 +126,48 @@ export default function About() {
               <li>
                 <code>[SPIN] Positive Effects</code> — rolls a random positive effect
               </li>
+              <li>
+                <code>[SPIN] Negative Effects</code> — rolls a random negative effect
+              </li>
             </ul>
 
             <h3 className="set-subheading">2. Bits Power-Ups</h3>
             <p>
-              The same four rolls, but funded by bit cheers instead of channel points (the
+              The same five rolls, but funded by bit cheers instead of channel points (the
               streamer sets the bits price on Twitch&apos;s side). A bits power-up always
               rolls the best case: the max count of 3 for Spawn Squads/Mutants and Loot
-              Roll, and a guaranteed bonus wherever one can land (spawn bonuses and
-              positive-effect bonuses alike). See the Bits Power-Ups guide, linked from
-              Settings, for how to create them on Twitch.
+              Roll, and a guaranteed bonus wherever one can land (spawn bonuses, positive
+              effects, and negative effects alike). See the Bits Power-Ups guide, linked
+              from Settings, for how to create them on Twitch.
             </p>
             <h3 className="set-subheading">3. Subs, Resubs &amp; Gift Subs</h3>
             <ul className="about-list">
               <li>
-                A brand-new sub, a resub, or a single gifted sub has EQUAL odds (1-in-4
-                each) of rolling: loot, a squad, a mutant pack, or a positive effect —
-                with a random 1-3 count for loot/squad/mutant either way (Random mode).
+                A brand-new sub, a resub, or a single gifted sub is one roll with EQUAL
+                odds (1-in-5 each) of landing on: loot, a squad, a mutant pack, a
+                positive effect, or a negative effect — with a random 1-3 count for loot.
               </li>
               <li>
-                Gifting MORE THAN ONE sub at once (a &quot;gift bomb&quot;) still has
-                those same 1-in-4 odds — it&apos;s not guaranteed to be a spawn or
-                anything else. What changes is the SIZE and the ODDS once it lands on loot
-                or a spawn:
+                Gifting several subs at once scales up. Gifting 1-4 subs is still just one
+                ordinary random roll. From 5 subs up, every full 5 gifted subs is one roll
+                with a GUARANTEED bonus, and any 1-4 leftover subs are dropped:
                 <ul className="about-list">
-                  <li>
-                    It always uses the maximum count of 3 instead of a random 1-3 (3 loot
-                    items, or 3 independently-rolled squad/mutant groups in Random mode).
-                  </li>
-                  <li>
-                    If it lands on a squad or mutant spawn while Count Roll mode is
-                    active, that spawn is also GUARANTEED to land a bonus — Count Roll
-                    always does a single roll regardless of gift size, so the &quot;always
-                    3&quot; part doesn&apos;t apply there, only the guaranteed bonus does.
-                  </li>
-                  <li>
-                    A gift bomb landing on a positive effect still rolls normally, with
-                    the effect&apos;s own regular bonus chance — the guaranteed-bonus
-                    treatment is a bits-power-up-only perk.
-                  </li>
+                  <li>5 subs: 1 bonus roll · 10 subs: 2 bonus rolls · 15 subs: 3 bonus rolls…</li>
+                  <li>7 subs: 1 bonus roll · 14 subs: 2 bonus rolls (the leftovers don&apos;t count)</li>
                 </ul>
               </li>
               <li>
-                The size of the gift bomb itself (2 subs, 5 subs, 50 subs…) doesn&apos;t
-                change any of this further — every gift bomb bigger than 1 gets exactly
-                the same treatment, however big it is.
+                The rolls of one gift batch never repeat an outcome until all five have
+                come up (loot, squad, mutants, positive, negative) — then a fresh set of
+                five starts, so 30 gifted subs (6 rolls) hit every outcome once and then
+                go around again. No outcome ever lands twice in a row.
+              </li>
+              <li>
+                What a bonus roll guarantees: loot always uses the maximum count of 3 (and
+                a weapon always comes with a scope and/or silencer attached), a squad or
+                mutant spawn lands a bonus, and a positive or negative effect lands its own
+                bonus wherever that effect has one. Only the first 100 gifted subs
+                count (20 rolls, a few minutes of reels), so a huge gift can&apos;t clog the queue.
               </li>
             </ul>
 
@@ -189,7 +190,7 @@ export default function About() {
 
           <section className="set-section">
             <h2 className="set-heading">Positive Effects</h2>
-            <p>A fourth kind of roll, picked at random among four effects:</p>
+            <p>One kind of roll, picked at random among five effects:</p>
             <ul className="about-list">
               <li>
                 <strong>Immortality</strong> — temporary invulnerability for a rolled
@@ -206,60 +207,54 @@ export default function About() {
                 <strong>Medicine</strong> — a medical item (varies by difficulty tier)
                 plus a secondary supply item, and a small chance of an extra bonus item
               </li>
+              <li>
+                <strong>Food &amp; Water</strong> — a random meal plus a random drink,
+                with a chance of a premium pair instead
+              </li>
             </ul>
             <p>
               Each effect has its own chance of landing an extra bonus on top — more
               seconds or doubled duration for Immortality, extra ammo packs for Give
               Ammunition, doubled or extra cash for Give Money, an extra medical item for
-              Medicine. The streamer can enable/disable each effect, fine-tune how often
-              each one is picked and how often its bonus lands, and restore everything to
-              its defaults in one click — all from the Tweaking page (linked from Settings
-              and the navbar).
+              Medicine, a premium food/drink pair for Food &amp; Water. The streamer can
+              enable/disable each effect, fine-tune how often each one is picked and how
+              often its bonus lands, and restore everything to its defaults in one click —
+              all from the Tweaking page (linked from Settings and the navbar).
             </p>
           </section>
 
           <section className="set-section">
-            <h2 className="set-heading">Spawn Rolls — Two Modes</h2>
+            <h2 className="set-heading">Spawn Rolls</h2>
             <p>
-              When a roll spawns mutants or a squad, it can work one of two ways. The
-              streamer switches between them any time in Settings, and it affects every
-              future spawn immediately.
+              A spawn roll (mutants or a hostile squad) is two separate spinning reels: the
+              first rolls a NUMBER — how many are about to spawn — and the second rolls
+              WHAT spawns — which mutant type or which squad. Only one type of thing
+              spawns per roll (never a mix), but the count can still be as small as 1 or
+              fairly large, and every spawn roll has a chance at a bonus (below).
             </p>
-
-            <h3 className="set-subheading">Random Mode</h3>
             <p>
-              The classic version. The roll independently picks 1 to 3 creature/squad
-              groups (the same group can even come up more than once), each with its own
-              spawn count. Simple and fast.
-            </p>
-
-            <h3 className="set-subheading">Count Roll Mode (default and recommended)</h3>
-            <p>
-              A more &quot;slot machine&quot; feeling version, with two separate spinning
-              reels: the first rolls a NUMBER — how many are about to spawn — and the
-              second rolls WHAT spawns — which mutant type or which squad. Only one type
-              of thing spawns per roll (never a mix), but the count can still be as small
-              as 1 or fairly large, and — unlike Random mode — Count Roll spawns have a
-              chance at a bonus (below).
-            </p>
-            <p className="set-muted">
-              Note: because Count Roll always does a single &quot;what + how many&quot;
-              roll, reward descriptions that mention rolling &quot;1-3&quot; are
-              describing Random mode&apos;s behavior — while Count Roll is active, those
-              same rewards still work, they just always produce one roll instead.
+              The streamer can switch the squad/mutant roster itself between{' '}
+              <strong>Count Roll</strong> and <strong>Count Roll (LABS)</strong> in Settings
+              — same mechanic either way, just a different roster. The LABS roster makes
+              Monolith, Sin, and UNISG reachable at every difficulty tier instead of Expert
+              only, and can trim or rebalance which mutants/squads show up independently of
+              the normal roster. Its own spawn bonuses (below) are tuned separately too.
             </p>
           </section>
 
           <section className="set-section">
-            <h2 className="set-heading">Spawn Bonuses (Count Roll Mode Only)</h2>
+            <h2 className="set-heading">Spawn Bonuses</h2>
             <p>
-              Every Count Roll spawn has a small chance of landing a bonus on top of the
-              normal result. At most one bonus can apply per roll:
+              Every spawn roll has a small chance of landing a bonus on top of the normal
+              result. At most one bonus can apply per roll:
             </p>
             <ul className="about-list">
               <li>
                 <strong>x2 Double Count</strong> — doubles however many were about to
                 spawn
+              </li>
+              <li>
+                <strong>+1 Plus One</strong> — adds 1 more to the spawn count
               </li>
               <li>
                 <strong>+2 Plus Two</strong> — adds 2 more to the spawn count
@@ -269,12 +264,14 @@ export default function About() {
                 something from the NEXT tier up (e.g. a Basic roll can spawn something
                 that&apos;s normally only available at Advanced). Expert rolls upgrade
                 within Expert&apos;s own rarest options, since there&apos;s no tier above
-                Expert.
+                Expert. Mutant packs only — hostile squads don&apos;t use this one.
               </li>
             </ul>
             <p>
-              By default, each bonus has a 3.3% chance per roll (about a 1-in-10 chance of
-              ANY bonus landing). The streamer can turn any bonus on or off, fine-tune
+              By default, each bonus has a 2.5% chance per roll (about a 1-in-10 chance of
+              ANY bonus landing). Exactly which bonuses are active can vary by category and
+              tier — see the Tweaking page for what&apos;s actually enabled right now. The
+              streamer can turn any bonus on or off, fine-tune
               each one&apos;s exact chance as a percentage, and restore the defaults in
               one click — all from the Tweaking page, and the tweaks survive the app being
               closed and reopened. If the enabled bonuses&apos; chances add up to 100% or
@@ -290,8 +287,10 @@ export default function About() {
             </p>
             <p>
               Tier Upgrade specifically respects the same faction restrictions described
-              below — it can never pull in Monolith, Sin, or UNISG unless the roll is
-              already happening at the Expert tier.
+              below — on the normal roster, it can never pull in Monolith, Sin, or UNISG
+              unless the roll is already happening at the Expert tier. The LABS roster has
+              no such restriction, since those factions are available at every tier there
+              to begin with.
             </p>
           </section>
 
@@ -330,9 +329,11 @@ export default function About() {
               </li>
             </ul>
             <p>
-              Monolith, Sin, and UNISG are exclusive to the Expert tier — they can never
-              show up while the squad difficulty is set to Basic or Advanced, even via a
-              Tier Upgrade bonus.
+              On the normal roster, Monolith, Sin, and UNISG are exclusive to the Expert
+              tier — they can never show up while the squad difficulty is set to Basic or
+              Advanced, even via a Tier Upgrade bonus. Switching to the{' '}
+              <strong>Count Roll (LABS)</strong> roster (see Spawn Rolls above) makes all
+              three reachable at every tier instead.
             </p>
           </section>
 
@@ -341,9 +342,7 @@ export default function About() {
             <p>
               The streamer can individually disable any hostile squad faction (say, never
               wanting Duty to spawn) from Settings — a disabled faction is skipped
-              entirely and can never come up, in either Random or Count Roll mode, and the
-              on/off state is shared between both modes (turning a squad off is a single
-              switch, not a separate one per mode).
+              entirely and can never come up.
             </p>
             <p>
               There&apos;s currently no equivalent on/off switch for individual mutant
@@ -367,7 +366,7 @@ export default function About() {
           <section className="set-section">
             <h2 className="set-heading">A Note On Odds</h2>
             <p>
-              &quot;Chance&quot; numbers above (3.3% per bonus, 1-in-4 category odds on
+              &quot;Chance&quot; numbers above (2.5% per bonus, 1-in-5 category odds on
               subs, etc.) reflect the defaults as of this guide. Bonus chances, positive
               effect odds, and which squads are enabled can all be changed by the streamer
               at any time from Settings and the Tweaking page, so the exact odds in effect

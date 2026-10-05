@@ -37,9 +37,11 @@ const SPIN_DISTANCE_PX = 12000;
 const SPIN_JITTER_ROWS = 6; // small random over/undershoot for variety
 
 const SPIN_VOLUME = 0.35;
-const EFFECT_COUNT = 46; // /gifs/effects/effect-0..45.gif
-const WINNING_EFFECTS_COUNT = 12;
+const WOW_VOLUME = 0.5;
+const EFFECT_COUNT = 101; // /gifs/effects/effect-0..100.gif
+const WINNING_EFFECTS_COUNT = 16;
 const EFFECTS_MS = 5000;
+const EFFECT_STAGGER_S = 0.08; // delay between consecutive emotes in one burst
 
 /* ========================================
    TYPES
@@ -111,7 +113,13 @@ interface WinningEffect {
 const POOLS: Record<Slot, Item[]> = {
   weapon: [...pistols, ...shotguns, ...smgs, ...rifles, ...snipers],
   helmet: [...helmetsField, ...helmetsLight, ...helmetsMedium, ...helmetsHeavyExo],
-  armor: [...outfitsField, ...outfitsLight, ...outfitsMedium, ...outfitsHeavy, ...outfitsExo],
+  armor: [
+    ...outfitsField,
+    ...outfitsLight,
+    ...outfitsMedium,
+    ...outfitsHeavy,
+    ...outfitsExo,
+  ],
 };
 
 const ICON_FOLDER: Record<Slot, string> = {
@@ -162,6 +170,45 @@ function shuffle<T>(array: T[]): T[] {
   return copy;
 }
 
+// Sparkles + emote burst: starts when `landed` flips to true and clears
+// itself after EFFECTS_MS.
+function useWinningEffects(landed: boolean): {
+  effects: WinningEffect[];
+  showEffects: boolean;
+} {
+  const [effects, setEffects] = useState<WinningEffect[]>([]);
+
+  useEffect(() => {
+    if (!landed) {
+      return;
+    }
+
+    // State is set from timers, not synchronously in the effect body.
+    const startTimer = window.setTimeout(() => {
+      setEffects(
+        shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
+          .slice(0, WINNING_EFFECTS_COUNT)
+          .map((id, index) => ({
+            id,
+            left: 10 + Math.random() * 80,
+            top: 10 + Math.random() * 80,
+            rotation: -25 + Math.random() * 50,
+            delay: index * EFFECT_STAGGER_S,
+          })),
+      );
+    }, 0);
+
+    const endTimer = window.setTimeout(() => setEffects([]), EFFECTS_MS);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(endTimer);
+    };
+  }, [landed]);
+
+  return { effects, showEffects: effects.length > 0 };
+}
+
 function hideBrokenImage(event: React.SyntheticEvent<HTMLImageElement>): void {
   event.currentTarget.style.visibility = 'hidden';
 }
@@ -190,10 +237,10 @@ function ReelIcon({ icon }: { icon: string | string[] | null | undefined }) {
   return <img src={icon} alt="" onError={hideBrokenImage} />;
 }
 
-function playSpinSound(): void {
+function playSound(src: string, volume: number): void {
   try {
-    const audio = new Audio('/sounds/spin.mp3');
-    audio.volume = SPIN_VOLUME;
+    const audio = new Audio(src);
+    audio.volume = volume;
 
     void audio.play().catch(() => {
       // autoplay blocked outside OBS until a user gesture
@@ -201,6 +248,166 @@ function playSpinSound(): void {
   } catch {
     // no audio available
   }
+}
+
+function playSpinSound(): void {
+  playSound('/sounds/spin.mp3', SPIN_VOLUME);
+}
+
+// Plays once per roll, after the LAST reel has landed — not per reel.
+function playWowSound(): void {
+  playSound('/sounds/wow.mp3', WOW_VOLUME);
+}
+
+/* ========================================
+   SHARED REEL PIECES
+======================================== */
+
+// Strip: random rows for a FIXED scroll distance (so every reel spins at
+// the same visual speed), the winning row at that distance, then a few
+// more rows so the window is never half-empty after it lands. Filler never
+// repeats an item within `clashRows` adjacent rows, and the winner's
+// neighbours are kept distinct from it.
+function buildStrip<T>(
+  fillPool: T[],
+  winner: T,
+  isSame: (a: T, b: T) => boolean,
+  clashRows: number,
+): { strip: T[]; targetIndex: number } {
+  const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
+  const target = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
+
+  const need = target + VISIBLE_ROWS + 2;
+
+  const randomItem = (): T => fillPool[Math.floor(Math.random() * fillPool.length)];
+
+  const rows: T[] = [];
+
+  for (let k = 0; k < need; k++) {
+    let candidate = randomItem();
+
+    for (let guard = 0; guard < 40; guard++) {
+      const clash = Array.from({ length: clashRows }, (_, i) => rows[k - 1 - i]).some(
+        (row) => row !== undefined && isSame(row, candidate),
+      );
+
+      if (!clash) {
+        break;
+      }
+
+      candidate = randomItem();
+    }
+
+    rows[k] = candidate;
+  }
+
+  rows[target] = winner;
+
+  for (const n of [target - 2, target - 1, target + 1, target + 2]) {
+    if (rows[n] && isSame(rows[n], winner)) {
+      for (let guard = 0; guard < 40; guard++) {
+        rows[n] = randomItem();
+
+        if (!isSame(rows[n], winner)) {
+          break;
+        }
+      }
+    }
+  }
+
+  return { strip: rows, targetIndex: target };
+}
+
+// Sparkles + emote burst over the reel once it has landed.
+function ReelEffects({ landed }: { landed: boolean }) {
+  const { effects, showEffects } = useWinningEffects(landed);
+
+  if (!showEffects) {
+    return null;
+  }
+
+  return (
+    <>
+      <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
+      <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
+
+      {effects.map((effect) => (
+        <img
+          key={effect.id}
+          className="winning-effect"
+          src={`/gifs/effects/effect-${effect.id}.gif`}
+          alt=""
+          style={{
+            left: `${effect.left}%`,
+            top: `${effect.top}%`,
+            transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
+            animationDelay: `${effect.delay}s`,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+interface ReelShellProps {
+  className: string;
+  title: string;
+  landed: boolean;
+  spin: boolean;
+  targetIndex: number;
+  withEffects?: boolean;
+  hidden?: boolean; // mask the pool until this reel's own turn starts — see PendingMask
+  result: React.ReactNode; // contents of the line under the reel
+  children: React.ReactNode; // the strip's rows
+}
+
+// The frame every reel shares: title, scrolling window (+ gradients and
+// marker), and the result line that fades in once it has landed.
+function ReelShell({
+  className,
+  title,
+  landed,
+  spin,
+  targetIndex,
+  withEffects = false,
+  hidden = false,
+  result,
+  children,
+}: ReelShellProps) {
+  // Land the target row in the middle band of the 3-row window.
+  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+
+  return (
+    <div className={`reel-container ov-reel ${className} ${landed ? 'ov-reel--landed' : ''}`}>
+      <h2 className="reel-title">{title}</h2>
+
+      <div className="reel-wrapper">
+        {withEffects && <ReelEffects landed={landed} />}
+
+        <div className="reel-window">
+          <div
+            className="reel"
+            style={{
+              transform: `translateY(-${offset}px)`,
+              transition: spin
+                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
+                : 'none',
+            }}
+          >
+            {children}
+          </div>
+
+          <div className="top-gradient" />
+          <div className="bottom-gradient" />
+          <div className="reel-indicator" />
+
+          {hidden && <PendingMask />}
+        </div>
+      </div>
+
+      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>{result}</div>
+    </div>
+  );
 }
 
 /* ========================================
@@ -236,155 +443,40 @@ function Reel({ result, grades, spin, landed }: ReelProps) {
   const targetName = real?.name ?? result.name;
   const repair = (real?.repair ?? '').toLowerCase();
 
-  const [effects, setEffects] = useState<WinningEffect[]>([]);
-  const [showEffects, setShowEffects] = useState<boolean>(false);
-
-  // Sparkles + emote burst when this reel lands.
-  useEffect(() => {
-    if (!landed) {
-      return;
-    }
-
-    const burst = shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
-      .slice(0, WINNING_EFFECTS_COUNT)
-      .map((id, index) => ({
-        id,
-        left: 10 + Math.random() * 80,
-        top: 10 + Math.random() * 80,
-        rotation: -25 + Math.random() * 50,
-        delay: index * 0.12,
-      }));
-
-    setEffects(burst);
-    setShowEffects(true);
-
-    const timer = window.setTimeout(() => {
-      setShowEffects(false);
-      setEffects([]);
-    }, EFFECTS_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [landed]);
-
-  // Strip: random rows for a FIXED scroll distance (so every reel spins
-  // at the same visual speed), the winning row at that distance, then a
-  // few more rows so the window is never half-empty after it lands.
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const winner = real ?? { id: result.itemId, name: targetName };
-
-    const need = target + VISIBLE_ROWS + 2;
-
-    const randomItem = (): Item =>
-      fillPool[Math.floor(Math.random() * fillPool.length)];
-
-    // Fill with random items, never repeating an item within 3 adjacent
-    // rows — so the slowdown never shows the same item twice near the marker.
-    const rows: Item[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = randomItem();
-
-      for (let guard = 0; guard < 40; guard++) {
-        const clash =
-          rows[k - 1]?.id === candidate.id ||
-          rows[k - 2]?.id === candidate.id ||
-          rows[k - 3]?.id === candidate.id;
-
-        if (!clash) {
-          break;
-        }
-
-        candidate = randomItem();
-      }
-
-      rows[k] = candidate;
-    }
-
-    // Drop the winner in, then keep its neighbours distinct from it.
-    rows[target] = winner;
-
-    for (const n of [target - 2, target - 1, target + 1, target + 2]) {
-      if (rows[n] && rows[n].id === winner.id) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = randomItem();
-
-          if (rows[n].id !== winner.id) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target };
+  const { strip, targetIndex } = useMemo(
+    () =>
+      buildStrip<Item>(
+        fillPool,
+        real ?? { id: result.itemId, name: targetName },
+        (a, b) => a.id === b.id,
+        3,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Land the target row in the middle band of the 3-row window.
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div
-      className={`reel-container ov-reel ${
-        landed ? `ov-reel--landed repair-${repair || 'none'}` : ''
-      }`}
+    <ReelShell
+      className={landed ? `repair-${repair || 'none'}` : ''}
+      title={SLOT_LABEL[result.slot]}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      withEffects
+      result={
+        <>
+          <img src={`/${folder}/${result.itemId}.png`} alt="" onError={hideBrokenImage} />
+          <span>{targetName}</span>
+        </>
+      }
     >
-      <h2 className="reel-title">{SLOT_LABEL[result.slot]}</h2>
-
-      <div className="reel-wrapper">
-        {showEffects && (
-          <>
-            <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
-            <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
-
-            {effects.map((effect) => (
-              <img
-                key={effect.id}
-                className="winning-effect"
-                src={`/gifs/effects/effect-${effect.id}.gif`}
-                alt=""
-                style={{
-                  left: `${effect.left}%`,
-                  top: `${effect.top}%`,
-                  transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
-                  animationDelay: `${effect.delay}s`,
-                }}
-              />
-            ))}
-          </>
-        )}
-
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((item, index) => (
-              <div className="reel-item" key={index}>
-                <img src={`/${folder}/${item.id}.png`} alt="" onError={hideBrokenImage} />
-                <span>{item.name}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
+      {strip.map((item, index) => (
+        <div className="reel-item" key={index}>
+          <img src={`/${folder}/${item.id}.png`} alt="" onError={hideBrokenImage} />
+          <span>{item.name}</span>
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <img src={`/${folder}/${result.itemId}.png`} alt="" onError={hideBrokenImage} />
-        <span>{targetName}</span>
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 
@@ -414,151 +506,49 @@ function SpawnReel({
   hidden,
 }: SpawnReelProps) {
   const fillPool = useMemo(() => {
-    const options = (pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]).map(
-      (o) => ({ label: o.label.toUpperCase(), icon: o.icon }),
-    );
+    const options = (
+      pool && pool.length > 0 ? pool : [{ label, icon: targetIcon ?? null }]
+    ).map((o) => ({ label: o.label.toUpperCase(), icon: o.icon }));
 
     return options.length > 0 ? options : [{ label: '???', icon: null }];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [effects, setEffects] = useState<WinningEffect[]>([]);
-  const [showEffects, setShowEffects] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!landed) {
-      return;
-    }
-
-    const burst = shuffle(Array.from({ length: EFFECT_COUNT }, (_, index) => index))
-      .slice(0, WINNING_EFFECTS_COUNT)
-      .map((id, index) => ({
-        id,
-        left: 10 + Math.random() * 80,
-        top: 10 + Math.random() * 80,
-        rotation: -25 + Math.random() * 50,
-        delay: index * 0.12,
-      }));
-
-    setEffects(burst);
-    setShowEffects(true);
-
-    const timer = window.setTimeout(() => {
-      setShowEffects(false);
-      setEffects([]);
-    }, EFFECTS_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [landed]);
-
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const need = target_ + VISIBLE_ROWS + 2;
-    const pickRandom = (): SpawnOption =>
-      fillPool[Math.floor(Math.random() * fillPool.length)];
-
-    const rows: SpawnOption[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = pickRandom();
-
-      for (let guard = 0; guard < 40; guard++) {
-        if (rows[k - 1]?.label !== candidate.label && rows[k - 2]?.label !== candidate.label) {
-          break;
-        }
-
-        candidate = pickRandom();
-      }
-
-      rows[k] = candidate;
-    }
-
-    // Drop the winner in, then keep its neighbours distinct from it —
-    // the fill loop above only guarded against clashes among the filler
-    // rows themselves, so the winner's own label could still land right
-    // next to a filler row that already happened to say the same thing.
-    const winner = { label: label.toUpperCase(), icon: targetIcon ?? null };
-
-    rows[target_] = winner;
-
-    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
-      if (rows[n] && rows[n].label === winner.label) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = pickRandom();
-
-          if (rows[n].label !== winner.label) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target_ };
+  const { strip, targetIndex } = useMemo(
+    () =>
+      buildStrip<SpawnOption>(
+        fillPool,
+        { label: label.toUpperCase(), icon: targetIcon ?? null },
+        (a, b) => a.label === b.label,
+        2,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div className={`reel-container ov-reel ov-spawn ${landed ? 'ov-reel--landed ov-spawn--landed' : ''}`}>
-      <h2 className="reel-title">{title}</h2>
-
-      <div className="reel-wrapper">
-        {showEffects && (
-          <>
-            <img className="winning-gif" src="/gifs/sparkles-02.gif" alt="" />
-            <img className="winning-gif" src="/gifs/sparkles-00.gif" alt="" />
-
-            {effects.map((effect) => (
-              <img
-                key={effect.id}
-                className="winning-effect"
-                src={`/gifs/effects/effect-${effect.id}.gif`}
-                alt=""
-                style={{
-                  left: `${effect.left}%`,
-                  top: `${effect.top}%`,
-                  transform: `translate(-50%, -50%) rotate(${effect.rotation}deg)`,
-                  animationDelay: `${effect.delay}s`,
-                }}
-              />
-            ))}
-          </>
-        )}
-
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((option, index) => (
-              <div className="reel-item ov-spawn-item" key={index}>
-                <ReelIcon icon={option.icon} />
-                {option.label && <span>{option.label}</span>}
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
-
-          {hidden && <PendingMask />}
+    <ReelShell
+      className={`ov-spawn ${landed ? 'ov-spawn--landed' : ''}`}
+      title={title}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      withEffects
+      hidden={hidden}
+      result={
+        <>
+          <ReelIcon icon={targetIcon} />
+          {resultText && <span>{resultText}</span>}
+        </>
+      }
+    >
+      {strip.map((option, index) => (
+        <div className="reel-item ov-spawn-item" key={index}>
+          <ReelIcon icon={option.icon} />
+          {option.label && <span>{option.label}</span>}
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <ReelIcon icon={targetIcon} />
-        {resultText && <span>{resultText}</span>}
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 
@@ -609,86 +599,32 @@ function CountReel({
   // bonus called out — the actually-final number only shows in the
   // result line below (matches how the species reel already shows the
   // full "BOARS x4 (x2 bonus)" text only in its own result line).
-  const winnerLabel = bonusLabel ? `x${baseTarget} (${bonusLabel} bonus)` : `x${baseTarget}`;
+  const winnerLabel = bonusLabel
+    ? `x${baseTarget} (${bonusLabel} bonus)`
+    : `x${baseTarget}`;
 
-  const { strip, targetIndex } = useMemo(() => {
-    const jitter = Math.round((Math.random() * 2 - 1) * SPIN_JITTER_ROWS);
-    const target_ = Math.round(SPIN_DISTANCE_PX / ITEM_HEIGHT) + jitter;
-
-    const need = target_ + VISIBLE_ROWS + 2;
-    const pickRandom = (): string =>
-      COUNT_FILLER[Math.floor(Math.random() * COUNT_FILLER.length)];
-
-    const rows: string[] = [];
-
-    for (let k = 0; k < need; k++) {
-      let candidate = pickRandom();
-
-      for (let guard = 0; guard < 40; guard++) {
-        if (rows[k - 1] !== candidate && rows[k - 2] !== candidate) {
-          break;
-        }
-
-        candidate = pickRandom();
-      }
-
-      rows[k] = candidate;
-    }
-
-    rows[target_] = winnerLabel;
-
-    for (const n of [target_ - 2, target_ - 1, target_ + 1, target_ + 2]) {
-      if (rows[n] === winnerLabel) {
-        for (let guard = 0; guard < 40; guard++) {
-          rows[n] = pickRandom();
-
-          if (rows[n] !== winnerLabel) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { strip: rows, targetIndex: target_ };
+  const { strip, targetIndex } = useMemo(
+    () => buildStrip<string>(COUNT_FILLER, winnerLabel, (a, b) => a === b, 2),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const offset = spin ? (targetIndex - Math.floor(VISIBLE_ROWS / 2)) * ITEM_HEIGHT : 0;
+    [],
+  );
 
   return (
-    <div className={`reel-container ov-reel ov-count ${landed ? 'ov-reel--landed ov-count--landed' : ''}`}>
-      <h2 className="reel-title">{title}</h2>
-
-      <div className="reel-wrapper">
-        <div className="reel-window">
-          <div
-            className="reel"
-            style={{
-              transform: `translateY(-${offset}px)`,
-              transition: spin
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.8, 0.18, 1)`
-                : 'none',
-            }}
-          >
-            {strip.map((label, index) => (
-              <div className="reel-item ov-count-item" key={index}>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="top-gradient" />
-          <div className="bottom-gradient" />
-          <div className="reel-indicator" />
-
-          {hidden && <PendingMask />}
+    <ReelShell
+      className={`ov-count ${landed ? 'ov-count--landed' : ''}`}
+      title={title}
+      landed={landed}
+      spin={spin}
+      targetIndex={targetIndex}
+      hidden={hidden}
+      result={<span>x{target}</span>}
+    >
+      {strip.map((label, index) => (
+        <div className="reel-item ov-count-item" key={index}>
+          <span>{label}</span>
         </div>
-      </div>
-
-      <div className={`ov-result ${landed ? 'is-shown' : ''}`}>
-        <span>x{target}</span>
-      </div>
-    </div>
+      ))}
+    </ReelShell>
   );
 }
 
@@ -779,10 +715,13 @@ export default function Overlay() {
 
     const allLandedAt = cursor - GAP_MS;
 
-    // The moment every reel has stopped: tell the server to hand the
-    // loadout to the game now — don't make it wait for the fade-out.
+    // The moment every reel has stopped: celebrate once, and tell the
+    // server to hand the loadout to the game now — don't make it wait
+    // for the fade-out.
     timers.current.push(
       window.setTimeout(() => {
+        playWowSound();
+
         fetch(`${API}/overlay/rolled`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -800,18 +739,21 @@ export default function Overlay() {
     );
 
     timers.current.push(
-      window.setTimeout(() => {
-        setPhase('idle');
-        setJob(null);
+      window.setTimeout(
+        () => {
+          setPhase('idle');
+          setJob(null);
 
-        fetch(`${API}/overlay/done`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: nextJob.id }),
-        }).catch(() => {
-          // server may be gone; nothing to do
-        });
-      }, cursor + HOLD_MS + FADE_MS),
+          fetch(`${API}/overlay/done`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: nextJob.id }),
+          }).catch(() => {
+            // server may be gone; nothing to do
+          });
+        },
+        cursor + HOLD_MS + FADE_MS,
+      ),
     );
   };
 
@@ -854,99 +796,99 @@ export default function Overlay() {
         <span className="ov-banner-user">{job.user}</span>
         <span className="ov-banner-label">{job.label}</span>
         {job.bonus && (
-          <span className="ov-banner-bonus">BONUS{job.bonus.label ? ` ${job.bonus.label}` : ''}</span>
+          <span className="ov-banner-bonus">
+            BONUS{job.bonus.label ? ` ${job.bonus.label}` : ''}
+          </span>
         )}
       </div>
 
       <div className="ov-reels">
-        {job.mode === 'spawn' ? (
-          job.results.map((result, index) => {
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+        {job.mode === 'spawn'
+          ? job.results.map((result, index) => {
+              const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return typeof result.value === 'number' ? (
-              <CountReel
-                key={`${job.id}-${index}`}
-                title="Count"
-                target={result.value}
-                baseTarget={result.baseValue ?? result.value}
-                bonusLabel={result.bonus?.label ?? null}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            ) : (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
-                pool={job.spawnPool ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : job.mode === 'perk' ? (
-          // slot 0 = which perk, slot 1 = that perk's rolled value —
-          // fixed two-entry shape built by _buildPerkJob in roulette.cjs.
-          // Slot 1 stays masked until it's actually spinning/landed — its
-          // pool's format (dollars vs seconds vs item names) would
-          // otherwise give away slot 0's result before it even lands.
-          job.results.map((result, index) => {
-            const title = index === 1 ? 'Amount' : 'Positive Effect';
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+              return typeof result.value === 'number' ? (
+                <CountReel
+                  key={`${job.id}-${index}`}
+                  title="Count"
+                  target={result.value}
+                  baseTarget={result.baseValue ?? result.value}
+                  bonusLabel={result.bonus?.label ?? null}
+                  spin={spinning[index] ?? false}
+                  landed={landed[index] ?? false}
+                  hidden={!started}
+                />
+              ) : (
+                <SpawnReel
+                  key={`${job.id}-${index}`}
+                  title={job.category === 'enemies' ? 'Enemies' : 'Mutants'}
+                  pool={job.spawnPool ?? []}
+                  label={result.label ?? result.name ?? '???'}
+                  resultText={result.name ?? '???'}
+                  targetIcon={result.icon}
+                  spin={spinning[index] ?? false}
+                  landed={landed[index] ?? false}
+                  hidden={!started}
+                />
+              );
+            })
+          : job.mode === 'perk'
+            ? // slot 0 = which perk, slot 1 = that perk's rolled value —
+              // fixed two-entry shape built by _buildPerkJob in roulette.cjs.
+              // Slot 1 stays masked until it's actually spinning/landed — its
+              // pool's format (dollars vs seconds vs item names) would
+              // otherwise give away slot 0's result before it even lands.
+              job.results.map((result, index) => {
+                const title = index === 1 ? 'Amount' : 'Positive Effect';
+                const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={title}
-                pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : job.mode === 'negative' ? (
-          // slot 0 = which effect, slot 1 (if present) = that effect's
-          // rolled value — some effects (Drop Weapon, Empty Pockets) have
-          // no second roll at all, so `job.results` may be length 1; the
-          // spin/landed timing in runJob already keys off results.length,
-          // so a single-entry job just plays one reel.
-          job.results.map((result, index) => {
-            const title = index === 1 ? 'Amount' : 'Negative Effect';
-            const started = (spinning[index] ?? false) || (landed[index] ?? false);
+                return (
+                  <SpawnReel
+                    key={`${job.id}-${index}`}
+                    title={title}
+                    pool={(index === 1 ? job.perkValuePool : job.perkPool) ?? []}
+                    label={result.label ?? result.name ?? '???'}
+                    resultText={result.name ?? '???'}
+                    targetIcon={result.icon}
+                    spin={spinning[index] ?? false}
+                    landed={landed[index] ?? false}
+                    hidden={!started}
+                  />
+                );
+              })
+            : job.mode === 'negative'
+              ? // slot 0 = which effect, slot 1 (if present) = that effect's
+                // rolled value — some effects (Drop Weapon, Empty Pockets) have
+                // no second roll at all, so `job.results` may be length 1; the
+                // spin/landed timing in runJob already keys off results.length,
+                // so a single-entry job just plays one reel.
+                job.results.map((result, index) => {
+                  const title = index === 1 ? 'Amount' : 'Negative Effect';
+                  const started = (spinning[index] ?? false) || (landed[index] ?? false);
 
-            return (
-              <SpawnReel
-                key={`${job.id}-${index}`}
-                title={title}
-                pool={(index === 1 ? job.effectValuePool : job.effectPool) ?? []}
-                label={result.label ?? result.name ?? '???'}
-                resultText={result.name ?? '???'}
-                targetIcon={result.icon}
-                spin={spinning[index] ?? false}
-                landed={landed[index] ?? false}
-                hidden={!started}
-              />
-            );
-          })
-        ) : (
-          job.results.map((result, index) => (
-            <Reel
-              key={`${job.id}-${index}`}
-              result={result}
-              grades={job.grades?.[result.slot]}
-              spin={spinning[index] ?? false}
-              landed={landed[index] ?? false}
-            />
-          ))
-        )}
+                  return (
+                    <SpawnReel
+                      key={`${job.id}-${index}`}
+                      title={title}
+                      pool={(index === 1 ? job.effectValuePool : job.effectPool) ?? []}
+                      label={result.label ?? result.name ?? '???'}
+                      resultText={result.name ?? '???'}
+                      targetIcon={result.icon}
+                      spin={spinning[index] ?? false}
+                      landed={landed[index] ?? false}
+                      hidden={!started}
+                    />
+                  );
+                })
+              : job.results.map((result, index) => (
+                  <Reel
+                    key={`${job.id}-${index}`}
+                    result={result}
+                    grades={job.grades?.[result.slot]}
+                    spin={spinning[index] ?? false}
+                    landed={landed[index] ?? false}
+                  />
+                ))}
       </div>
     </div>
   );

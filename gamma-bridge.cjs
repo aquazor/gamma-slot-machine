@@ -1,7 +1,8 @@
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const { isSea, getAsset } = require('node:sea');
+
+const { createJsonStore } = require('./utils/json-store.cjs');
 
 /*
  * ---------------------------------------------------------
@@ -76,25 +77,10 @@ function isValidAnomalyPath(anomalyPath) {
  * next to the other user-data overrides (twitch-rewards.cjs).
  */
 
-const PATHS_OVERRIDE_FILE = path.join(os.homedir(), '.gamma-slot-machine', 'paths.json');
+const pathsStore = createJsonStore('paths.json');
 
-function loadPathOverrides() {
-  try {
-    return JSON.parse(fs.readFileSync(PATHS_OVERRIDE_FILE, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-function savePathOverrides(overrides) {
-  const dir = path.dirname(PATHS_OVERRIDE_FILE);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(PATHS_OVERRIDE_FILE, JSON.stringify(overrides, null, 2), 'utf8');
-}
+const loadPathOverrides = pathsStore.read;
+const savePathOverrides = pathsStore.write;
 
 function getPathOverrides() {
   return loadPathOverrides();

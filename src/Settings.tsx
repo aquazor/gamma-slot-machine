@@ -197,15 +197,16 @@ export default function Settings() {
     }
   }, [bumpSeq, isStaleSeq]);
 
-  const manualRoll = useCallback(
-    async (count: number): Promise<void> => {
+  // Every manual roll button posts the same body shape to /roulette/trigger.
+  const sendTrigger = useCallback(
+    async (payload: Record<string, unknown>): Promise<void> => {
       setTriggerBusy(true);
 
       try {
         await fetch(`${API}/roulette/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user: 'Streamer', count }),
+          body: JSON.stringify({ user: 'Streamer', ...payload }),
         });
       } finally {
         setTriggerBusy(false);
@@ -213,55 +214,28 @@ export default function Settings() {
       }
     },
     [refreshRouletteStatus],
+  );
+
+  const manualRoll = useCallback(
+    (count: number, forceBonus = false) => sendTrigger({ count, forceBonus }),
+    [sendTrigger],
   );
 
   const manualSpawn = useCallback(
-    async (category: 'mutants' | 'enemies', rolls: number): Promise<void> => {
-      setTriggerBusy(true);
-
-      try {
-        await fetch(`${API}/roulette/trigger`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'spawn', category, rolls, user: 'Streamer' }),
-        });
-      } finally {
-        setTriggerBusy(false);
-        refreshRouletteStatus();
-      }
-    },
-    [refreshRouletteStatus],
+    (category: 'mutants' | 'enemies', forceBonus = false) =>
+      sendTrigger({ kind: 'spawn', category, forceBonus }),
+    [sendTrigger],
   );
 
-  const manualPerk = useCallback(async (): Promise<void> => {
-    setTriggerBusy(true);
+  const manualPerk = useCallback(
+    (forceBonus = false) => sendTrigger({ kind: 'perk', forceBonus }),
+    [sendTrigger],
+  );
 
-    try {
-      await fetch(`${API}/roulette/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'perk', user: 'Streamer' }),
-      });
-    } finally {
-      setTriggerBusy(false);
-      refreshRouletteStatus();
-    }
-  }, [refreshRouletteStatus]);
-
-  const manualNegativeEffect = useCallback(async (): Promise<void> => {
-    setTriggerBusy(true);
-
-    try {
-      await fetch(`${API}/roulette/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'negative', user: 'Streamer' }),
-      });
-    } finally {
-      setTriggerBusy(false);
-      refreshRouletteStatus();
-    }
-  }, [refreshRouletteStatus]);
+  const manualNegativeEffect = useCallback(
+    (forceBonus = false) => sendTrigger({ kind: 'negative', forceBonus }),
+    [sendTrigger],
+  );
 
   const selectPreset = useCallback(
     async (name: string): Promise<void> => {
@@ -313,22 +287,22 @@ export default function Settings() {
     [bumpSeq, isStaleSeq],
   );
 
-  const selectRollMode = useCallback(
-    async (mode: 'random' | 'count-roll'): Promise<void> => {
+  const toggleLabsMode = useCallback(
+    async (enabled: boolean): Promise<void> => {
       setRoulette((prev) => {
-        if (!prev || prev.rollMode === mode) {
+        if (!prev || prev.labsMode === enabled) {
           return prev;
         }
 
-        return { ...prev, rollMode: mode };
+        return { ...prev, labsMode: enabled };
       });
 
       const s = bumpSeq();
 
-      const updated = await fetch(`${API}/roulette/roll-mode`, {
+      const updated = await fetch(`${API}/roulette/labs-mode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ enabled }),
       }).then((res) => res.json());
 
       if (!isStaleSeq(s) && !updated.error) {
@@ -390,14 +364,14 @@ export default function Settings() {
                 triggerBusy={triggerBusy}
                 selectPreset={selectPreset}
                 selectSpawnTier={selectSpawnTier}
-                selectRollMode={selectRollMode}
+                toggleLabsMode={toggleLabsMode}
                 manualRoll={manualRoll}
                 manualSpawn={manualSpawn}
                 manualPerk={manualPerk}
                 manualNegativeEffect={manualNegativeEffect}
               />
 
-              <EnemyFactions />
+              <EnemyFactions labsMode={Boolean(roulette?.labsMode)} />
 
               <section className="set-section">
                 <h2 className="set-heading">Tweaking</h2>

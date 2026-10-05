@@ -8,11 +8,11 @@ interface Props {
   triggerBusy: boolean;
   selectPreset: (name: string) => void;
   selectSpawnTier: (name: string) => void;
-  selectRollMode: (mode: 'random' | 'count-roll') => void;
-  manualRoll: (count: number) => void;
-  manualSpawn: (category: 'mutants' | 'enemies', rolls: number) => void;
-  manualPerk: () => void;
-  manualNegativeEffect: () => void;
+  toggleLabsMode: (enabled: boolean) => void;
+  manualRoll: (count: number, forceBonus?: boolean) => void;
+  manualSpawn: (category: 'mutants' | 'enemies', forceBonus?: boolean) => void;
+  manualPerk: (forceBonus?: boolean) => void;
+  manualNegativeEffect: (forceBonus?: boolean) => void;
 }
 
 function RouletteControls({
@@ -20,7 +20,7 @@ function RouletteControls({
   triggerBusy,
   selectPreset,
   selectSpawnTier,
-  selectRollMode,
+  toggleLabsMode,
   manualRoll,
   manualSpawn,
   manualPerk,
@@ -65,19 +65,27 @@ function RouletteControls({
 
       {roulette && (
         <div className="set-presets">
-          <span className="set-muted">Spawn roll mode</span>
+          <span className="set-muted">Spawn roster</span>
           <div className="set-preset-group">
             <button
-              className={`set-preset ${roulette.rollMode === 'random' ? 'is-active' : ''}`}
-              onClick={() => selectRollMode('random')}
-            >
-              Random
-            </button>
-            <button
-              className={`set-preset ${roulette.rollMode === 'count-roll' ? 'is-active' : ''}`}
-              onClick={() => selectRollMode('count-roll')}
+              className={`set-preset ${!roulette.labsMode ? 'is-active' : ''}`}
+              onClick={() => toggleLabsMode(false)}
             >
               Count Roll
+            </button>
+            <button
+              className={`set-preset ${roulette.labsMode ? 'is-active' : ''}`}
+              onClick={() => toggleLabsMode(true)}
+            >
+              Count Roll (LABS)
+              <span
+                className="set-hint"
+                tabIndex={0}
+                data-tip="Monolith, ISG and Sin can spawn on all tiers. More balanced spawn roster for Labs."
+                onClick={(event) => event.stopPropagation()}
+              >
+                ?
+              </span>
             </button>
           </div>
         </div>
@@ -118,7 +126,7 @@ function RouletteControls({
       )}
 
       <div className="set-trigger">
-        <span className="set-muted">Manual roll</span>
+        <span className="set-muted">Roll items</span>
         {[1, 2, 3].map((n) => (
           <button
             key={n}
@@ -129,6 +137,13 @@ function RouletteControls({
             {n} item{n > 1 ? 's' : ''}
           </button>
         ))}
+        <button
+          className="set-btn"
+          onClick={() => manualRoll(3, true)}
+          disabled={triggerBusy}
+        >
+          3 items<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
+        </button>
 
         <label className="set-auto-activate">
           <input
@@ -143,48 +158,72 @@ function RouletteControls({
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual spawn Mutants</span>
-        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
-          <button
-            key={n}
-            className="set-btn"
-            onClick={() => manualSpawn('mutants', n)}
-            disabled={triggerBusy}
-          >
-            {n === 1 ? 'Mutants' : `Mutants ×${n}`}
-          </button>
-        ))}
-      </div>
-
-      <div className="set-trigger">
-        <span className="set-muted">Manual spawn Squads</span>
-        {(roulette?.rollMode === 'count-roll' ? [1] : [1, 2, 3]).map((n) => (
-          <button
-            key={n}
-            className="set-btn"
-            onClick={() => manualSpawn('enemies', n)}
-            disabled={triggerBusy}
-          >
-            {n === 1 ? 'Squads' : `Squads ×${n}`}
-          </button>
-        ))}
-      </div>
-
-      <div className="set-trigger">
-        <span className="set-muted">Manual positive effect</span>
-        <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
-          Positive Effects
+        <span className="set-muted">Spawn Mutants</span>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('mutants')}
+          disabled={triggerBusy}
+        >
+          Mutants
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('mutants', true)}
+          disabled={triggerBusy}
+        >
+          Mutants<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 
       <div className="set-trigger">
-        <span className="set-muted">Manual negative effect</span>
+        <span className="set-muted">Spawn Squads</span>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('enemies')}
+          disabled={triggerBusy}
+        >
+          Squads
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualSpawn('enemies', true)}
+          disabled={triggerBusy}
+        >
+          Squads<span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
+        </button>
+      </div>
+
+      <div className="set-trigger">
+        <span className="set-muted">Positive effect</span>
+        <button className="set-btn" onClick={() => manualPerk()} disabled={triggerBusy}>
+          Positive Effects
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualPerk(true)}
+          disabled={triggerBusy}
+        >
+          Positive Effects
+          <span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
+        </button>
+      </div>
+
+      <div className="set-trigger">
+        <span className="set-muted">Negative effect</span>
         <button
           className="set-btn"
           onClick={() => manualNegativeEffect()}
           disabled={triggerBusy}
         >
           Negative Effects
+        </button>
+        <button
+          className="set-btn"
+          onClick={() => manualNegativeEffect(true)}
+          disabled={triggerBusy}
+        >
+          Negative Effects
+          <span className="set-badge set-badge--warn set-btn-badge">+ bonus</span>
         </button>
       </div>
 

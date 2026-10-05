@@ -20,6 +20,8 @@ export default function Tweaking() {
 
           <SpawnBonuses />
 
+          <SpawnBonuses labs />
+
           <PositiveEffects />
 
           <NegativeEffects />

@@ -11,9 +11,11 @@ A local Windows app for S.T.A.L.K.E.R.: GAMMA streamers. It ships as a single
 - **Loot Roulette** (`/overlay` + `/settings` + `/tweaking`) — a
   Twitch-integrated roulette. Channel-point redemptions, bits power-ups,
   subs, resubs and gift subs trigger a slot-machine roll live on stream,
-  landing on one of three outcomes: loot for the streamer, a hostile squad /
-  mutant pack spawn, or a positive effect (temporary invulnerability, a cash
-  drop, free ammo, or a medical item).
+  landing on one of five outcomes: loot for the streamer, a hostile squad /
+  mutant pack spawn, a positive effect (temporary invulnerability, a cash
+  drop, free ammo, a medical item, or food and water), or a negative effect
+  (a dropped weapon, lost money, broken gear, a time warp, getting drunk, or
+  a junk item).
 
 Everything runs locally — there's no external server, no data leaves the
 streamer's PC except the direct calls to Twitch's own API.
@@ -29,30 +31,32 @@ Twitch (EventSub)  →  server.cjs / roulette.cjs  →  command.txt  →  Lua br
 1. A Twitch event comes in over EventSub (WebSocket) — a sub, gift sub, a
    bits power-up redemption, or a channel-point redemption.
 2. `roulette.cjs` decides what the event should roll: a loot item, a
-   mutant/enemy spawn, or a positive effect. Spawns can roll one of two ways
-   (switchable live in Settings):
-   - **Random mode** (`enemies.cjs` + `enemies.data.json`) — independently
-     rolls 1-3 groups, each with its own count.
-   - **Count Roll mode** (`enemies-mode2.cjs` + `enemies.mode2.data.json`,
-     default) — one dual-slot roll (how many + which group), with a chance
-     of a bonus (double count, +2, or a tier upgrade).
-   Positive effects (`positive-effects.cjs` + `positive-effects.data.json`)
-   are a separate dual-slot roll: which effect (Immortality / Give Ammo /
-   Give Money / Medicine), then that effect's own rolled value, with its own
-   chance of a bonus.
+   mutant/enemy spawn, a positive effect, or a negative effect.
+   - Spawns are a dual-slot roll (how many + which group), with a chance
+     of a bonus (double count, +1, +2, or a tier upgrade). Two selectable
+     rosters share the same engine (`spawn/spawn-mode.cjs`): the normal one
+     (`spawn/enemies-mode2.cjs` + `spawn/enemies.mode2.data.json`) and "Count Roll
+     (labs)" (`spawn/enemies-labs.cjs` + `spawn/enemies.labs.data.json`, where
+     Monolith/UNISG/Sin are available at every tier instead of Expert
+     only) — each with its own independent bonus chances.
+   - Positive effects (`effects/positive-effects.cjs` + `effects/positive-effects.data.json`)
+     and negative effects (`effects/negative-effects.cjs` + `effects/negative-effects.data.json`)
+     are each their own dual-slot roll: which effect, then that effect's own
+     rolled value, with its own chance of a bonus.
+   A loot roll that includes a weapon also has a chance of giving it with a
+   scope/silencer already attached (`loot/gun-attachments.cjs`).
 3. The result is pushed to the `/overlay` page over Server-Sent Events, so
    the slot-machine animation plays live in OBS, and written as plain-text
    commands to `command.txt` inside the GAMMA mod folder.
 4. A Lua script polling that file in-game (`GAMMA MOD/gamedata/scripts/zzzzzz_slot_machine_bridge.script`
    — tracked in this repo, copied into the GAMMA install's own `gamedata/`
    once, see below) reads the commands and gives the item, spawns the
-   squad, or applies the effect (temporary god mode, money, ammo, or a
-   medical item).
+   squad, or applies the effect.
 
 The `/settings` page is where the streamer connects their Twitch account,
-tunes channel-point reward cost/limits/cooldowns, switches spawn/roll mode,
-enables or disables enemy factions, and manually triggers a roll for
-testing. Spawn-bonus and positive-effect chances (enable/disable, per-effect
+tunes channel-point reward cost/limits/cooldowns, enables or disables enemy
+factions, and manually triggers a roll for testing. Spawn-bonus,
+positive-effect and negative-effect chances (enable/disable, per-effect
 odds, "Restore defaults") live on their own `/tweaking` page, linked from
 Settings and the navbar.
 
@@ -93,9 +97,9 @@ instance running. Test the actual game/roll logic directly instead:
 node -e "const roulette = require('./roulette.cjs'); console.log(roulette.planForEvent({kind: 'manual'}, null))"
 ```
 
-`roulette.cjs`, `positive-effects.cjs`, `enemies.cjs`, `enemies-mode2.cjs`
-and `config.cjs` are all safe to `require()` directly this way — pure logic,
-no ports, no network.
+`roulette.cjs`, `effects/*.cjs`, `spawn/*.cjs`, `utils/*.cjs`, `loot/gun-attachments.cjs` and
+`config.cjs` are all safe to
+`require()` directly this way — pure logic, no ports, no network.
 
 ## Twitch setup
 
@@ -111,7 +115,7 @@ redemption events — the old bits-cheer roll trigger was removed, so plain
 `channel.cheer` is no longer subscribed to.
 
 Channel-point rewards are created and kept in sync automatically
-(`twitch-rewards.cjs`) — their structure (title, category, roll count) is
+(`twitch/twitch-rewards.cjs`) — their structure (title, category, roll count) is
 fixed in `config.cjs`; only cost, per-user limit, cooldown and enabled state
 are streamer-editable from `/settings`, stored as overrides next to the
 token file so they survive reinstalls of the app itself.
@@ -173,7 +177,7 @@ src/
   App.tsx              manual weapon/armor slot machine (/, deprecated)
   Overlay.tsx          OBS browser-source overlay (/overlay)
   Settings.tsx         Twitch connection + roulette settings (/settings)
-  Tweaking.tsx         spawn-bonus / positive-effect chance tuning (/tweaking)
+  Tweaking.tsx         spawn-bonus / positive-effect / negative-effect chance tuning (/tweaking)
   About.tsx            what this app does, setup steps, GitHub link (/about)
   BitsGuide.tsx        step-by-step Custom Power-ups setup guide (/bits-guide)
   Navbar.tsx           top nav shared by every page
@@ -182,16 +186,34 @@ src/
   constants/           static weapon/outfit/helmet data for the manual slot machine
 
 server.cjs             Express server — HTTP API + Twitch EventSub wiring
-roulette.cjs           picks what an event rolls (loot / spawn / positive effect) and runs the delivery queue
-enemy-pool.cjs         shared spawn-pool factory (faction toggles, group rolling) behind both spawn modes
-enemies.cjs / enemies.data.json               "Random" spawn mode — independent per-group rolls
-enemies-mode2.cjs / enemies.mode2.data.json   "Count Roll" spawn mode — dual-slot count+species roll, spawn bonuses
-positive-effects.cjs / positive-effects.data.json   Immortality / Give Ammo / Give Money / Medicine roll outcome
-twitch-auth.cjs        Device Code auth flow, token storage/refresh
-twitch-eventsub.cjs    Twitch EventSub WebSocket client
-twitch-rewards.cjs     channel-point reward creation/sync + streamer overrides
-gamma-bridge.cjs       finds the GAMMA install, writes command.txt
+roulette.cjs           picks what an event rolls (loot / spawn / positive / negative effect) and runs the delivery queue
+gamma-bridge.cjs       finds the GAMMA install, writes command.txt, installs the mod
 config.cjs             Twitch client id/scopes, channel-point + bits power-up reward definitions
+
+spawn/                 squad / mutant spawn rolls
+  enemy-pool.cjs         shared spawn-pool factory (faction toggles, group rolling)
+  spawn-mode.cjs         dual-slot spawn engine factory (count+species roll, bonuses) behind both rosters below
+  enemies-mode2.cjs / enemies.mode2.data.json   normal spawn roster
+  enemies-labs.cjs / enemies.labs.data.json     "Count Roll (labs)" roster — Monolith/UNISG/Sin at every tier
+effects/               positive / negative effect rolls
+  positive-effects.cjs / positive-effects.data.json   Immortality / Give Ammo / Give Money / Medicine / Food & Water
+  negative-effects.cjs / negative-effects.data.json   Drop Weapon / Empty Pockets / Break Item / Time Factor / Drink Vodka / Junk Item
+loot/                  gear rolls
+  items.data.json        weapon / helmet / outfit pools (generated by scripts/generate-items.cjs)
+  gun-attachments.cjs    "Roll guns with attachments" bonus — enable flag + chance
+twitch/                Twitch integration
+  twitch-auth.cjs        Device Code auth flow, token storage/refresh
+  twitch-eventsub.cjs    Twitch EventSub WebSocket client
+  twitch-rewards.cjs     channel-point reward creation/sync + streamer overrides
+utils/                 shared helpers reused across the backend
+  random.cjs             randBelow / randInt / pick / shuffle
+  json-store.cjs         one JSON file under ~/.gamma-slot-machine (tokens, overrides, settings)
+  key-toggles.cjs        runtime enable/disable set (faction + bonus toggles)
+  chance-overrides.cjs   persisted per-key chance overrides
+  weighted.cjs           weighted bonus / index picking
+  effect-catalog.cjs     enable + chance + weighted roll for the perk / negative-effect catalogs
+  chance-routes.cjs      the toggle / chance / reset HTTP routes shared by every /tweaking catalog
+scripts/               build tooling (build-release, build-server, generate-sea-config, generate-items, set-icon)
 
 GAMMA MOD/             the in-game Lua bridge — copy into <GAMMA>/mods/GAMMA Randomizer Slot Machine by rip_perri/ (see below)
 ```

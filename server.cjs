@@ -4,16 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const { isSea, getAsset } = require('node:sea');
 const { exec, execFile } = require('child_process');
-const twitchAuth = require('./twitch-auth.cjs');
-const { TwitchEventSub } = require('./twitch-eventsub.cjs');
+const twitchAuth = require('./twitch/twitch-auth.cjs');
+const { TwitchEventSub } = require('./twitch/twitch-eventsub.cjs');
 const { Roulette } = require('./roulette.cjs');
-const rewards = require('./twitch-rewards.cjs');
+const rewards = require('./twitch/twitch-rewards.cjs');
 const bridge = require('./gamma-bridge.cjs');
-const enemies = require('./enemies.cjs');
-const enemiesMode2 = require('./enemies-mode2.cjs');
-const perks = require('./positive-effects.cjs');
-const negativeEffects = require('./negative-effects.cjs');
-const gunAttachments = require('./gun-attachments.cjs');
+const enemies = require('./spawn/enemies-mode2.cjs');
+const enemiesLabs = require('./spawn/enemies-labs.cjs');
+const perks = require('./effects/positive-effects.cjs');
+const negativeEffects = require('./effects/negative-effects.cjs');
+const { registerChanceRoutes } = require('./utils/chance-routes.cjs');
+const gunAttachments = require('./loot/gun-attachments.cjs');
 
 const { getGammaPath, MOD_NAME } = bridge;
 
@@ -356,7 +357,9 @@ eventSub.on('event', (event) => {
   const job = roulette.handleEvent(event);
 
   if (job) {
-    console.log(`Roulette: ${event.kind} from ${job.user} -> ${job.label}`);
+    const extra = job.batch ? ` (${job.batch.size} rolls queued)` : '';
+
+    console.log(`Roulette: ${event.kind} from ${job.user} -> ${job.label}${extra}`);
   }
 });
 
@@ -464,36 +467,31 @@ app.post('/roulette/spawn-tier', (req, res) => {
   res.json(roulette.getState());
 });
 
-app.post('/roulette/roll-mode', (req, res) => {
-  const mode = (req.body || {}).mode;
+/*
+ * "Count Roll (labs)" — same engine, different roster (enemies-labs.cjs):
+ * Monolith/UNISG/Sin at every tier, trimmable mutant roster. Toggled
+ * independently of spawn tier.
+ */
+app.post('/roulette/labs-mode', (req, res) => {
+  const enabled = Boolean((req.body || {}).enabled);
 
-  if (!roulette.setRollMode(mode)) {
-    return res.status(400).json({ error: `Unknown roll mode: ${mode}` });
-  }
+  roulette.setLabsMode(enabled);
 
-  console.log(`Roulette roll mode -> ${mode}`);
+  console.log(`Roulette labs mode -> ${enabled ? 'on' : 'off'}`);
 
   res.json(roulette.getState());
 });
 
-// Faction on/off toggles are deliberately SHARED between "Random" and
-// "Count Roll" — disabling a squad means that real-world faction is off
-// everywhere, not just in whichever mode you disabled it from (see
-// enemy-pool.cjs's module-level `disabledFactions`). Only the spawn-BONUS
-// state is mode-specific, since mode 1 ("Random") has no concept of
-// bonuses at all — always act on whichever pool is currently active so a
-// bonus toggle/chance change only ever touches Count Roll's own state.
-function activeSpawnPool() {
-  return roulette.rollMode === 'count-roll' ? enemiesMode2 : enemies;
-}
-
 /*
  * Which armed factions ('enemies' category) can currently be rolled —
- * a blanket on/off per faction, the same across every tier. Reflects
- * whichever roll mode ("Random" or "Count Roll") is currently active.
+ * a blanket on/off per faction, the same across every tier. Faction
+ * enable/disable state is shared between the normal and labs rosters
+ * (see enemy-pool.cjs's module-level factionToggles) — disabling one
+ * here also disables it for Count Roll (labs), so there's just the one
+ * endpoint regardless of which mode is active.
  */
 app.get('/roulette/enemies', (req, res) => {
-  res.json({ factions: activeSpawnPool().listFactions() });
+  res.json({ factions: enemies.listFactions() });
 });
 
 app.post('/roulette/enemies/toggle', (req, res) => {
@@ -503,68 +501,51 @@ app.post('/roulette/enemies/toggle', (req, res) => {
     return res.status(400).json({ error: 'group is required' });
   }
 
-  activeSpawnPool().setFactionEnabled(group, Boolean(enabled));
+  enemies.setFactionEnabled(group, Boolean(enabled));
 
-  console.log(
-    `Roulette faction "${group}" -> ${enabled ? 'enabled' : 'disabled'} (${roulette.rollMode})`,
-  );
+  console.log(`Roulette faction "${group}" -> ${enabled ? 'enabled' : 'disabled'}`);
 
-  res.json({ factions: activeSpawnPool().listFactions() });
+  res.json({ factions: enemies.listFactions() });
 });
 
 /*
- * "Count Roll" mode only: the 3 global spawn-bonus toggles (double
- * count, +2, rare-upgrade). Applies across every tier that defines
- * that bonus key.
+ * The global spawn-bonus toggles (double count, +1, +2, rare-upgrade) for
+ * the normal roster. Applies across every tier that defines that bonus
+ * key. Count Roll (labs) has its own independent set — see the
+ * /roulette/labs/bonuses* endpoints below — so both can be tuned without
+ * needing labs mode switched on just to edit them.
  */
-app.get('/roulette/bonuses', (req, res) => {
-  res.json({ bonuses: enemiesMode2.listBonuses() });
+registerChanceRoutes(app, {
+  base: '/roulette/bonuses',
+  label: 'bonus',
+  resetLabel: 'spawn bonuses',
+  responseKey: 'bonuses',
+  list: enemies.listBonuses,
+  setEnabled: enemies.setBonusEnabled,
+  setChance: enemies.setBonusChance,
+  reset: enemies.resetBonuses,
 });
 
-app.post('/roulette/bonuses/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  enemiesMode2.setBonusEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette bonus "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ bonuses: enemiesMode2.listBonuses() });
-});
-
-app.post('/roulette/bonuses/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  enemiesMode2.setBonusChance(key, chance);
-
-  console.log(`Roulette bonus "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ bonuses: enemiesMode2.listBonuses() });
-});
-
-app.post('/roulette/bonuses/reset', (req, res) => {
-  enemiesMode2.resetBonuses();
-
-  console.log('Roulette spawn bonuses -> restored to defaults');
-
-  res.json({ bonuses: enemiesMode2.listBonuses() });
+/*
+ * Same 3 bonus toggles, for the Count Roll (labs) roster — independent
+ * enable state/chances from the normal roster's own (see
+ * enemies-labs.cjs).
+ */
+registerChanceRoutes(app, {
+  base: '/roulette/labs/bonuses',
+  label: 'labs bonus',
+  resetLabel: 'labs spawn bonuses',
+  responseKey: 'bonuses',
+  list: enemiesLabs.listBonuses,
+  setEnabled: enemiesLabs.setBonusEnabled,
+  setChance: enemiesLabs.setBonusChance,
+  reset: enemiesLabs.resetBonuses,
 });
 
 /*
  * "Roll guns with attachments" bonus — a plain on/off toggle, fixed
  * chance (see gun-attachments.cjs). Applies to any loot roll that
- * includes a weapon; always guaranteed for gift-sub bombs and bits
+ * includes a weapon; always guaranteed for gift-sub bonus rolls (every 5th gifted sub) and bits
  * power-ups regardless of this chance.
  */
 app.get('/roulette/gun-attachments', (req, res) => {
@@ -581,92 +562,26 @@ app.post('/roulette/gun-attachments/toggle', (req, res) => {
   res.json({ enabled: gunAttachments.isEnabled(), chance: gunAttachments.CHANCE });
 });
 
-app.get('/roulette/perks', (req, res) => {
-  res.json({ perks: perks.listPerks() });
+registerChanceRoutes(app, {
+  base: '/roulette/perks',
+  label: 'perk',
+  resetLabel: 'positive effects',
+  responseKey: 'perks',
+  list: perks.listPerks,
+  setEnabled: perks.setPerkEnabled,
+  setChance: perks.setPerkChance,
+  reset: perks.resetPerks,
 });
 
-app.post('/roulette/perks/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  perks.setPerkEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette perk "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.post('/roulette/perks/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  perks.setPerkChance(key, chance);
-
-  console.log(`Roulette perk "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.post('/roulette/perks/reset', (req, res) => {
-  perks.resetPerks();
-
-  console.log('Roulette positive effects -> restored to defaults');
-
-  res.json({ perks: perks.listPerks() });
-});
-
-app.get('/roulette/negative-effects', (req, res) => {
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/toggle', (req, res) => {
-  const { key, enabled } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  negativeEffects.setEffectEnabled(key, Boolean(enabled));
-
-  console.log(`Roulette negative effect "${key}" -> ${enabled ? 'enabled' : 'disabled'}`);
-
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/chance', (req, res) => {
-  const { key, chance } = req.body || {};
-
-  if (typeof key !== 'string' || !key) {
-    return res.status(400).json({ error: 'key is required' });
-  }
-
-  if (typeof chance !== 'number' || !Number.isFinite(chance)) {
-    return res.status(400).json({ error: 'chance must be a number' });
-  }
-
-  negativeEffects.setEffectChance(key, chance);
-
-  console.log(`Roulette negative effect "${key}" chance -> ${(chance * 100).toFixed(1)}%`);
-
-  res.json({ effects: negativeEffects.listEffects() });
-});
-
-app.post('/roulette/negative-effects/reset', (req, res) => {
-  negativeEffects.resetEffects();
-
-  console.log('Roulette negative effects -> restored to defaults');
-
-  res.json({ effects: negativeEffects.listEffects() });
+registerChanceRoutes(app, {
+  base: '/roulette/negative-effects',
+  label: 'negative effect',
+  resetLabel: 'negative effects',
+  responseKey: 'effects',
+  list: negativeEffects.listEffects,
+  setEnabled: negativeEffects.setEffectEnabled,
+  setChance: negativeEffects.setEffectChance,
+  reset: negativeEffects.resetEffects,
 });
 
 /*
@@ -677,9 +592,10 @@ app.post('/roulette/negative-effects/reset', (req, res) => {
  *   { user, kind: "negative" }
  */
 app.post('/roulette/trigger', (req, res) => {
-  const { user, count, kind, category } = req.body || {};
+  const { user, count, kind, category, forceBonus } = req.body || {};
 
   const who = (typeof user === 'string' && user.trim()) || 'Streamer';
+  const wantsBonus = Boolean(forceBonus);
 
   let event;
 
@@ -688,17 +604,18 @@ app.post('/roulette/trigger', (req, res) => {
       kind: 'manual-spawn',
       user: who,
       category: category === 'enemies' ? 'enemies' : 'mutants',
-      rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
+      forceBonus: wantsBonus,
     };
   } else if (kind === 'perk') {
-    event = { kind: 'manual-perk', user: who };
+    event = { kind: 'manual-perk', user: who, forceBonus: wantsBonus };
   } else if (kind === 'negative') {
-    event = { kind: 'manual-negative', user: who };
+    event = { kind: 'manual-negative', user: who, forceBonus: wantsBonus };
   } else {
     event = {
       kind: 'manual',
       user: who,
       manualCount: Math.min(3, Math.max(1, Number(count) || 1)),
+      forceBonus: wantsBonus,
     };
   }
 
@@ -744,7 +661,6 @@ app.post('/roulette/test', (req, res) => {
 
   if (kind === 'manual-spawn') {
     event.category = req.body.category === 'enemies' ? 'enemies' : 'mutants';
-    event.rolls = Math.min(3, Math.max(1, Number(req.body.rolls) || 1));
   }
 
   if (kind === 'reward') {
@@ -771,7 +687,6 @@ app.post('/roulette/test', (req, res) => {
             {
               kind: 'spawn',
               category: req.body.category === 'enemies' ? 'enemies' : 'mutants',
-              rolls: Math.min(3, Math.max(1, Number(req.body.rolls) || 1)),
             },
           ],
         ]),
